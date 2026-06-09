@@ -184,8 +184,8 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     `PROMPTEOF`,
     `( printf 'Paste these style rules first:\\n%s\\n\\nThen render this panel:\\n' "$(cat "${BIBLE}")"; cat /tmp/bake_${pid}_${aTag}.txt ) > /tmp/bakefull_${pid}_${aTag}.txt`,
     `M=/tmp/cm_${pid}_${aTag}; touch "$M"`,
-    `setsid codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${CANON}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,
-    `( sleep 480; kill -9 -$P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // kill the whole process group → no orphan image_gen polluting the next panel
+    `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${CANON}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
+    `( sleep 480; pkill -9 -P $P 2>/dev/null; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // watchdog kills codex's children then codex → no orphan image_gen polluting the next panel
     `NEW=$(find ~/.codex/generated_images -name '*.png' -newer "$M" 2>/dev/null | sort | tail -1); SZ=$(stat -f%z "$NEW" 2>/dev/null || echo 0)`,
     `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; echo "GEN_OK ${out} $SZ"; else echo "GEN_FAIL size=$SZ (image_gen errored / rate-limited)"; fi`,
     '```',
