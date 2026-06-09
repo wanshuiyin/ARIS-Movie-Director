@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect x="0" y="0" width="1280" height="720" rx="0" fill="#12182E" opacity="1.0"/>
+<rect x="60" y="56" width="1160" height="608" rx="16" fill="#171F38" opacity="0.5" stroke="#2A3552" stroke-width="2"/>
+<text x="640" y="98" fill="#E4E9F7" font-size="22" font-weight="800" font-family="JetBrains Mono, Menlo, monospace" text-anchor="middle" text-decoration="none">VERDICT — WARN_corrected</text>
+<text x="640" y="122" fill="#8C97B8" font-size="13" font-weight="400" font-family="JetBrains Mono, Menlo, monospace" text-anchor="middle" text-decoration="none">诚实但不杀稿 · the bug was caught before it reached the paper</text>
+<rect x="470" y="150" width="340" height="86" rx="12" fill="#1A1330" opacity="1.0" stroke="#FFB000" stroke-width="3"/>
+<text x="640" y="206" fill="#FFB000" font-size="30" font-weight="800" font-family="JetBrains Mono, Menlo, monospace" text-anchor="middle" text-decoration="none">⚠ WARN_corrected</text>
+<text x="120" y="300" fill="#8C97B8" font-size="14" font-weight="700" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="none">the claim NARROWS (not retracted):</text>
+<rect x="120" y="320" width="1040" height="64" rx="10" fill="#241019" opacity="1.0" stroke="#FF3366" stroke-width="1.5"/>
+<text x="140" y="360" fill="#FF3366" font-size="18" font-weight="700" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="line-through">✗  "schema-keyword-first is BEST"</text>
+<path d="M580,352 L640,352 M636,345 L644,352 L636,359" stroke="#E4E9F7" stroke-width="2.5" fill="none"/>
+<rect x="660" y="332" width="480" height="40" rx="8" fill="#0E2A22" opacity="1.0" stroke="#00C896" stroke-width="1.5"/>
+<text x="680" y="360" fill="#00C896" font-size="16" font-weight="700" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="none">✓  "...BEST under an external validator"</text>
+<text x="120" y="440" fill="#8C97B8" font-size="14" font-weight="700" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="none">claim ledger (research-wiki):</text>
+<rect x="120" y="460" width="1040" height="150" rx="10" fill="#0E1322" opacity="1.0" stroke="#2A3552" stroke-width="1.5"/>
+<text x="150" y="494" fill="#E4E9F7" font-size="15" font-weight="400" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="none">claim_id   = C7</text>
+<text x="150" y="522" fill="#E4E9F7" font-size="15" font-weight="400" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="none">evidence   = results/json_2026_05_06.json</text>
+<text x="150" y="550" fill="#FFB000" font-size="15" font-weight="700" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="none">integrity  = WARN_corrected</text>
+<text x="150" y="578" fill="#00C896" font-size="15" font-weight="400" font-family="JetBrains Mono, Menlo, monospace" text-anchor="start" text-decoration="none">scope      = "under external jsonschema only"</text>
+<text x="640" y="640" fill="#E4E9F7" font-size="14" font-weight="700" font-family="JetBrains Mono, Menlo, monospace" text-anchor="middle" text-decoration="none">effect REAL (+1.4) · audit caught the inflation · paper stays honest</text>
+</svg>

@@ -41,10 +41,10 @@
       "panel_ids": ["S02"] },
 
     { "id": "P02_b08", "type": "grid2x2", "beat": "B08",
-      "beat_title": { "zh": "Wiki 回滚 · 全片高潮", "en": "Wiki Rollback · the centerpiece" },
-      "skill": "research-wiki :: rollback → invariant upgrade → re-run",
-      "narration": { "zh": "被 REJECT 后，ARIS 回到 wiki：诊断失败、把 K3 升级成硬约束、重跑。",
-                     "en": "After a REJECT, ARIS returns to the wiki: diagnose the failure, upgrade K3 to a hard invariant, re-run." },
+      "beat_title": { "zh": "通胀审计 · 全片高潮", "en": "The Inflation Audit · the centerpiece" },
+      "skill": "experiment-audit :: sanitizer ≠ validator → raw re-eval → WARN_corrected",
+      "narration": { "zh": "schema-first 初看 +6.2。但 adversarial 审计发现评估器偷用了 JSON sanitizer 补键——纯 raw 重评后只剩 +1.4。效应真，范围缩小：诚实但不杀稿。",
+                     "en": "schema-first looked like +6.2. But the adversarial audit found the evaluator secretly ran a JSON sanitizer — on a raw re-eval only +1.4 holds. Real but narrowed: honest, not killed." },
       "panel_ids": ["S12", "S13", "S14", "S15"] },
 
     { "id": "P03_end", "type": "endcard", "beat": "B13",
@@ -67,29 +67,66 @@
         { "speaker": "reviewer", "style": "terse", "anchor": "tr", "tail": "tr", "text": { "zh": "别冲。", "en": "Don't rush." } }
       ], "overlays": [], "caption": null },
 
-    "S12": { "wiki_node_id": "panel:s12_aris_comic_v1", "active_attempt_id": "S12_a03",
-      "image_path": "panels/S12_panel_a03.png", "crop": { "shape": "square", "position": [0.5, 0.5], "zoom": 1.0 },
-      "safe_zones": [{ "id": "tl", "x": 0.04, "y": 0.06, "w": 0.5, "h": 0.16 }],
-      "bubbles": [], "overlays": [{ "style": "system", "x": 0.05, "y": 0.07, "text": { "zh": "research-wiki :: rollback", "en": "research-wiki :: rollback" } }], "caption": null },
+    "S12": { "wiki_node_id": "panel:s12_aris_comic_v1", "active_attempt_id": null,
+      "image_path": "panels/cal_S12_a01.png", "crop": { "shape": "square", "position": [0.5, 0.5], "zoom": 1.0 },
+      "text_mode": "baked",
+      "_condition": "per-panel content-driven gen config: the engine feeds content_svg (rendered to PNG) as -i ref #1 + duo_canonical as #2; bubbles are BAKED into the prompt (text_mode=baked)",
+      "condition": {
+        "content_svg": "assets/method_random_vs_schema_first_v1.svg",
+        "world": "warm-lab",
+        "scene": "warm-lit pixel ML research lab at night; a back board/monitor shows the method diagram (random-mask row ends red exact_parse FAIL, schema-keyword-first row ends green OK); a small wandb exact_parse curve with an amber +6.2 callout",
+        "chibi_action": { "executor": "warm foreground LOWER-LEFT, one arm thrust up in triumph pointing at the board, proud", "reviewer": "foreground LOWER-RIGHT, arms crossed, eyes narrowed, already glancing toward the code, skeptical" }
+      },
+      "bubbles": [
+        { "speaker": "executor", "text": { "zh": "赢了 +6.2！", "en": "We win +6.2!" } },
+        { "speaker": "reviewer", "text": { "zh": "先审评估器。", "en": "Audit the evaluator first." } }
+      ],
+      "overlays": [], "caption": { "zh": "看起来，去噪顺序就是全部故事。", "en": "The unmask order looked like the whole story." } },
 
-    "S13": { "wiki_node_id": "panel:s13_aris_comic_v1", "active_attempt_id": "S13_a01",
-      "image_path": "panels/S13_panel_a01.png", "crop": { "shape": "square", "position": [0.5, 0.45], "zoom": 1.0 },
-      "safe_zones": [{ "id": "tl", "x": 0.04, "y": 0.05, "w": 0.6, "h": 0.2 }],
-      "bubbles": [], "overlays": [{ "style": "system-red", "x": 0.05, "y": 0.06, "text": { "zh": "[1] 失败 trace: keyword 'Tokyo' 跨过 schema boundary", "en": "[1] failure trace: keyword 'Tokyo' crosses the schema boundary" } }],
-      "caption": { "zh": "研究不是一直往前。", "en": "Research doesn't always move forward." } },
+    "S13": { "wiki_node_id": "panel:s13_aris_comic_v1", "active_attempt_id": null,
+      "image_path": "panels/cal_S13_a01.png", "crop": { "shape": "square", "position": [0.5, 0.45], "zoom": 1.0 },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/sanitizer_vs_raw_v1.svg",
+        "world": "dark-cyber",
+        "scene": "dark, screen-lit; a laptop terminal shows the two-column code contrast — LEFT (red, THE BUG): score(json_sanitizer(out)) with '# default-fills malformed keys BEFORE scoring'; RIGHT (honest): json.loads + jsonschema.validate with '# raw, no repair'",
+        "chibi_action": { "reviewer": "hunched at the terminal, finger jabbing the red sanitizer line", "executor": "leaning in over the shoulder, dawning-horror face, a single sweat drop" }
+      },
+      "bubbles": [
+        { "speaker": "reviewer", "text": { "zh": "评分前，它在偷偷补键。", "en": "It default-fills keys before scoring." } },
+        { "speaker": "executor", "text": { "zh": "……那是在打分之前？", "en": "...that runs before scoring?" } }
+      ],
+      "overlays": [], "caption": { "zh": "评测器在判分前，先把错的修好了。", "en": "The evaluator repaired the outputs before judging them." } },
 
-    "S14": { "wiki_node_id": "panel:s14_aris_comic_v1", "active_attempt_id": "S14_a02",
+    "S14": { "wiki_node_id": "panel:s14_aris_comic_v1", "active_attempt_id": null,
       "image_path": "panels/S14_panel_a02.png", "crop": { "shape": "square", "position": [0.5, 0.5], "zoom": 1.0 },
-      "safe_zones": [{ "id": "tl", "x": 0.04, "y": 0.05, "w": 0.6, "h": 0.22 }],
-      "bubbles": [{ "speaker": "reviewer", "style": "terse", "anchor": "tl", "tail": "tl", "text": { "zh": "K3 改成硬约束。重跑。", "en": "Make K3 a hard constraint. Re-run." } }],
-      "overlays": [{ "style": "system-purple", "x": 0.55, "y": 0.84, "text": { "zh": "K3 → I-K3 (invariant)", "en": "K3 → I-K3 (invariant)" } }],
-      "caption": { "zh": "错了，就回到证据还站得住的地方。", "en": "When it's wrong, return to where the evidence still holds." } },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/collapse_6_2_to_1_4_v1.svg",
+        "world": "dark-cyber",
+        "scene": "a dark re-eval dashboard labeled HONEST RE-EVAL; the inflated +6.2 visibly cracks and falls into a solid green +1.4; the +4.8 drops away labeled 'evaluator self-repair artifact'",
+        "chibi_action": { "reviewer": "flipping a RAW switch on the dashboard, composed", "executor": "watching the number collapse, humbled but not crushed" }
+      },
+      "bubbles": [
+        { "speaker": "reviewer", "text": { "zh": "纯 raw 重评——真值是 +1.4。", "en": "Raw re-eval — the real number is +1.4." } },
+        { "speaker": "executor", "text": { "zh": "……+4.8 是修复器修出来的。", "en": "...the +4.8 was the sanitizer's doing." } }
+      ],
+      "overlays": [], "caption": { "zh": "效应真，但范围缩小了。", "en": "Real effect — but the scope narrowed." } },
 
-    "S15": { "wiki_node_id": "panel:s15_aris_comic_v1", "active_attempt_id": "S15_a04",
+    "S15": { "wiki_node_id": "panel:s15_aris_comic_v1", "active_attempt_id": null,
       "image_path": "panels/S15_panel_a04.png", "crop": { "shape": "square", "position": [0.5, 0.45], "zoom": 1.0 },
-      "safe_zones": [{ "id": "tc", "x": 0.22, "y": 0.05, "w": 0.55, "h": 0.2 }],
-      "bubbles": [{ "speaker": "executor", "style": "say", "anchor": "tc", "tail": "tc", "text": { "zh": "……OK，我学到了。", "en": "...OK. Lesson learned." } }],
-      "overlays": [{ "style": "system-green", "x": 0.6, "y": 0.85, "text": { "zh": "[3] RE-RUN ENFORCED", "en": "[3] RE-RUN ENFORCED" } }], "caption": null },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/warn_corrected_v1.svg",
+        "world": "dark-cyber",
+        "scene": "a verdict card glows amber: WARN_corrected; the over-claim 'X is best' is struck through and narrows to '...best under an external validator'; a claim-ledger entry (integrity=WARN_corrected, scope)",
+        "chibi_action": { "reviewer": "holding/stamping the WARN_corrected verdict, calm authority", "executor": "nodding, having learned" }
+      },
+      "bubbles": [
+        { "speaker": "reviewer", "text": { "zh": "不杀稿——但范围写清楚。", "en": "Not killed — but write the scope." } },
+        { "speaker": "executor", "text": { "zh": "……OK，我学到了。", "en": "...OK. Lesson learned." } }
+      ],
+      "overlays": [], "caption": { "zh": "诚实但不杀稿。", "en": "Honest, but not killed." } },
 
     "S22": { "wiki_node_id": "panel:s22_aris_comic_v1", "active_attempt_id": null,
       "image_path": "seeds/S22_seed.png", "crop": { "shape": "hero", "position": [0.5, 0.5], "zoom": 1.0 },
