@@ -64,13 +64,20 @@ function panelVerdict(cc, gem, cdx, cfg = {}) {
     const bothBtq = btqs.every(x => x != null)                                   // BOTH reviewers must score legibility
     const minBtq = bothBtq ? Math.min(...btqs) : 0
     const corruption = gem?.content_corruption_present === true || cdx?.content_corruption_present === true  // single-vote veto
-    const norm = s => String(s).toLowerCase().replace(/\s+/g, '')
-    const exp = (cfg.expected_literals || []).map(norm).filter(Boolean)
-    const seen = [...(gem?.observed_literals || []), ...(cdx?.observed_literals || [])].map(norm)
-    const missing = exp.filter(e => !seen.some(s => s.includes(e) || e.includes(s)))   // each authored literal read by ≥1 reviewer
-    const tokensOK = missing.length === 0
+    // EXACT atomic-token match (NOT substring — "+6.25"/"+16.2" must NOT satisfy "+6.2"), and each authored literal must be
+    // transcribed by BOTH reviewers INDEPENDENTLY (not the union): a single over-helpful / hallucinating reviewer must not be
+    // able to satisfy a missing literal. toks() is Array.isArray-safe → a malformed extraction returns null ⇒ fail closed.
+    const toks = arr => Array.isArray(arr) ? arr.flatMap(s => typeof s === 'string' ? (s.toLowerCase().match(/[a-z0-9+._-]+/g) || []) : []) : null
+    const gemToks = toks(gem?.observed_literals), cdxToks = toks(cdx?.observed_literals)
+    const reviewersOk = gemToks !== null && cdxToks !== null                          // both reviewers returned a usable array
+    const gemSet = new Set(gemToks || []), cdxSet = new Set(cdxToks || [])
+    const exp = Array.isArray(cfg.expected_literals)
+      ? cfg.expected_literals.flatMap(e => typeof e === 'string' ? (e.toLowerCase().match(/[a-z0-9+._-]+/g) || []) : []) : []
+    const missing = exp.filter(e => !(gemSet.has(e) && cdxSet.has(e)))                // BOTH reviewers must have transcribed it
+    const figureUngated = !!cfg.content_svg && exp.length === 0                        // baked figure w/ no gateable literal ⇒ fail closed (also pre-screened in main loop)
+    const tokensOK = reviewersOk && !figureUngated && missing.length === 0
     textOK = bothBtq && minBtq >= 4 && !corruption && tokensOK
-    textReason = `btq=${bothBtq ? minBtq : 'MISSING-reviewer'} corruption=${corruption} missingLiterals=[${missing.join('|')}]`
+    textReason = `btq=${bothBtq ? minBtq : 'NO-reviewer'} corruption=${corruption} reviewersOk=${reviewersOk} missing(¬both)=[${missing.join('|')}]${figureUngated ? ' UNGATED-figure' : ''}`
   } else {
     const safezone = gem?.safezone_present === true || cdx?.safezone_present === true   // either confirms
     const strayText = (gem?.stray_text_present === true) || (cdx?.stray_text_present === true) // either sees text → fail
@@ -242,7 +249,14 @@ let kept = []
 const totalByPanel = {}, pending = {}
 let escalated = null, throttled = false
 const flagged = []                 // panels accepted best-so-far for HUMAN review (design R10)
-for (let i = 0; i < PANEL_IDS.length && !throttled; i++) {
+// FAIL-CLOSED: if comic.json couldn't be loaded, every cfg would be empty → mode defaults + the faithfulness token-check goes
+// vacuous (a bad panel could keep). Refuse to run rather than run an ungated gate.
+const asciiTok = e => typeof e === 'string' && (e.toLowerCase().match(/[a-z0-9+._-]+/g) || []).length > 0
+const cfgUsable = c => !!c && !!c.text_mode && (c.text_mode !== 'baked' || !c.content_svg
+  || (Array.isArray(c.expected_literals) && c.expected_literals.length > 0 && c.expected_literals.every(asciiTok)))  // a baked figure MUST carry ASCII-tokenizable expected_literals
+const missingCfg = PANEL_IDS.filter(p => !cfgUsable(CONFIG[p]))
+if (missingCfg.length) { escalated = { pid: missingCfg[0], why: `unusable cfg for [${missingCfg.join(',')}] (missing text_mode, or a baked figure with no ASCII-tokenizable expected_literals) — refusing to run an ungated gate` } }
+for (let i = 0; i < PANEL_IDS.length && !throttled && !escalated; i++) {
   const pid = PANEL_IDS[i]
   const cfg = CONFIG[pid] || {}
   let done = false, lastGen = null
