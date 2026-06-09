@@ -5,8 +5,14 @@
   "_seam_note": "Content-graph IR: the panel pipeline WRITES this (wiki_to_comic.py projects it from the wiki graph on gate-pass); build_comic.py INLINES it into comic/index.html (no runtime fetch). image_path currently points at seeds/ as placeholder until panels are generated (then -> panels/SXX_panel_aNN.png).",
   "_crop_note": "crop is an OBJECT (review blocker #1): {shape, position:[x,y] object-position 0..1 focal point, zoom>=1}. shape drives container aspect at layout time; position+zoom frame the 16:9 source inside the (square/hero/wide) container WITHOUT re-generating other ratios — point position at the subjects so square cells never slice faces. Real generated panels are composed-to-shape so heavy zoom is rarely needed.",
   "meta": {
-    "title": { "zh": "ARIS — 我把那 24 小时交出去了", "en": "ARIS — I Handed Over Those 24 Hours" },
-    "tagline": { "zh": "你不在的时候，研究在。", "en": "While you're away, the research carries on." }
+    "title": {
+      "zh": "ARIS — 我把那 24 小时交出去了",
+      "en": "ARIS — I Handed Over Those 24 Hours"
+    },
+    "tagline": {
+      "zh": "你不在的时候，研究在。",
+      "en": "While you're away, the research carries on."
+    }
   },
   "defaults": {
     "panels_per_page_cap": 4,
@@ -18,123 +24,409 @@
     "pixel_rendering": true
   },
   "ui_tokens": {
-    "warning_red": "#FF3366", "amber": "#FFB000", "invariant_purple": "#B066FF",
-    "success_green": "#00C896", "dark_navy_void": "#0A0E27"
+    "warning_red": "#FF3366",
+    "amber": "#FFB000",
+    "invariant_purple": "#B066FF",
+    "success_green": "#00C896",
+    "dark_navy_void": "#0A0E27"
   },
   "identity_refs": {
     "duo_canonical": "movie-wiki/assets/refs/sprites/duo_canonical_ref_v001.png",
-    "executor": { "hoodie": "#1D4684", "hair": "#925935", "beard": false },
-    "reviewer": { "hoodie": "#30582D", "hair": "#0F0D16", "beard": true }
+    "executor": {
+      "hoodie": "#1D4684",
+      "hair": "#925935",
+      "beard": false
+    },
+    "reviewer": {
+      "hoodie": "#30582D",
+      "hair": "#0F0D16",
+      "beard": true
+    }
   },
   "pages": [
-    { "id": "P00_cover", "type": "cover", "beat": null,
-      "panel_ids": ["S01"],
-      "title": { "zh": "我把那 24 小时<br>交出去了", "en": "I Handed Over<br>Those 24 Hours" },
+    {
+      "id": "P00_cover",
+      "type": "cover",
+      "beat": null,
+      "panel_ids": [
+        "S01"
+      ],
+      "title": {
+        "zh": "我把那 24 小时<br>交出去了",
+        "en": "I Handed Over<br>Those 24 Hours"
+      },
       "kicker": "AN ARIS PRODUCTION · 22 PANELS",
-      "tag": { "zh": "离投稿，还有二十四小时。", "en": "24 hours to the deadline." } },
-
-    { "id": "P01_b02", "type": "single", "beat": "B02",
-      "beat_title": { "zh": "交接 · Hand-off", "en": "Hand-off" },
+      "tag": {
+        "zh": "离投稿，还有二十四小时。",
+        "en": "24 hours to the deadline."
+      }
+    },
+    {
+      "id": "P01_b02",
+      "type": "single",
+      "beat": "B02",
+      "beat_title": {
+        "zh": "交接 · Hand-off",
+        "en": "Hand-off"
+      },
       "skill": "$ aris run --task dllm-schema-keyword-first --deadline 24h",
-      "narration": { "zh": "他把这一轮交给 ARIS，去睡了。蓝衣 executor、绿衣 reviewer 在笔记本里醒来。",
-                     "en": "He hands the round to ARIS and goes to sleep. The blue executor and green reviewer wake inside the laptop." },
-      "panel_ids": ["S02"] },
-
-    { "id": "P02_b08", "type": "grid2x2", "beat": "B08",
-      "beat_title": { "zh": "通胀审计 · 全片高潮", "en": "The Inflation Audit · the centerpiece" },
+      "narration": {
+        "zh": "他把这一轮交给 ARIS，去睡了。蓝衣 executor、绿衣 reviewer 在笔记本里醒来。",
+        "en": "He hands the round to ARIS and goes to sleep. The blue executor and green reviewer wake inside the laptop."
+      },
+      "panel_ids": [
+        "S02"
+      ]
+    },
+    {
+      "id": "P02_b08",
+      "type": "grid2x2",
+      "beat": "B08",
+      "beat_title": {
+        "zh": "通胀审计 · 全片高潮",
+        "en": "The Inflation Audit · the centerpiece"
+      },
       "skill": "experiment-audit :: sanitizer ≠ validator → raw re-eval → WARN_corrected",
-      "narration": { "zh": "schema-first 初看 +6.2。但 adversarial 审计发现评估器偷用了 JSON sanitizer 补键——纯 raw 重评后只剩 +1.4。效应真，范围缩小：诚实但不杀稿。",
-                     "en": "schema-first looked like +6.2. But the adversarial audit found the evaluator secretly ran a JSON sanitizer — on a raw re-eval only +1.4 holds. Real but narrowed: honest, not killed." },
-      "panel_ids": ["S12", "S13", "S14", "S15"] },
-
-    { "id": "P03_end", "type": "endcard", "beat": "B13",
-      "panel_ids": ["S22"],
-      "logo": "ARIS", "logo_sub": "AUTO · RESEARCH · IN · SLEEP",
-      "tag": { "zh": "你不在的时候，研究在。", "en": "While you're away, the research carries on." } }
+      "narration": {
+        "zh": "schema-first 初看 +6.2。但 adversarial 审计发现评估器偷用了 JSON sanitizer 补键——纯 raw 重评后只剩 +1.4。效应真，范围缩小：诚实但不杀稿。",
+        "en": "schema-first looked like +6.2. But the adversarial audit found the evaluator secretly ran a JSON sanitizer — on a raw re-eval only +1.4 holds. Real but narrowed: honest, not killed."
+      },
+      "panel_ids": [
+        "S12",
+        "S13",
+        "S14",
+        "S15"
+      ]
+    },
+    {
+      "id": "P03_end",
+      "type": "endcard",
+      "beat": "B13",
+      "panel_ids": [
+        "S22"
+      ],
+      "logo": "ARIS",
+      "logo_sub": "AUTO · RESEARCH · IN · SLEEP",
+      "tag": {
+        "zh": "你不在的时候，研究在。",
+        "en": "While you're away, the research carries on."
+      }
+    }
   ],
   "panels": {
-    "S01": { "wiki_node_id": "panel:s01_aris_comic_v1", "active_attempt_id": null,
-      "image_path": "seeds/S01_seed.png", "crop": { "shape": "hero", "position": [0.32, 0.45], "zoom": 1.0 },
-      "safe_zones": [{ "id": "main", "x": 0.04, "y": 0.30, "w": 0.55, "h": 0.40 }],
-      "bubbles": [], "overlays": [], "caption": null },
-
-    "S02": { "wiki_node_id": "panel:s02_aris_comic_v1", "active_attempt_id": null,
-      "image_path": "seeds/S02_seed.png", "crop": { "shape": "wide", "position": [0.5, 0.45], "zoom": 1.0 },
-      "safe_zones": [{ "id": "tl", "x": 0.02, "y": 0.03, "w": 0.40, "h": 0.22 }, { "id": "tc", "x": 0.38, "y": 0.02, "w": 0.26, "h": 0.20 }, { "id": "tr", "x": 0.78, "y": 0.04, "w": 0.20, "h": 0.20 }],
+    "S01": {
+      "wiki_node_id": "panel:s01_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "seeds/S01_seed.png",
+      "crop": {
+        "shape": "hero",
+        "position": [
+          0.32,
+          0.45
+        ],
+        "zoom": 1.0
+      },
+      "safe_zones": [
+        {
+          "id": "main",
+          "x": 0.04,
+          "y": 0.3,
+          "w": 0.55,
+          "h": 0.4
+        }
+      ],
+      "bubbles": [],
+      "overlays": [],
+      "caption": null
+    },
+    "S02": {
+      "wiki_node_id": "panel:s02_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "seeds/S02_seed.png",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.45
+        ],
+        "zoom": 1.0
+      },
+      "safe_zones": [
+        {
+          "id": "tl",
+          "x": 0.02,
+          "y": 0.03,
+          "w": 0.4,
+          "h": 0.22
+        },
+        {
+          "id": "tc",
+          "x": 0.38,
+          "y": 0.02,
+          "w": 0.26,
+          "h": 0.2
+        },
+        {
+          "id": "tr",
+          "x": 0.78,
+          "y": 0.04,
+          "w": 0.2,
+          "h": 0.2
+        }
+      ],
       "bubbles": [
-        { "speaker": "user", "style": "say", "anchor": "tl", "tail": "tl", "text": { "zh": "这一轮交给 ARIS 了。我睡几个小时，明早上课。", "en": "This round's on ARIS. I'll sleep a few hours — class in the morning." } },
-        { "speaker": "executor", "style": "shout", "anchor": "tc", "tail": "tc", "text": { "zh": "包在我们身上！", "en": "Leave it to us!" } },
-        { "speaker": "reviewer", "style": "terse", "anchor": "tr", "tail": "tr", "text": { "zh": "别冲。", "en": "Don't rush." } }
-      ], "overlays": [], "caption": null },
-
-    "S12": { "wiki_node_id": "panel:s12_aris_comic_v1", "active_attempt_id": null,
-      "image_path": "panels/cal_S12_a01.png", "crop": { "shape": "square", "position": [0.5, 0.5], "zoom": 1.0 },
+        {
+          "speaker": "user",
+          "style": "say",
+          "anchor": "tl",
+          "tail": "tl",
+          "text": {
+            "zh": "这一轮交给 ARIS 了。我睡几个小时，明早上课。",
+            "en": "This round's on ARIS. I'll sleep a few hours — class in the morning."
+          }
+        },
+        {
+          "speaker": "executor",
+          "style": "shout",
+          "anchor": "tc",
+          "tail": "tc",
+          "text": {
+            "zh": "包在我们身上！",
+            "en": "Leave it to us!"
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "anchor": "tr",
+          "tail": "tr",
+          "text": {
+            "zh": "别冲。",
+            "en": "Don't rush."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": null
+    },
+    "S12": {
+      "wiki_node_id": "panel:s12_aris_comic_v1",
+      "active_attempt_id": "S12_a01",
+      "image_path": "panels/S12_panel_a01.png",
+      "crop": {
+        "shape": "square",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
       "text_mode": "baked",
       "_condition": "per-panel content-driven gen config: the engine feeds content_svg (rendered to PNG) as -i ref #1 + duo_canonical as #2; bubbles are BAKED into the prompt (text_mode=baked)",
       "condition": {
         "content_svg": "assets/method_random_vs_schema_first_v1.svg",
-        "expected_literals": ["+6.2"],
+        "expected_literals": [
+          "+6.2"
+        ],
         "world": "warm-lab",
         "scene": "warm-lit pixel ML research lab at night. The back board/monitor shows the method diagram (random-mask row ends red exact_parse FAIL with 'span 跨边界切碎'; schema-keyword-first row ends green OK with 'span ⊆ schema') plus a small wandb exact_parse curve with an amber Δ +6.2 callout. FILL the warm room with legible storytelling props (density target = cal_S12): bookshelf spines 'LLM DECODING' / 'STRUCTURED OUTPUTS' / 'EVALS FIRST', a hand-drawn TODO note ('better masks ☐ / schema locks ☐ / evals ☑'), an open laptop showing real readable code 'def exact_parse(json_str, schema): ...', an 'ML RESEARCH' mug and a '</>' mug, a small potted plant, warm Edison desk lamps; a cool blue night-city skyline glows through the window behind the warm interior (warm room vs cool night = in-panel two-world contrast)",
-        "chibi_action": { "executor": "warm foreground LOWER-LEFT, one arm thrust up in triumph pointing at the board, proud", "reviewer": "foreground LOWER-RIGHT, arms crossed, eyes narrowed, already glancing toward the code, skeptical" }
+        "chibi_action": {
+          "executor": "warm foreground LOWER-LEFT, one arm thrust up in triumph pointing at the board, proud",
+          "reviewer": "foreground LOWER-RIGHT, arms crossed, eyes narrowed, already glancing toward the code, skeptical"
+        }
       },
       "bubbles": [
-        { "speaker": "executor", "text": { "zh": "赢了 +6.2！", "en": "We win +6.2!" } },
-        { "speaker": "reviewer", "text": { "zh": "先审评估器。", "en": "Audit the evaluator first." } }
+        {
+          "speaker": "executor",
+          "text": {
+            "zh": "赢了 +6.2！",
+            "en": "We win +6.2!"
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "text": {
+            "zh": "先审评估器。",
+            "en": "Audit the evaluator first."
+          }
+        }
       ],
-      "overlays": [], "caption": { "zh": "看起来，去噪顺序就是全部故事。", "en": "The unmask order looked like the whole story." } },
-
-    "S13": { "wiki_node_id": "panel:s13_aris_comic_v1", "active_attempt_id": null,
-      "image_path": "panels/cal_S13_a01.png", "crop": { "shape": "square", "position": [0.5, 0.45], "zoom": 1.0 },
+      "overlays": [],
+      "caption": {
+        "zh": "看起来，去噪顺序就是全部故事。",
+        "en": "The unmask order looked like the whole story."
+      }
+    },
+    "S13": {
+      "wiki_node_id": "panel:s13_aris_comic_v1",
+      "active_attempt_id": "S13_a01",
+      "image_path": "panels/S13_panel_a01.png",
+      "crop": {
+        "shape": "square",
+        "position": [
+          0.5,
+          0.45
+        ],
+        "zoom": 1.0
+      },
       "text_mode": "baked",
       "condition": {
         "content_svg": "assets/sanitizer_vs_raw_v1.svg",
-        "expected_literals": ["sanitizer", "+6.2", "+1.4"],
+        "expected_literals": [
+          "sanitizer",
+          "+6.2",
+          "+1.4"
+        ],
         "world": "dark-cyber",
         "scene": "dark screen-lit AUDIT LAB at night. A laptop terminal shows the two-column code contrast — LEFT (red, THE BUG): score(json_sanitizer(out)) with '# default-fills malformed keys BEFORE scoring'; RIGHT (honest, green): json.loads + jsonschema.validate with '# raw, no repair'. FILL the dark cyber room with legible storytelling props (density target = cal_S12): a faint 'WIKI VOID' swirl glow + dark shelf spines 'JSON SCHEMA AUDIT' / 'EVAL INTEGRITY', a second monitor scrolling raw json.loads logs, a '</>' mug and a cooling coffee, neon-edged panels, one warm desk lamp breaking the cool gloom (cool cyber + warm accent)",
-        "chibi_action": { "reviewer": "hunched at the terminal, finger jabbing the red sanitizer line", "executor": "leaning in over the shoulder, dawning-horror face, a single sweat drop" }
+        "chibi_action": {
+          "reviewer": "hunched at the terminal, finger jabbing the red sanitizer line",
+          "executor": "leaning in over the shoulder, dawning-horror face, a single sweat drop"
+        }
       },
       "bubbles": [
-        { "speaker": "reviewer", "text": { "zh": "评分前，它在偷偷补键。", "en": "It default-fills keys before scoring." } },
-        { "speaker": "executor", "text": { "zh": "……那是在打分之前？", "en": "...that runs before scoring?" } }
+        {
+          "speaker": "reviewer",
+          "text": {
+            "zh": "评分前，它在偷偷补键。",
+            "en": "It default-fills keys before scoring."
+          }
+        },
+        {
+          "speaker": "executor",
+          "text": {
+            "zh": "……那是在打分之前？",
+            "en": "...that runs before scoring?"
+          }
+        }
       ],
-      "overlays": [], "caption": { "zh": "评测器在判分前，先把错的修好了。", "en": "The evaluator repaired the outputs before judging them." } },
-
-    "S14": { "wiki_node_id": "panel:s14_aris_comic_v1", "active_attempt_id": null,
-      "image_path": "panels/S14_panel_a02.png", "crop": { "shape": "square", "position": [0.5, 0.5], "zoom": 1.0 },
+      "overlays": [],
+      "caption": {
+        "zh": "评测器在判分前，先把错的修好了。",
+        "en": "The evaluator repaired the outputs before judging them."
+      }
+    },
+    "S14": {
+      "wiki_node_id": "panel:s14_aris_comic_v1",
+      "active_attempt_id": "S14_a01",
+      "image_path": "panels/S14_panel_a01.png",
+      "crop": {
+        "shape": "square",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
       "text_mode": "baked",
       "condition": {
         "content_svg": "assets/collapse_6_2_to_1_4_v1.svg",
-        "expected_literals": ["+6.2", "+1.4", "+4.8"],
+        "expected_literals": [
+          "+6.2",
+          "+1.4",
+          "+4.8"
+        ],
         "world": "dark-cyber",
         "scene": "a dark re-eval war-room at night. The center dashboard labeled HONEST RE-EVAL shows the inflated +6.2 visibly cracking and falling into a solid green +1.4, with the +4.8 dropping away labeled 'evaluator self-repair artifact'. FILL the dark cyber room with legible storytelling props (density target = cal_S12): a glowing 'RAW' toggle switch flipped on, secondary monitors scrolling raw json.loads re-eval logs, dark shelf spines 'EXPERIMENT AUDIT' / 'RESULT INTEGRITY', neon gridlines on the floor, a '</>' mug, one warm desk lamp accent against the cool cyber gloom",
-        "chibi_action": { "reviewer": "flipping a RAW switch on the dashboard, composed", "executor": "watching the number collapse, humbled but not crushed" }
+        "chibi_action": {
+          "reviewer": "flipping a RAW switch on the dashboard, composed",
+          "executor": "watching the number collapse, humbled but not crushed"
+        }
       },
       "bubbles": [
-        { "speaker": "reviewer", "text": { "zh": "纯 raw 重评——真值是 +1.4。", "en": "Raw re-eval — the real number is +1.4." } },
-        { "speaker": "executor", "text": { "zh": "……+4.8 是修复器修出来的。", "en": "...the +4.8 was the sanitizer's doing." } }
+        {
+          "speaker": "reviewer",
+          "text": {
+            "zh": "纯 raw 重评——真值是 +1.4。",
+            "en": "Raw re-eval — the real number is +1.4."
+          }
+        },
+        {
+          "speaker": "executor",
+          "text": {
+            "zh": "……+4.8 是修复器修出来的。",
+            "en": "...the +4.8 was the sanitizer's doing."
+          }
+        }
       ],
-      "overlays": [], "caption": { "zh": "效应真，但范围缩小了。", "en": "Real effect — but the scope narrowed." } },
-
-    "S15": { "wiki_node_id": "panel:s15_aris_comic_v1", "active_attempt_id": null,
-      "image_path": "panels/S15_panel_a04.png", "crop": { "shape": "square", "position": [0.5, 0.45], "zoom": 1.0 },
+      "overlays": [],
+      "caption": {
+        "zh": "效应真，但范围缩小了。",
+        "en": "Real effect — but the scope narrowed."
+      }
+    },
+    "S15": {
+      "wiki_node_id": "panel:s15_aris_comic_v1",
+      "active_attempt_id": "S15_a01",
+      "image_path": "panels/S15_panel_a01.png",
+      "crop": {
+        "shape": "square",
+        "position": [
+          0.5,
+          0.45
+        ],
+        "zoom": 1.0
+      },
       "text_mode": "baked",
       "condition": {
         "content_svg": "assets/warn_corrected_v1.svg",
-        "expected_literals": ["WARN_corrected", "+1.4"],
+        "expected_literals": [
+          "WARN_corrected",
+          "+1.4"
+        ],
         "world": "dark-cyber",
         "scene": "a dark verdict chamber at night. A verdict card glows amber: WARN_corrected; the over-claim 'X is best' is struck through and narrows to '...best under an external validator'; a claim-ledger board shows the entry (claim_id / integrity=WARN_corrected / scope). FILL the dark cyber room with legible storytelling props (density target = cal_S12): dark shelf spines 'CLAIM AUDIT' / 'RESEARCH WIKI', a terminal showing the enforced re-run command, neon stamp-glow around the verdict card, a '</>' mug and a half-finished coffee, one warm desk lamp accent against the cool cyber gloom",
-        "chibi_action": { "reviewer": "holding/stamping the WARN_corrected verdict, calm authority", "executor": "nodding, having learned" }
+        "chibi_action": {
+          "reviewer": "holding/stamping the WARN_corrected verdict, calm authority",
+          "executor": "nodding, having learned"
+        }
       },
       "bubbles": [
-        { "speaker": "reviewer", "text": { "zh": "不杀稿——但范围写清楚。", "en": "Not killed — but write the scope." } },
-        { "speaker": "executor", "text": { "zh": "……OK，我学到了。", "en": "...OK. Lesson learned." } }
+        {
+          "speaker": "reviewer",
+          "text": {
+            "zh": "不杀稿——但范围写清楚。",
+            "en": "Not killed — but write the scope."
+          }
+        },
+        {
+          "speaker": "executor",
+          "text": {
+            "zh": "……OK，我学到了。",
+            "en": "...OK. Lesson learned."
+          }
+        }
       ],
-      "overlays": [], "caption": { "zh": "诚实但不杀稿。", "en": "Honest, but not killed." } },
-
-    "S22": { "wiki_node_id": "panel:s22_aris_comic_v1", "active_attempt_id": null,
-      "image_path": "seeds/S22_seed.png", "crop": { "shape": "hero", "position": [0.5, 0.5], "zoom": 1.0 },
-      "safe_zones": [{ "id": "main", "x": 0.0, "y": 0.30, "w": 1.0, "h": 0.4 }],
-      "bubbles": [], "overlays": [], "caption": null }
+      "overlays": [],
+      "caption": {
+        "zh": "诚实但不杀稿。",
+        "en": "Honest, but not killed."
+      }
+    },
+    "S22": {
+      "wiki_node_id": "panel:s22_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "seeds/S22_seed.png",
+      "crop": {
+        "shape": "hero",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "safe_zones": [
+        {
+          "id": "main",
+          "x": 0.0,
+          "y": 0.3,
+          "w": 1.0,
+          "h": 0.4
+        }
+      ],
+      "bubbles": [],
+      "overlays": [],
+      "caption": null
+    }
   }
 }
