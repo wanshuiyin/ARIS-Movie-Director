@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s13_a02_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S13 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s13_a02",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 4,
+    "composition_story": 5,
+    "timed_out": false,
+    "notes": "S13 is the diagnosis beat of B08 \"Wiki Rollback · centerpiece\" (2x2 grid, sub-panel 2). Beat = ARIS returns to wiki, inspects the failure trace (keyword 'Tokyo' crossing schema boundary, sliced as Tok|yo); caption \"Reset to the last good entry.\" narrative_beat_fidelity 4: the diagnosis/inspection beat reads and stays distinct from the S12 return-to-wiki pivot, the S14 K3->I-K3 invariant upgrade, and the S15 RE-RUN ENFORCED beat, so the 2x2 progression remains monotonic; downgraded one notch because the sliced-keyword trace ('Tok|yo' crossing the schema boundary) is the load-bearing diagnostic signal and it does not read as cleanly as it should at panel scale, softening the 'we found the bug' read. composition_story 5: reading order, duo legibility, and eye-flow toward the inspected failure trace all hold cleanly, and the top/left dark regions stay clear for the 'research-wiki :: rollback' system overlay. NARRATIVE VERDICT: diagnosis beat delivered and distinct (PASS on beat distinctness) — visual identity-lock / artifact / safezone-cleanliness are the visual reviewers' call; flagging only that the sliced-keyword trace must stay legible as the diagnostic payload."
+  }
+}

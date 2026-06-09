@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s13_a02",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S13 a2 → rollback",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s13_a02",
+    "verdict": "rollback",
+    "reasoning": "ROLLBACK — identity/style/artifact break (narr=4 identity=5 style=4 comp=4 worstArt=5 safezone=true stray=false disagree=0)",
+    "repair_instruction": "蓝棕无须executor与绿黑有须reviewer身份锁成立，像素chibi与深蓝wiki空间一致；主要风险是顶部/左侧留白偏大但可作为HTML文字安全区。"
+  }
+}

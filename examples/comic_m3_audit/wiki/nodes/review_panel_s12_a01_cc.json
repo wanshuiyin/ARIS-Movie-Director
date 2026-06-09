@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s12_a01_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S12 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s12_a01",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 4,
+    "composition_story": 4,
+    "timed_out": false,
+    "notes": "Panel S12 = B08 first sub-shot, the transition INTO the wiki rollback space (page P02_b08 narration: \"After a REJECT, ARIS returns to the wiki...\"). Storyboard S12 intent = screen-ripple dissolve from warm bedroom into the cool wiki/graph space, with the duo turning back toward the research-wiki surface and the 'research-wiki :: rollback' system overlay landing in the upper-left safe_zone. STORY READ: the rollback-entry beat is delivered — both duo members are present and oriented toward the wiki surface, the setback->regroup turn reads, and the cell opens the centerpiece 2x2 without leaking S13's diagnosis, S14's K3->I-K3 invariant upgrade, or S15's RE-RUN ENFORCED badge. narrative_beat_fidelity 4: the 'return to wiki after REJECT' beat lands, but the ripple/dissolve transition motif is only partly legible — the cool wiki space reads more as a static backdrop than an active dissolve, softening the 'we go BACK' pivot. composition_story 4: reading order is clear and the duo+wiki surface compose the eye toward the rollback action, but the upper-left system-overlay region is slightly busy, so the caption/overlay anchor is a touch less clean than ideal. NARRATIVE VERDICT: PASS on story (no beat-level rejection); cell stays distinct from S13-S15. Visual identity-lock / artifact / safezone-cleanliness are NOT my call — left to the visual reviewers."
+  }
+}

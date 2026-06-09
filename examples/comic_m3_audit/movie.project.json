@@ -1,0 +1,13 @@
+{
+  "project_id": "comic_m3_audit",
+  "title": { "zh": "ARIS — 我把那 24 小时交出去了", "en": "ARIS — I Handed Over Those 24 Hours" },
+  "story": "dllm schema-keyword-first denoising; the M3 audit-cascade integrity catch (sanitizer inflated +6.2 → honest re-eval +1.4 → WARN_corrected)",
+  "framework_version": "0.1",
+  "schema_version": "comic-ir/1.0",
+  "comic_json": "comic.json",
+  "art_bible": "ART_BIBLE.md",
+  "identity_ref": "assets/duo_canonical_ref_v001.png",
+  "dirs": { "assets": "assets", "gen": "gen", "seeds": "seeds", "panels": "panels", "wiki": "wiki", "outputs": "outputs", "workflows": "workflows" },
+  "text_mode_default": "baked",
+  "palette": "two-world: real=warm, digital=dark-cyber (ART_BIBLE §0.5)"
+}

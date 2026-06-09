@@ -1,0 +1,13 @@
+{
+  "node_id": "fail:s14_a01",
+  "node_type": "failure_mode",
+  "status": "active",
+  "title": "S14 a1 panel_visual failure mode",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "active": true,
+    "affected_shot_ids": ["S14"],
+    "layer": "panel_visual",
+    "repair_pattern": "reviewer绿 hoodie、黑发、有须身份稳定；中心紫色wiki光核和像素终端氛围可保留，但需清掉伪代码字形并预留低细节文字安全区"
+  }
+}

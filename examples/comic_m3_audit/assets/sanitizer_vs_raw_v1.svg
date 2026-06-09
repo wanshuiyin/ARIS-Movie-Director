@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect x="0" y="0" width="1280" height="720" rx="0" fill="#12182E" opacity="1.0"/>
+<rect x="40" y="52" width="1200" height="616" rx="16" fill="#171F38" opacity="0.5" stroke="#2A3552" stroke-width="2"/>
+<text x="640" y="92" fill="#E4E9F7" font-size="22" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">EVALUATOR INTEGRITY — sanitizer ≠ external validator</text>
+<text x="640" y="116" fill="#8C97B8" font-size="13" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">same model outputs · two ways to SCORE them · the gap is an artifact</text>
+<rect x="478" y="140" width="324" height="86" rx="10" fill="#241019" opacity="1.0" stroke="#FF3366" stroke-width="2"/>
+<text x="640" y="162" fill="#FF3366" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">model output (malformed)</text>
+<text x="498" y="190" fill="#7FB0FF" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">{"city":</text>
+<text x="567" y="190" fill="#9CE0B4" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tok</text>
+<text x="602" y="190" fill="#FF3366" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">|</text>
+<text x="612" y="190" fill="#9CE0B4" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">yo"</text>
+<text x="639" y="190" fill="#6E7CA8" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">,</text>
+<text x="498" y="214" fill="#7FB0FF" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"founded":1603 }</text>
+<rect x="70" y="270" width="520" height="360" rx="12" fill="#1A0F18" opacity="1.0" stroke="#FF3366" stroke-width="2"/>
+<rect x="70" y="270" width="520" height="36" rx="12" fill="#3A1626" opacity="1.0"/>
+<text x="88" y="294" fill="#FF3366" font-size="14" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">✗  THE BUG — what the pipeline actually ran</text>
+<text x="92" y="338" fill="#FFB000" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">score</text>
+<text x="136" y="338" fill="#6E7CA8" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">(</text>
+<text x="146" y="338" fill="#FF3366" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">json_sanitizer</text>
+<text x="265" y="338" fill="#7FB0FF" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">(out)</text>
+<text x="309" y="338" fill="#6E7CA8" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">)</text>
+<text x="92" y="364" fill="#6E7CA8" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0"># default-fills malformed</text>
+<text x="92" y="390" fill="#6E7CA8" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">#   keys BEFORE scoring</text>
+<line x1="640" y1="226" x2="306.85994340570034" y2="425.8840339565798" stroke="#FF3366" stroke-width="2.5"/><path d="M300,430 L305.89449202303814,421.9219455442328 L309.90157370710665,428.6004150176803 Z" fill="#FF3366"/>
+<rect x="110" y="440" width="200" height="40" rx="8" fill="#2A1020" opacity="1.0" stroke="#FF3366" stroke-width="1.5"/>
+<text x="210" y="465" fill="#FF3366" font-size="14" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">json_sanitizer</text>
+<text x="210" y="500" fill="#8C97B8" font-size="12" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">↓ auto-repairs</text>
+<rect x="110" y="512" width="200" height="42" rx="8" fill="#10241A" opacity="1.0" stroke="#00C896" stroke-width="1"/>
+<text x="124" y="538" fill="#7FB0FF" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">{"city":</text>
+<text x="193" y="538" fill="#9CE0B4" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tokyo"</text>
+<text x="253" y="538" fill="#00C896" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0"> ✓</text>
+<text x="210" y="580" fill="#8C97B8" font-size="11.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">scored as PASS (but it was broken)</text>
+<rect x="370" y="505" width="180" height="70" rx="10" fill="#1A1330" opacity="1.0" stroke="#FFB000" stroke-width="2"/>
+<text x="460" y="532" fill="#8C97B8" font-size="12" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">reported</text>
+<text x="460" y="562" fill="#FFB000" font-size="26" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">+6.2</text>
+<text x="460" y="600" fill="#FF3366" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">INFLATED</text>
+<rect x="690" y="270" width="520" height="360" rx="12" fill="#0E1A20" opacity="1.0" stroke="#00C896" stroke-width="2"/>
+<rect x="690" y="270" width="520" height="36" rx="12" fill="#10342A" opacity="1.0"/>
+<text x="708" y="294" fill="#00C896" font-size="14" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">✓  THE PRIMARY METRIC — raw, no repair</text>
+<text x="712" y="338" fill="#E4E9F7" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">obj = </text>
+<text x="764" y="338" fill="#FFB000" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">json.loads</text>
+<text x="850" y="338" fill="#7FB0FF" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">(out)</text>
+<text x="712" y="364" fill="#FFB000" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">jsonschema</text>
+<text x="798" y="364" fill="#FFB000" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">.validate</text>
+<text x="875" y="364" fill="#7FB0FF" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">(obj, schema)</text>
+<text x="712" y="390" fill="#6E7CA8" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0"># external validator, no fix</text>
+<line x1="640" y1="226" x2="973.1400565942996" y2="425.8840339565798" stroke="#00C896" stroke-width="2.5"/><path d="M980,430 L970.0984262928934,428.6004150176803 L974.1055079769619,421.9219455442328 Z" fill="#00C896"/>
+<rect x="730" y="440" width="200" height="40" rx="8" fill="#10241A" opacity="1.0" stroke="#00C896" stroke-width="1.5"/>
+<text x="830" y="465" fill="#00C896" font-size="13" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">json.loads + schema</text>
+<text x="830" y="500" fill="#8C97B8" font-size="12" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">↓ no repair</text>
+<rect x="730" y="512" width="200" height="42" rx="8" fill="#2A1020" opacity="1.0" stroke="#FF3366" stroke-width="1"/>
+<text x="744" y="538" fill="#9CE0B4" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tok</text>
+<text x="779" y="538" fill="#FF3366" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">|</text>
+<text x="789" y="538" fill="#9CE0B4" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">yo"</text>
+<text x="816" y="538" fill="#FF3366" font-size="14.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">  ✗ FAIL</text>
+<text x="830" y="580" fill="#8C97B8" font-size="11.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">counted as FAIL (honest)</text>
+<rect x="990" y="505" width="180" height="70" rx="10" fill="#0E2A22" opacity="1.0" stroke="#00C896" stroke-width="2"/>
+<text x="1080" y="532" fill="#8C97B8" font-size="12" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">true effect</text>
+<text x="1080" y="562" fill="#00C896" font-size="26" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">+1.4</text>
+<text x="1080" y="600" fill="#00C896" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">REAL</text>
+<text x="640" y="656" fill="#E4E9F7" font-size="14" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">the +4.8 gap = evaluator self-repair artifact   →   WARN_corrected, not killed</text>
+</svg>

@@ -1,0 +1,13 @@
+{
+  "node_id": "fail:s15_a01",
+  "node_type": "failure_mode",
+  "status": "active",
+  "title": "S15 a1 panel_visual failure mode",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "active": true,
+    "affected_shot_ids": ["S15"],
+    "layer": "panel_visual",
+    "repair_pattern": "双人配色/胡子身份锁定正确,像素chibi稳定,中心到右侧留白干净可承接HTML文字层"
+  }
+}

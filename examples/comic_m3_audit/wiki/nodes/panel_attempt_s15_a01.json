@@ -1,0 +1,14 @@
+{
+  "node_id": "attempt:s15_a01",
+  "node_type": "panel_attempt",
+  "status": "under_review",
+  "title": "S15 panel attempt 1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "source_panel_id": "panel:s15_aris_comic_v1",
+    "image_path": "panels/S15_panel_a01.png",
+    "attempt_index": 1,
+    "model": "codex_image_gen",
+    "is_baked_duo": true
+  }
+}

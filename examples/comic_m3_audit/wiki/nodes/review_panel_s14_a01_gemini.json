@@ -1,0 +1,21 @@
+{
+  "node_id": "review:panel_s14_a01_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S14 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s14_a01",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 4,
+    "artifact_severity": 2,
+    "safezone_present": false,
+    "stray_text_present": true,
+    "failure_mode_positive_invariant": "清空右侧/底部背景 UI 连线以预留干净 Safezone，并将浮窗内的模拟字形替换为无语义像素块以符合 ART_BIBLE Hard Rule §6（禁止冒出可读文字/字形）。",
+    "timed_out": false,
+    "notes": "GEMINI VISUAL reviewer for S14_panel_a01.png。reviewer 绿帽衫、黑发、有络腮的身份在像素风格下保持稳定，与 duo_canonical_ref 一致，identity_consistency=5。像素霓虹风格统一、深蓝 wiki 空间与中心紫色光核配色贴合基调，style_consistency=5。构图可读、视线导向中心 I-K3 不变量光核，composition_readability=4，但右侧/底部背景终端 UI 连线偏密，挤占 HTML 文字安全区。浮窗/终端内出现模拟 wiki 字形与伪代码残留文本（stray_text_present=true），违反 ART_BIBLE Hard Rule §6；连同字形导致的边缘噪点构成中度伪影（artifact_severity=2）。当前未预留干净文字安全区（safezone_present=false）。failure_mode_positive_invariant：清空右侧/底部背景 UI 连线以预留干净 Safezone，并将浮窗内的模拟字形替换为无语义像素块以符合 ART_BIBLE Hard Rule §6（禁止冒出可读文字/字形）。"
+  }
+}

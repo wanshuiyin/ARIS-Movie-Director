@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s12_a04_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S12 panel a4",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s12_a04",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 4.5,
+    "composition_story": 4.5,
+    "timed_out": false,
+    "notes": "S12 is the B08 opener — the transition/portal shot that carries the duo OUT of warm desk reality and INTO the dark-navy wiki space, where the rollback (diagnose K3 -> upgrade -> re-run) plays out across S13-S15.\n\nNAR"
+  }
+}

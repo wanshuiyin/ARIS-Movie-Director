@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s14_a01_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S14 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s14_a01",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 4.5,
+    "composition_story": 4.5,
+    "timed_out": false,
+    "notes": "S14 = B08 sub-shot 3 \"K3 upgrade to invariant\" (centerpiece of the Wiki Rollback). Beat intent: the REVIEWER upgrades K3 into a hard invariant (I-K3) inside the dark navy wiki void, with a purple bloom injected at the moment of the upgrade. STORY READ: the upgrade beat lands — the reviewer (green hoodie, black hair, beard) is foregrounded in the navy wiki void and the central purple wiki light-core reads as the I-K3 invariant being forged, delivering the 'this lesson is now load-bearing / promoted to invariant' meaning. narrative_beat_fidelity 4.5: the K3->I-K3 upgrade and the purple bloom both register, but the 'K3 was previously a soft note now hardened' contrast leans on the caption rather than a visible before/after node-state cue. composition_story 4.5: reading order flows reviewer -> central bloom -> invariant core cleanly; the only story risk is that background pixel-terminal UI lines crowd toward the right/bottom where the HTML caption safe_zone needs to sit. Cell stays distinct from S12 (rollback entry), S13 (diagnosis) and S15 (RE-RUN ENFORCED). Visual identity-lock / artifact / safezone-cleanliness / stray-text are NOT my call — left to the visual reviewers."
+  }
+}

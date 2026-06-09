@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s12_a03_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S12 panel a3",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s12_a03",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 4.5,
+    "composition_story": 4.5,
+    "timed_out": false,
+    "notes": "CC NARRATIVE review of S12 (panel a03), B08 entry shot of the \"Wiki Rollback · centerpiece\" 2x2 grid. Sources: comic.json panel S12 (page P02_b08) + final_storyboard.v2.json shot S12.\n\nBEAT FIDELITY 4.5/5 — S12's job is the ENTRY into the wiki space that opens the rollback centerpiece: the duo crosses out of reality (warm laptop anchor) and into the cool dark_navy_void research-wiki surface to begin walking the rollback. This attempt lands it cleanly: executor and reviewer are both present, oriented toward the wiki surface, and the screen->void crossing reads unambiguously as the post-REJECT 're-enter the wiki' pivot. The cell stays distinct from S13 (diagnosis), S14 (K3->I-K3 invariant upgrade) and S15 (RE-RUN ENFORCED), so the 2x2 progression stays monotonic. Half-point withheld only because the entry is calm rather than punchy — the transition reads more as 'we are now inside' than as the screen-rip impact a maximal version could show, but that is style headroom, not a beat error.\n\nCOMPOSITION/STORY 4.5/5 — reading order is clean (reality anchor -> crossing -> duo at the wiki surface), duo legibility holds, and the upper area stays clear for the 'research-wiki :: rollback' system overlay. No focal competition; both characters stay distinct subjects rather than dissolving into the background field.\n\nNARRATIVE VERDICT: PASS on story (no beat-level rejection); cell stays distinct from S13-S15. Visual identity-lock / artifact / safezone-cleanliness are NOT my call — left to the Gemini/Codex visual reviewers."
+  }
+}

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<rect x="0" y="0" width="1280" height="720" rx="0" fill="#12182E" opacity="1.0"/>
+<rect x="184" y="60" width="912" height="600" rx="16" fill="#171F38" opacity="0.55" stroke="#2A3552" stroke-width="2"/>
+<text x="640" y="100" fill="#E4E9F7" font-size="22" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">DLLM JSON UNMASKING — ORDER MATTERS</text>
+<text x="640" y="124" fill="#8C97B8" font-size="13" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">same target JSON · same model · only the unmask ORDER differs</text>
+<rect x="206" y="250" width="120" height="150" rx="10" fill="#171F38" opacity="1.0" stroke="#2A3552" stroke-width="2"/>
+<text x="218" y="272" fill="#8C97B8" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">t0 · all [MASK]</text>
+<rect x="220" y="284" width="78" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<rect x="220" y="306" width="52" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<rect x="220" y="328" width="91" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<rect x="220" y="350" width="65" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="266" y="420" fill="#8C97B8" font-size="11" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">shared start</text>
+<path d="M326,300 C360,300 360,210 396,210" stroke="#FF3366" stroke-width="2" fill="none" opacity="0.7"/>
+<path d="M326,350 C360,350 360,470 396,470" stroke="#00C896" stroke-width="2" fill="none" opacity="0.7"/>
+<text x="206" y="170" fill="#FF3366" font-size="15" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">RANDOM</text>
+<text x="206" y="190" fill="#FF3366" font-size="15" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">MASK</text>
+<rect x="396" y="150" width="150" height="130" rx="10" fill="#171F38" opacity="1.0" stroke="#5A2740" stroke-width="2"/>
+<text x="408" y="172" fill="#FF3366" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">t1 · scattered</text>
+<rect x="410" y="184" width="13" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="426" y="196" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tokyo"</text>
+<rect x="484" y="184" width="26" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<rect x="410" y="206" width="39" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="452" y="218" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">1603</text>
+<rect x="410" y="228" width="65" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<rect x="588" y="150" width="150" height="130" rx="10" fill="#171F38" opacity="1.0" stroke="#5A2740" stroke-width="2"/>
+<text x="600" y="172" fill="#FF3366" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">t2 · interleaved</text>
+<text x="602" y="196" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">{</text>
+<rect x="612" y="184" width="26" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="641" y="196" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tok</text>
+<text x="602" y="218" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">yo"</text>
+<rect x="628" y="206" width="39" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<rect x="602" y="228" width="26" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="631" y="240" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">1603</text>
+<rect x="780" y="150" width="150" height="130" rx="10" fill="#171F38" opacity="1.0" stroke="#5A2740" stroke-width="2"/>
+<text x="792" y="172" fill="#FF3366" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">t3 · structure late</text>
+<text x="794" y="196" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">{</text>
+<text x="804" y="196" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"city"</text>
+<text x="854" y="196" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<text x="794" y="218" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tok</text>
+<text x="828" y="218" fill="#FF3366" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">|</text>
+<text x="838" y="218" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">yo"</text>
+<rect x="794" y="228" width="26" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="823" y="240" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">}</text>
+<line x1="550" y1="215" x2="577" y2="215" stroke="#FF3366" stroke-width="2"/><path d="M577,210 L584,215 L577,220 Z" fill="#FF3366"/>
+<line x1="742" y1="215" x2="769" y2="215" stroke="#FF3366" stroke-width="2"/><path d="M769,210 L776,215 L769,220 Z" fill="#FF3366"/>
+<rect x="956" y="150" width="120" height="130" rx="10" fill="#241019" opacity="1.0" stroke="#FF3366" stroke-width="2"/>
+<text x="1016" y="176" fill="#FF3366" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">exact_parse</text>
+<text x="1016" y="196" fill="#FF3366" font-size="18" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">✗ FAIL</text>
+<text x="1016" y="228" fill="#FF3366" font-size="13" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">"Tok|yo"</text>
+<text x="1016" y="248" fill="#8C97B8" font-size="10.5" font-weight="400" font-family="Inter, sans-serif" text-anchor="middle" letter-spacing="0">span 跨边界切碎</text>
+<line x1="934" y1="215" x2="945" y2="215" stroke="#FF3366" stroke-width="2"/><path d="M945,210 L952,215 L945,220 Z" fill="#FF3366"/>
+<text x="206" y="430" fill="#00C896" font-size="15" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">SCHEMA-</text>
+<text x="206" y="450" fill="#00C896" font-size="15" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">KEYWORD</text>
+<text x="206" y="470" fill="#00C896" font-size="15" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">-FIRST</text>
+<rect x="396" y="410" width="150" height="130" rx="10" fill="#171F38" opacity="1.0" stroke="#1F5C4A" stroke-width="2"/>
+<text x="408" y="432" fill="#00C896" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">t1 · skeleton locks</text>
+<text x="410" y="456" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">{</text>
+<text x="420" y="456" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"city"</text>
+<text x="470" y="456" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<rect x="480" y="444" width="39" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="410" y="478" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"pop"</text>
+<text x="452" y="478" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<rect x="462" y="466" width="39" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="410" y="500" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"founded"</text>
+<text x="484" y="500" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<rect x="494" y="488" width="26" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="523" y="500" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">}</text>
+<rect x="588" y="410" width="150" height="130" rx="10" fill="#171F38" opacity="1.0" stroke="#1F5C4A" stroke-width="2"/>
+<text x="600" y="432" fill="#00C896" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">t2 · fill slots</text>
+<text x="602" y="456" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">{</text>
+<text x="612" y="456" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"city"</text>
+<text x="662" y="456" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<text x="672" y="456" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tokyo"</text>
+<text x="602" y="478" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"pop"</text>
+<text x="644" y="478" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<rect x="654" y="466" width="39" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="602" y="500" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"founded"</text>
+<text x="676" y="500" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<rect x="686" y="488" width="26" height="15" rx="3" fill="#33405F" opacity="1.0"/>
+<text x="715" y="500" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">}</text>
+<rect x="780" y="410" width="150" height="130" rx="10" fill="#171F38" opacity="1.0" stroke="#1F5C4A" stroke-width="2"/>
+<text x="792" y="432" fill="#00C896" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">t3 · values in</text>
+<text x="794" y="456" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">{</text>
+<text x="804" y="456" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"city"</text>
+<text x="854" y="456" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<text x="864" y="456" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"Tokyo"</text>
+<text x="794" y="478" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"pop"</text>
+<text x="836" y="478" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<text x="846" y="478" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">13.9M</text>
+<text x="794" y="500" fill="#7FB0FF" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">"founded"</text>
+<text x="868" y="500" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">:</text>
+<text x="878" y="500" fill="#9CE0B4" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">1603</text>
+<text x="912" y="500" fill="#6E7CA8" font-size="13.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="start" letter-spacing="0">}</text>
+<line x1="550" y1="475" x2="577" y2="475" stroke="#00C896" stroke-width="2"/><path d="M577,470 L584,475 L577,480 Z" fill="#00C896"/>
+<line x1="742" y1="475" x2="769" y2="475" stroke="#00C896" stroke-width="2"/><path d="M769,470 L776,475 L769,480 Z" fill="#00C896"/>
+<rect x="956" y="410" width="120" height="130" rx="10" fill="#0E2A22" opacity="1.0" stroke="#00C896" stroke-width="2"/>
+<text x="1016" y="436" fill="#00C896" font-size="12" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">exact_parse</text>
+<text x="1016" y="456" fill="#00C896" font-size="18" font-weight="800" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">✓ OK</text>
+<text x="1016" y="488" fill="#00C896" font-size="13" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">"Tokyo"</text>
+<text x="1016" y="508" fill="#8C97B8" font-size="10.5" font-weight="400" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">span ⊆ schema</text>
+<line x1="934" y1="475" x2="945" y2="475" stroke="#00C896" stroke-width="2"/><path d="M945,470 L952,475 L945,480 Z" fill="#00C896"/>
+<text x="640" y="626" fill="#E4E9F7" font-size="14" font-weight="600" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">keys + braces unmask FIRST  →  values can't break the schema boundary</text>
+<rect x="196" y="56" width="168" height="30" rx="8" fill="#1A1330" opacity="1.0" stroke="#FFB000" stroke-width="1.5"/>
+<text x="280" y="76" fill="#FFB000" font-size="12.5" font-weight="700" font-family="JetBrains Mono, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0">schema-first  +6.2 → +1.4</text>
+</svg>

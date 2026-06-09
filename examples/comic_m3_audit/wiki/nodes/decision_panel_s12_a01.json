@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s12_a01",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S12 a1 → retry_panel",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s12_a01",
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — narr=4 identity=5 style=4/4 comp=4/4 art(g/c)=1/2 safezone=true stray=true disagreeId=0",
+    "repair_instruction": "双人身份锁稳定：executor为蓝衣棕发无须，reviewer为绿衣黑发有须，中心双人对视构图清晰"
+  }
+}

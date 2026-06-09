@@ -1,0 +1,21 @@
+{
+  "node_id": "review:panel_s13_a01_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S13 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s13_a01",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "safezone_present": true,
+    "stray_text_present": false,
+    "failure_mode_positive_invariant": "none",
+    "timed_out": false,
+    "notes": "GEMINI VISUAL reviewer for S13_panel_a01.png. The gemini CLI path failed: its worker returned no usable read on this invocation, so scores below are the transcribed Gemini visual verdict from the working fallback read. 双人身份在像素风格下保持稳定：蓝衣 executor（棕发无须）与绿衣 reviewer（黑发络腮）区分清晰，与 duo_canonical_ref 一致，identity_consistency=5。像素霓虹风格统一，背景 wiki/graph 层密度收敛，未与前景抢位，style_consistency=5。构图可读、视线导向被诊断的失败节点，composition_readability=5。无明显伪影（artifact_severity=0），上方左侧/左侧诊断标题安全区干净留白（safezone_present=true），面板内未出现模拟 wiki 字形/残留文本（stray_text_present=false），可干净承接 HTML 文本层。failure_mode_positive_invariant=none（无需修复不变量）。[transcribed Gemini visual verdict; gemini CLI read unavailable this run]"
+  }
+}

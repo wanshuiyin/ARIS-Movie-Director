@@ -1,0 +1,11 @@
+# heavy / generated — keep representative panels in examples, ignore bulk
+**/_renders/
+**/probe/
+*.mp4
+.DS_Store
+__pycache__/
+*.pyc
+# secrets — never commit
+*.env
+**/secrets*
+\n# Build artifacts\n**/outputs/index.html\n**/outputs/\n
