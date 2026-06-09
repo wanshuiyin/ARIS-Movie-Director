@@ -57,13 +57,26 @@
 - 源图 **16:9**(对齐种子;codex 实际可能产 1672×941 等 ≈16:9 大图,viewer 按格 CSS 裁成 hero/宽/方/高,**不重生成别的比例**)。
 - 镜头语言:establishing(宽)/ dialogue(中近)/ reaction(近)/ hero(大)。B08 回滚 2×2 用近方裁,保 chibi 不被压扁。
 
-## 6. 文字 / 气泡 —— 默认硬锁:图里不画字(设计 §3.5/R2 跨两轮锁定)
-**HARD RULE(默认 = `comic.json.defaults.text_mode:"html"`)**:**codex 生成的图里不画任何文字/气泡/字形/标签**,只画人+景,并**留一块干净低细节"安全区"**(见 comic.json `safe_zones`)给文字层。整个气泡(框+尾+字)由 HTML/CSS/SVG 画。
+## 6. 文字 / 气泡 —— 两种模式(html 留白 / baked 烤字)
+
+> **更新 2026-06-09(B08 这一页已切 `baked`)**:烤字对弈已做,codex 烤 CJK 实测干净,用户偏好 → B08 panels 默认 `text_mode:"baked"`:**气泡对白 + 技术图文字直接烤进图**。baked 格的 gate **不查** `safezone`/`stray_text`(图里本该有字),改查 `baked_text_quality`(气泡清晰不乱码,≥4)+ `observed_literals` 与 authored `expected_literals` 的**数字保真 token-diff**(双 reviewer 盲转录)。视觉 reviewer 评 baked 格时**不要**把"图里有字"当违规扣分。以下 html 规则保留给仍用 `text_mode:"html"` 的格(如纯场景/无技术图的格)。
+
+**HARD RULE(`text_mode:"html"` 模式)**:**codex 生成的图里不画任何文字/气泡/字形/标签**,只画人+景,并**留一块干净低细节"安全区"**(见 comic.json `safe_zones`)给文字层。整个气泡(框+尾+字)由 HTML/CSS/SVG 画。
 - 理由:设计经两轮跨模型锁定 —— 烤字会乱码(尤其 CJK)、且烤死的框框不住会重排的双语文字。
 - **双语**(zh + en),英文通常更长,**留白按更长的(一般 EN)留**;`text_fits_safezone` gate 对两种语言都验。
 - gate 检查 `safezone_present`(留白区存在)+ `stray_text_absence`(此模式下图里**不得**出现任何字形)。
 
 **显式 PENDING 实验(唯一未决项,不影响默认锁)**:用户 2026-06-08 重新提出"AI 烤字会不会更好"。等 codex image_gen 冷却后补一次烤字对弈(②);**仅当**实测 AI 烤 CJK 干净 **且** 用户明确偏好,才把 `text_mode` 切到 `baked`(届时本节改为"气泡由生成层画,文字必须正确无乱码、放进安全区")。代码画(③,PIL/SVG)是第三备选。在用户拍板前,**默认锁 html 不变**。
+
+## 6.5 环境叙事密度(Environmental Narrative Density —— 用户 2026-06-09 品味校准,靶 = `cal_S12_a01`)
+
+用户偏好的质感:场景要**"满"而有故事**,不是只有人 + 一块主屏幕的空荡构图。最丰富的参考 = `cal_S12_a01`(暖光研究室那张)。每格都按这个密度来:
+
+- **领域叙事道具(要可读、与本格主题相关)**:书脊(如 `LLM DECODING` / `STRUCTURED OUTPUTS` / `EVALS FIRST`)、手写 TODO 便签(如 `better masks ☐ / schema locks ☐ / evals ☑`)、笔记本屏幕上**真实可读的代码片段**(如 `def exact_parse(json_str, schema): ...`)、主题马克杯(`ML RESEARCH` / `</>`)、绿植、纸张/键盘/外设、暖台灯。这些是"讲环境故事"的细节,不是填空。
+- **单格内冷暖对比**(§0.5 在一格里也成立):暖室内前景 + **窗外冷蓝夜城**;暗赛博场景里则用霓虹冷光 + 暖点缀(台灯/咖啡)破闷。
+- **技术图保持细节**:方法图/审计图**不要简化**,带逐 step 注解(如 `span 跨边界切碎` / `span ⊆ schema`、`t0..t3` 阶段)。技术图是内容权威(来自 content_svg 蓝图),环境道具是次要叙事层 —— 别让道具文字与 `expected_literals` 撞车。
+- **文字清晰锐利**:所有 baked 文字(标题/标签/代码/数字/气泡)必须清晰可读、不糊不乱码。
+- **gate 取向**:`composition_readability` / `narrative_beat_fidelity` 奖励"环境讲了故事"的丰富度;空荡、道具稀少、技术图被简化 = 偏弱。**但这是质量梯度,不是硬 reject** —— 身份锁 + 数字保真(`expected_literals`)+ 烤字清晰仍是硬门。
 
 ## 7. FORBIDDEN(出现即扣分/reject)
 - 角色上的平滑抗锯齿渐变 / 写实照片质感

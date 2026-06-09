@@ -75,7 +75,7 @@
         "content_svg": "assets/method_random_vs_schema_first_v1.svg",
         "expected_literals": ["+6.2"],
         "world": "warm-lab",
-        "scene": "warm-lit pixel ML research lab at night; a back board/monitor shows the method diagram (random-mask row ends red exact_parse FAIL, schema-keyword-first row ends green OK); a small wandb exact_parse curve with an amber +6.2 callout",
+        "scene": "warm-lit pixel ML research lab at night. The back board/monitor shows the method diagram (random-mask row ends red exact_parse FAIL with 'span 跨边界切碎'; schema-keyword-first row ends green OK with 'span ⊆ schema') plus a small wandb exact_parse curve with an amber Δ +6.2 callout. FILL the warm room with legible storytelling props (density target = cal_S12): bookshelf spines 'LLM DECODING' / 'STRUCTURED OUTPUTS' / 'EVALS FIRST', a hand-drawn TODO note ('better masks ☐ / schema locks ☐ / evals ☑'), an open laptop showing real readable code 'def exact_parse(json_str, schema): ...', an 'ML RESEARCH' mug and a '</>' mug, a small potted plant, warm Edison desk lamps; a cool blue night-city skyline glows through the window behind the warm interior (warm room vs cool night = in-panel two-world contrast)",
         "chibi_action": { "executor": "warm foreground LOWER-LEFT, one arm thrust up in triumph pointing at the board, proud", "reviewer": "foreground LOWER-RIGHT, arms crossed, eyes narrowed, already glancing toward the code, skeptical" }
       },
       "bubbles": [
@@ -91,7 +91,7 @@
         "content_svg": "assets/sanitizer_vs_raw_v1.svg",
         "expected_literals": ["sanitizer", "+6.2", "+1.4"],
         "world": "dark-cyber",
-        "scene": "dark, screen-lit; a laptop terminal shows the two-column code contrast — LEFT (red, THE BUG): score(json_sanitizer(out)) with '# default-fills malformed keys BEFORE scoring'; RIGHT (honest): json.loads + jsonschema.validate with '# raw, no repair'",
+        "scene": "dark screen-lit AUDIT LAB at night. A laptop terminal shows the two-column code contrast — LEFT (red, THE BUG): score(json_sanitizer(out)) with '# default-fills malformed keys BEFORE scoring'; RIGHT (honest, green): json.loads + jsonschema.validate with '# raw, no repair'. FILL the dark cyber room with legible storytelling props (density target = cal_S12): a faint 'WIKI VOID' swirl glow + dark shelf spines 'JSON SCHEMA AUDIT' / 'EVAL INTEGRITY', a second monitor scrolling raw json.loads logs, a '</>' mug and a cooling coffee, neon-edged panels, one warm desk lamp breaking the cool gloom (cool cyber + warm accent)",
         "chibi_action": { "reviewer": "hunched at the terminal, finger jabbing the red sanitizer line", "executor": "leaning in over the shoulder, dawning-horror face, a single sweat drop" }
       },
       "bubbles": [
@@ -107,7 +107,7 @@
         "content_svg": "assets/collapse_6_2_to_1_4_v1.svg",
         "expected_literals": ["+6.2", "+1.4", "+4.8"],
         "world": "dark-cyber",
-        "scene": "a dark re-eval dashboard labeled HONEST RE-EVAL; the inflated +6.2 visibly cracks and falls into a solid green +1.4; the +4.8 drops away labeled 'evaluator self-repair artifact'",
+        "scene": "a dark re-eval war-room at night. The center dashboard labeled HONEST RE-EVAL shows the inflated +6.2 visibly cracking and falling into a solid green +1.4, with the +4.8 dropping away labeled 'evaluator self-repair artifact'. FILL the dark cyber room with legible storytelling props (density target = cal_S12): a glowing 'RAW' toggle switch flipped on, secondary monitors scrolling raw json.loads re-eval logs, dark shelf spines 'EXPERIMENT AUDIT' / 'RESULT INTEGRITY', neon gridlines on the floor, a '</>' mug, one warm desk lamp accent against the cool cyber gloom",
         "chibi_action": { "reviewer": "flipping a RAW switch on the dashboard, composed", "executor": "watching the number collapse, humbled but not crushed" }
       },
       "bubbles": [
@@ -123,7 +123,7 @@
         "content_svg": "assets/warn_corrected_v1.svg",
         "expected_literals": ["WARN_corrected", "+1.4"],
         "world": "dark-cyber",
-        "scene": "a verdict card glows amber: WARN_corrected; the over-claim 'X is best' is struck through and narrows to '...best under an external validator'; a claim-ledger entry (integrity=WARN_corrected, scope)",
+        "scene": "a dark verdict chamber at night. A verdict card glows amber: WARN_corrected; the over-claim 'X is best' is struck through and narrows to '...best under an external validator'; a claim-ledger board shows the entry (claim_id / integrity=WARN_corrected / scope). FILL the dark cyber room with legible storytelling props (density target = cal_S12): dark shelf spines 'CLAIM AUDIT' / 'RESEARCH WIKI', a terminal showing the enforced re-run command, neon stamp-glow around the verdict card, a '</>' mug and a half-finished coffee, one warm desk lamp accent against the cool cyber gloom",
         "chibi_action": { "reviewer": "holding/stamping the WARN_corrected verdict, calm authority", "executor": "nodding, having learned" }
       },
       "bubbles": [
