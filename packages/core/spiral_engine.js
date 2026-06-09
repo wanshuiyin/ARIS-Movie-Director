@@ -101,11 +101,14 @@ function panelVerdict(cc, gem, cdx, cfg = {}) {
   return { v: 'retry_panel', reason: 'RETRY — ' + reason, invariant: repair }
 }
 
-function assemblyVerdict(cc, gem) {
-  const minDim = Math.min(cc?.reading_order ?? 0, cc?.page_rhythm ?? 0, gem?.cross_panel_identity ?? 0, gem?.cross_panel_style ?? 0, gem?.text_fits_safezone ?? 0)
-  const sum = (cc?.reading_order ?? 0) + (cc?.page_rhythm ?? 0) + (gem?.cross_panel_identity ?? 0) + (gem?.cross_panel_style ?? 0) + (gem?.text_fits_safezone ?? 0)
-  if (minDim < 2 || sum < 16) return { v: 'rollback', reason: `assembly weak (min=${minDim} sum=${sum}/25)` }
-  return { v: 'accept', reason: `assembly ok (min=${minDim} sum=${sum}/25)` }
+function assemblyVerdict(cc, gem, mode = 'html') {
+  // mode-aware: baked pages have intended text → judge baked_text_legibility, NOT html safezone fit (deferred #12 fixed).
+  const textDim = mode === 'baked' ? (gem?.baked_text_legibility ?? 0) : (gem?.text_fits_safezone ?? 0)
+  const dims = [cc?.reading_order ?? 0, cc?.page_rhythm ?? 0, gem?.cross_panel_identity ?? 0, gem?.cross_panel_style ?? 0, textDim]
+  const minDim = Math.min(...dims), sum = dims.reduce((a, b) => a + b, 0)
+  const drift = Array.isArray(gem?.drift_panels) ? gem.drift_panels.filter(x => typeof x === 'string') : []   // which panels the reviewer says break the page
+  if (minDim < 2 || sum < 16) return { v: 'rollback', reason: `[${mode}] assembly weak (min=${minDim} sum=${sum}/25)`, drift_panels: drift }
+  return { v: 'accept', reason: `[${mode}] assembly ok (min=${minDim} sum=${sum}/25)`, drift_panels: [] }
 }
 
 // ── schemas ──
@@ -124,7 +127,7 @@ const VIS_SCHEMA = { type: 'object', required: ['identity_consistency', 'style_c
   failure_mode_positive_invariant: { type: 'string' }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
 const WIKI_SCHEMA = { type: 'object', required: ['wrote_nodes'], properties: { wrote_nodes: { type: 'array', items: { type: 'string' } }, failure_mode_id: { type: ['string', 'null'] } } }
 const ASM_CC_SCHEMA = { type: 'object', required: ['reading_order', 'page_rhythm'], properties: { reading_order: { type: 'number' }, page_rhythm: { type: 'number' }, notes: { type: 'string' } } }
-const ASM_VIS_SCHEMA = { type: 'object', required: ['cross_panel_identity', 'cross_panel_style', 'text_fits_safezone'], properties: { cross_panel_identity: { type: 'number' }, cross_panel_style: { type: 'number' }, text_fits_safezone: { type: 'number' }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
+const ASM_VIS_SCHEMA = { type: 'object', required: ['cross_panel_identity', 'cross_panel_style'], properties: { cross_panel_identity: { type: 'number' }, cross_panel_style: { type: 'number' }, text_fits_safezone: { type: 'number' }, baked_text_legibility: { type: 'number' }, drift_panels: { type: 'array', items: { type: 'string' } }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
 
 // ── generation: CONTENT-CONDITIONED BAKE (the deterministic-SVG → codex narrative-figure technique) ──
 // Per panel the engine reads comic.json .condition {content_svg, world, scene, chibi_action} + .bubbles, renders the
@@ -299,26 +302,72 @@ for (let i = 0; i < PANEL_IDS.length && !throttled && !escalated; i++) {
   }
 }
 
-// ── page assembly_gate ──
+// ── page assembly_gate + CROSS-FRAME REPAIR ──
+// Seed-anchored panels are independent, so within-panel retry handles per-panel quality. The ONE genuinely cross-panel
+// concern is DRIFT (the duo identity / pixel style diverging across the page). Cross-frame repair lives HERE: if assembly
+// flags drift, the reviewer NAMES the offending panel(s); we re-bake ONLY those with a cross-panel-consistency invariant,
+// re-gate them, swap the keepers into `kept`, and re-assemble — bounded by MAX_ROLLBACKS. (NOT the video chain-rollback;
+// this is page-coherence repair, the right shape of "fix across frames" for an independent-panel comic.)
 let asm = null
-if (!escalated && kept.length >= 2) {
-  phase('Assembly')
-  const list = kept.map(k => `@${absImg(k.image_path)}`).join(' ')   // @ prefix so gemini actually loads the panel images (review fix)
+const pageMode = kept.some(k => (CONFIG[k.pid] || {}).text_mode === 'baked') ? 'baked' : 'html'
+async function runAssembly() {
+  const list = kept.map(k => `@${absImg(k.image_path)}`).join(' ')
   const acc = agent([
-    `You are the CC reviewer for ARIS comic PAGE assembly_gate (page ${PAGE}). The kept panels in reading order: ${kept.map(k => k.pid).join(' → ')}.`,
-    `Read the page's narration/beat from "${COMICJSON}" (page ${PAGE}). Score 0-5: reading_order (do the panels flow left→right/top→bottom and tell the beat?), page_rhythm (does the 2x2 / sequence pace well?). Return ASM_CC_SCHEMA.`,
+    `You are the CC reviewer for ARIS comic PAGE assembly_gate (page ${PAGE}). Kept panels in reading order: ${kept.map(k => k.pid).join(' → ')}.`,
+    `Read the page's narration/beat from "${COMICJSON}" (page ${PAGE}). Score 0-5: reading_order, page_rhythm. Return ASM_CC_SCHEMA.`,
   ].join('\n'), { label: `asm-cc:${PAGE}`, phase: 'Assembly', schema: ASM_CC_SCHEMA })
+  const ids = kept.map(k => k.pid).join(',')
+  const textKey = pageMode === 'baked' ? '\\"baked_text_legibility\\":n' : '\\"text_fits_safezone\\":n'
+  const textDesc = pageMode === 'baked' ? 'baked_text_legibility=各格烤字是否都清晰' : 'text_fits_safezone=各格留白是否够放气泡'
   const avis = agent([
-    `You are the GEMINI visual reviewer for ARIS comic PAGE assembly (page ${PAGE}); judge the panels SIDE BY SIDE for drift. Watchdog CLI:`,
+    `You are the GEMINI visual reviewer for ARIS comic PAGE assembly (page ${PAGE}, mode=${pageMode}); judge the panels SIDE BY SIDE for cross-panel DRIFT. Watchdog CLI:`,
     '```bash',
-    `( gemini --model auto-gemini-3 -p "@${CANON} 这些是同一页要并排的漫画格(按顺序): ${list} . 并排看跨格一致性,输出一行JSON {\\"cross_panel_identity\\":n,\\"cross_panel_style\\":n,\\"text_fits_safezone\\":n} (0-5; identity=双人跨格是否同一身份;style=画风是否一致;text_fits_safezone=各格留白区是否足够放气泡)。gutter 容差:跨格轻微光照/风格差正常,只标可识别的身份断裂或画风大不一致。" < /dev/null > /tmp/asm_${PAGE}.txt 2>&1 ) & P=$!`,
-    `( sleep 240; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1200 /tmp/asm_${PAGE}.txt`,
+    `( gemini --model auto-gemini-3 -p "@${CANON} 这些是同一页并排的漫画格,顺序=[${ids}]: ${list} . 并排看跨格一致性。只输出一行JSON {\\"cross_panel_identity\\":n,\\"cross_panel_style\\":n,${textKey},\\"drift_panels\\":[\\"漂移格id\\"]} (0-5; identity=双人跨格是否同一身份;style=画风是否一致;${textDesc};drift_panels=列出明显与其他格不一致(身份断裂/画风跑偏)的格id如S14,没有就[])。gutter 容差:轻微光照差正常,只标可识别的断裂。" < /dev/null > /tmp/asm_${PAGE}.txt 2>&1 ) & P=$!`,
+    `( sleep 240; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1400 /tmp/asm_${PAGE}.txt`,
     '```',
-    `Parse into ASM_VIS_SCHEMA (timed_out=true if none).`,
+    `Parse into ASM_VIS_SCHEMA (timed_out=true if none; drift_panels = the panel ids that visibly drift from the rest).`,
   ].join('\n'), { label: `asm-gem:${PAGE}`, phase: 'Assembly', schema: ASM_VIS_SCHEMA })
   const [accR, avisR] = await Promise.all([acc, avis])
-  asm = { cc: accR, gem: avisR, verdict: assemblyVerdict(accR, avisR) }
-  log(`  assembly_gate ${PAGE}: ${asm.verdict.v} — ${asm.verdict.reason}`)
+  return { cc: accR, gem: avisR, verdict: assemblyVerdict(accR, avisR, pageMode) }
+}
+
+if (!escalated && kept.length >= 2) {
+  phase('Assembly')
+  let asmRound = 0
+  while (true) {
+    asm = await runAssembly()
+    const d = asm.verdict.drift_panels || []
+    log(`  assembly_gate ${PAGE} (round ${asmRound}): ${asm.verdict.v} — ${asm.verdict.reason}${d.length ? ' drift=[' + d.join(',') + ']' : ''}`)
+    if (asm.verdict.v === 'accept') break
+    if (asmRound >= MAX_ROLLBACKS) { log(`  ⚑ assembly still drifting after ${MAX_ROLLBACKS} rollbacks → flagged for HUMAN`); flagged.push(`${PAGE}:assembly`); break }
+    const drifters = d.filter(p => kept.some(k => k.pid === p))
+    if (!drifters.length) { log(`  ⚑ assembly drift not localized to specific panels → flagged for HUMAN (no blind re-bake)`); flagged.push(`${PAGE}:assembly`); break }
+    log(`  ⤺ CROSS-FRAME repair round ${asmRound + 1}: re-bake drift panel(s) [${drifters.join(',')}]`)
+    let anyFixed = false
+    for (const pid of drifters) {
+      if (throttled) break
+      const cfg = CONFIG[pid] || {}
+      const ai = (totalByPanel[pid] || 0) + 1; totalByPanel[pid] = ai
+      const inv = [`CROSS-PANEL CONSISTENCY REPAIR: this panel drifted from the rest of page ${PAGE} — match the canonical duo identity AND the page's flat pixel-art style EXACTLY (same chibi proportions, the exact hoodie/hair/beard colors, the same line + 1-step shading as the sibling panels). Assembly flagged: ${asm.verdict.reason}`]
+      const gen = await generatePanel(pid, cfg, { attemptIndex: ai, invariants: inv })
+      if (!gen || gen.status !== 'panel_ready' || !gen.image_path || (gen.bytes || 0) <= 500000) {
+        const reason = gen?.gen_failed_reason || 'no image'
+        if (/rate|limit|throttl|server|unavailable|429|quota/i.test(reason)) { throttled = true; escalated = { pid, why: 'image_gen throttled during cross-frame repair — stop + resume' } }
+        log(`  ✗ ${pid} re-bake failed: ${reason}`); continue
+      }
+      const gate = await panelGate(pid, gen, cfg)
+      await writeWiki(pid, gen, gate, ai)
+      log(`  panel_gate ${pid}#${ai} (cross-frame): ${gate.verdict.v}`)
+      if (gate.verdict.v === 'keep') {
+        const idx = kept.findIndex(k => k.pid === pid)
+        if (idx >= 0) kept[idx] = { pid, image_path: gen.image_path, attempt: ai, needs_human: false }
+        anyFixed = true
+      }
+    }
+    asmRound++
+    if (throttled) break
+    if (!anyFixed) { log(`  ⚑ cross-frame repair couldn't re-keep any drifter → stop`); flagged.push(`${PAGE}:assembly`); break }
+  }
 }
 
 return {
