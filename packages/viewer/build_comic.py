@@ -10,16 +10,19 @@ active_attempt_id + re-run).
 Hard-fails (review blockers): missing inlined image, unknown panel_id in a page,
 safe_zone without id, bubble.anchor not in its panel's safe_zones, unknown text_mode.
 
-Usage:  python3 build_comic.py              # inline (default, release)
-        python3 build_comic.py --no-inline  # reference image (dev only, NOT single-file)
+Usage:  python3 build_comic.py <project_dir>              # inline (default, release)
+        python3 build_comic.py <project_dir> --no-inline  # reference image (dev only, NOT single-file)
+        python3 build_comic.py                            # project_dir defaults to this script's dir
 """
 import json, base64, sys, mimetypes
 from pathlib import Path
 
-PROJ = Path(__file__).resolve().parent
+SCRIPT_DIR = Path(__file__).resolve().parent
+_args = [a for a in sys.argv[1:] if not a.startswith("--")]
+PROJ = Path(_args[0]).resolve() if _args else SCRIPT_DIR   # PROJECT dir (comic.json, panels/, outputs/) — pass as argv[1]
 COMIC_JSON = PROJ / "comic.json"
-TEMPLATE = PROJ / "comic_kit" / "comic_template.html"
-OUT = PROJ / "comic" / "index.html"
+TEMPLATE = SCRIPT_DIR / "comic_template.html"              # FRAMEWORK viewer template, ships next to this script
+OUT = PROJ / "outputs" / "index.html"
 INLINE = "--no-inline" not in sys.argv
 KNOWN_MODES = {"html", "baked", "code"}
 
