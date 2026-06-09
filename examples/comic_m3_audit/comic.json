@@ -89,7 +89,7 @@
       "text_mode": "baked",
       "condition": {
         "content_svg": "assets/sanitizer_vs_raw_v1.svg",
-        "expected_literals": ["sanitizer", "jsonschema"],
+        "expected_literals": ["sanitizer", "+6.2", "+1.4"],
         "world": "dark-cyber",
         "scene": "dark, screen-lit; a laptop terminal shows the two-column code contrast — LEFT (red, THE BUG): score(json_sanitizer(out)) with '# default-fills malformed keys BEFORE scoring'; RIGHT (honest): json.loads + jsonschema.validate with '# raw, no repair'",
         "chibi_action": { "reviewer": "hunched at the terminal, finger jabbing the red sanitizer line", "executor": "leaning in over the shoulder, dawning-horror face, a single sweat drop" }

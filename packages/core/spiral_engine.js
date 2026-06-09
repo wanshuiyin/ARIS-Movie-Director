@@ -67,13 +67,22 @@ function panelVerdict(cc, gem, cdx, cfg = {}) {
     // EXACT atomic-token match (NOT substring — "+6.25"/"+16.2" must NOT satisfy "+6.2"), and each authored literal must be
     // transcribed by BOTH reviewers INDEPENDENTLY (not the union): a single over-helpful / hallucinating reviewer must not be
     // able to satisfy a missing literal. toks() is Array.isArray-safe → a malformed extraction returns null ⇒ fail closed.
-    const toks = arr => Array.isArray(arr) ? arr.flatMap(s => typeof s === 'string' ? (s.toLowerCase().match(/[a-z0-9+._-]+/g) || []) : []) : null
-    const gemToks = toks(gem?.observed_literals), cdxToks = toks(cdx?.observed_literals)
-    const reviewersOk = gemToks !== null && cdxToks !== null                          // both reviewers returned a usable array
-    const gemSet = new Set(gemToks || []), cdxSet = new Set(cdxToks || [])
-    const exp = Array.isArray(cfg.expected_literals)
-      ? cfg.expected_literals.flatMap(e => typeof e === 'string' ? (e.toLowerCase().match(/[a-z0-9+._-]+/g) || []) : []) : []
-    const missing = exp.filter(e => !(gemSet.has(e) && cdxSet.has(e)))                // BOTH reviewers must have transcribed it
+    // Each reviewer's transcription → two token sets: COARSE (keeps "+6.2" / "warn_corrected" / "a.b" whole) and FINE (alnum
+    // runs, splitting on . _ - and the sign). A reviewer "read" an authored literal e if: for a NUMBER, e is an exact COARSE
+    // token (so a wrong "+6.25" can NOT satisfy "+6.2"); for a CODE/LABEL, e is a coarse token OR all of e's fine parts are
+    // present (so "jsonschema" matches "jsonschema.validate", "warn_corrected" matches "WARN corrected"). Each authored literal
+    // must be read by BOTH reviewers independently (no union — a single over-helpful/hallucinating reviewer can't satisfy it).
+    const sets = arr => { if (!Array.isArray(arr)) return null; const c = new Set(), f = new Set()
+      for (const s of arr) { if (typeof s !== 'string') continue; const t = s.toLowerCase()
+        ;(t.match(/[a-z0-9+._-]+/g) || []).forEach(x => c.add(x)); (t.match(/[a-z0-9]+/g) || []).forEach(x => f.add(x)) }
+      return { c, f } }
+    const gemS = sets(gem?.observed_literals), cdxS = sets(cdx?.observed_literals)
+    const reviewersOk = !!gemS && !!cdxS                                              // both reviewers returned a usable array
+    const isNum = e => /^[+-]?\d[\d.]*$/.test(e)
+    const hit = (e, S) => { e = e.toLowerCase(); if (S.c.has(e)) return true; if (isNum(e)) return false
+      const parts = e.match(/[a-z0-9]+/g) || []; return parts.length > 0 && parts.every(p => S.f.has(p)) }
+    const exp = Array.isArray(cfg.expected_literals) ? cfg.expected_literals.filter(e => typeof e === 'string') : []
+    const missing = reviewersOk ? exp.filter(e => !(hit(e, gemS) && hit(e, cdxS))) : exp   // BOTH reviewers must have read it
     const figureUngated = !!cfg.content_svg && exp.length === 0                        // baked figure w/ no gateable literal ⇒ fail closed (also pre-screened in main loop)
     const tokensOK = reviewersOk && !figureUngated && missing.length === 0
     textOK = bothBtq && minBtq >= 4 && !corruption && tokensOK
@@ -243,8 +252,9 @@ function writeWiki(pid, gen, gate, ai) {
 phase('Panels')
 // Load the per-panel condition ONCE (the sandbox has no fs). CONFIG is the SOURCE OF TRUTH for text_mode + expected_literals
 // + the concrete scene/bubbles the gen command interpolates — so the gate's mode + faithfulness check can't be bypassed.
-const CONFIG = (await loadConditions())?.panels || {}
-log(`loaded conditions: ${Object.keys(CONFIG).join(' ') || '(NONE — comic.json unreadable)'}`)
+let CONFIG = (await loadConditions())?.panels || {}
+if (CONFIG.panels && !CONFIG[PANEL_IDS[0]]) CONFIG = CONFIG.panels   // tolerate the agent double-wrapping its output as {panels:{panels:{...}}}
+log(`args.projectRoot=${args?.projectRoot ? 'set' : 'MISSING'} args.panelIds=${JSON.stringify(args?.panelIds)} PANEL_IDS=${JSON.stringify(PANEL_IDS)} | loaded cfg keys: ${Object.keys(CONFIG).join(' ') || '(NONE)'}`)
 let kept = []
 const totalByPanel = {}, pending = {}
 let escalated = null, throttled = false
