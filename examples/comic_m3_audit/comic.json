@@ -73,6 +73,7 @@
       "_condition": "per-panel content-driven gen config: the engine feeds content_svg (rendered to PNG) as -i ref #1 + duo_canonical as #2; bubbles are BAKED into the prompt (text_mode=baked)",
       "condition": {
         "content_svg": "assets/method_random_vs_schema_first_v1.svg",
+        "expected_literals": ["+6.2"],
         "world": "warm-lab",
         "scene": "warm-lit pixel ML research lab at night; a back board/monitor shows the method diagram (random-mask row ends red exact_parse FAIL, schema-keyword-first row ends green OK); a small wandb exact_parse curve with an amber +6.2 callout",
         "chibi_action": { "executor": "warm foreground LOWER-LEFT, one arm thrust up in triumph pointing at the board, proud", "reviewer": "foreground LOWER-RIGHT, arms crossed, eyes narrowed, already glancing toward the code, skeptical" }
@@ -88,6 +89,7 @@
       "text_mode": "baked",
       "condition": {
         "content_svg": "assets/sanitizer_vs_raw_v1.svg",
+        "expected_literals": ["sanitizer", "jsonschema"],
         "world": "dark-cyber",
         "scene": "dark, screen-lit; a laptop terminal shows the two-column code contrast — LEFT (red, THE BUG): score(json_sanitizer(out)) with '# default-fills malformed keys BEFORE scoring'; RIGHT (honest): json.loads + jsonschema.validate with '# raw, no repair'",
         "chibi_action": { "reviewer": "hunched at the terminal, finger jabbing the red sanitizer line", "executor": "leaning in over the shoulder, dawning-horror face, a single sweat drop" }
@@ -103,6 +105,7 @@
       "text_mode": "baked",
       "condition": {
         "content_svg": "assets/collapse_6_2_to_1_4_v1.svg",
+        "expected_literals": ["+6.2", "+1.4", "+4.8"],
         "world": "dark-cyber",
         "scene": "a dark re-eval dashboard labeled HONEST RE-EVAL; the inflated +6.2 visibly cracks and falls into a solid green +1.4; the +4.8 drops away labeled 'evaluator self-repair artifact'",
         "chibi_action": { "reviewer": "flipping a RAW switch on the dashboard, composed", "executor": "watching the number collapse, humbled but not crushed" }
@@ -118,6 +121,7 @@
       "text_mode": "baked",
       "condition": {
         "content_svg": "assets/warn_corrected_v1.svg",
+        "expected_literals": ["WARN_corrected", "+1.4"],
         "world": "dark-cyber",
         "scene": "a verdict card glows amber: WARN_corrected; the over-claim 'X is best' is struck through and narrows to '...best under an external validator'; a claim-ledger entry (integrity=WARN_corrected, scope)",
         "chibi_action": { "reviewer": "holding/stamping the WARN_corrected verdict, calm authority", "executor": "nodding, having learned" }
