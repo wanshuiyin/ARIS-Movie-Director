@@ -27,9 +27,11 @@ const ID_RE = /^[A-Za-z0-9_-]+$/
 if (!ID_RE.test(PAGE) || !Array.isArray(PANEL_IDS) || !PANEL_IDS.every(p => typeof p === 'string' && ID_RE.test(p))) {
   throw new Error(`unsafe page/panelIds (must match ${ID_RE}): page=${JSON.stringify(PAGE)} panelIds=${JSON.stringify(PANEL_IDS)}`)
 }
-const MAX_LOCAL = 3, MAX_TOTAL = 4, MAX_ROLLBACKS = 6
+const MAX_TOTAL = 4, MAX_ROLLBACKS = 6   // per-panel bakes in the main loop / extra repair rounds at assembly (unified budget = MAX_TOTAL + MAX_ROLLBACKS)
 const FINALIZE = (args && args.finalize === true) || false
 const absImg = (p) => !p ? '' : (p.startsWith('/') ? p : PROJ + '/' + p)  // resolve panel image path (abs or project-rel) — one helper
+// throttle = the DETERMINISTIC class set by the bash wrapper (failure_kind), with the old prose regex only as a fallback
+const isThrottle = (gen, reason) => gen?.failure_kind === 'throttle' || (!gen?.failure_kind && /rate|limit|throttl|server|unavailable|429|quota/i.test(reason || ''))
 
 // ── deterministic verdicts (formula over independent cross-model reviewers) ──
 // Verdict for a SEED-ANCHORED comic panel. Calibrated after the first real B08 run:
@@ -117,22 +119,26 @@ function assemblyVerdict(cc, gem, mode = 'html') {
 }
 
 // ── schemas ──
+const SCORE = { type: 'number', minimum: 0, maximum: 5 }   // every reviewer score is bounded 0-5 (a stray 50 can't slip through)
 const GEN_SCHEMA = { type: 'object', required: ['status', 'image_path'], properties: {
   status: { type: 'string', enum: ['panel_ready', 'generation_failed'] }, image_path: { type: 'string' }, bytes: { type: 'number' }, gen_failed_reason: { type: 'string' },
+  failure_kind: { type: 'string', enum: ['throttle', 'other'] },   // DETERMINISTIC failure class (set by the bash wrapper from the codex log), not parsed from prose
   text_mode: { type: 'string' }, content_figure_png: { type: 'string' }, image_sha256: { type: 'string' }, baked_numbers_verified: { type: 'string' }, notes: { type: 'string' } } }
 const COND_SCHEMA = { type: 'object', required: ['panels'], properties: { panels: { type: 'object' } } }
-const CC_SCHEMA = { type: 'object', required: ['narrative_beat_fidelity', 'composition_story'], properties: {
-  narrative_beat_fidelity: { type: 'number' }, composition_story: { type: 'number' }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
+// Reviewer schemas: scores are NOT required, so a reviewer can return {timed_out:true} cleanly instead of being forced to
+// invent numbers (audit P1). A missing score defaults to 0 in the verdict → fail-closed → retry. All scores are 0-5 bounded.
+const CC_SCHEMA = { type: 'object', properties: {
+  narrative_beat_fidelity: SCORE, composition_story: SCORE, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
 // VIS_SCHEMA: html reviewers fill safezone_present/stray_text_present; baked reviewers fill observed_literals (verbatim
 // transcription of the numbers/labels/code they can READ — NOT told the expected values), content_corruption_present, baked_text_quality.
-const VIS_SCHEMA = { type: 'object', required: ['identity_consistency', 'style_consistency', 'composition_readability', 'artifact_severity'], properties: {
-  identity_consistency: { type: 'number' }, style_consistency: { type: 'number' }, composition_readability: { type: 'number' },
-  artifact_severity: { type: 'number' }, safezone_present: { type: 'boolean' }, stray_text_present: { type: 'boolean' },
-  baked_text_quality: { type: 'number' }, observed_literals: { type: 'array', items: { type: 'string' } }, content_corruption_present: { type: 'boolean' },
+const VIS_SCHEMA = { type: 'object', properties: {
+  identity_consistency: SCORE, style_consistency: SCORE, composition_readability: SCORE,
+  artifact_severity: SCORE, safezone_present: { type: 'boolean' }, stray_text_present: { type: 'boolean' },
+  baked_text_quality: SCORE, observed_literals: { type: 'array', items: { type: 'string' } }, content_corruption_present: { type: 'boolean' },
   failure_mode_positive_invariant: { type: 'string' }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
 const WIKI_SCHEMA = { type: 'object', required: ['wrote_nodes'], properties: { wrote_nodes: { type: 'array', items: { type: 'string' } }, failure_mode_id: { type: ['string', 'null'] } } }
-const ASM_CC_SCHEMA = { type: 'object', required: ['reading_order', 'page_rhythm'], properties: { reading_order: { type: 'number' }, page_rhythm: { type: 'number' }, notes: { type: 'string' } } }
-const ASM_VIS_SCHEMA = { type: 'object', required: ['cross_panel_identity', 'cross_panel_style'], properties: { cross_panel_identity: { type: 'number' }, cross_panel_style: { type: 'number' }, text_fits_safezone: { type: 'number' }, baked_text_legibility: { type: 'number' }, drift_panels: { type: 'array', items: { type: 'string' } }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
+const ASM_CC_SCHEMA = { type: 'object', properties: { reading_order: SCORE, page_rhythm: SCORE, notes: { type: 'string' } } }
+const ASM_VIS_SCHEMA = { type: 'object', properties: { cross_panel_identity: SCORE, cross_panel_style: SCORE, text_fits_safezone: SCORE, baked_text_legibility: SCORE, drift_panels: { type: 'array', items: { type: 'string' } }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
 
 // ── generation: CONTENT-CONDITIONED BAKE (the deterministic-SVG → codex narrative-figure technique) ──
 // Per panel the engine reads comic.json .condition {content_svg, world, scene, chibi_action} + .bubbles, renders the
@@ -204,9 +210,9 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${CANON}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
     `( sleep 480; pkill -9 -P $P 2>/dev/null; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // watchdog kills codex's children then codex → no orphan image_gen polluting the next panel
     `NEW=$(find ~/.codex/generated_images -name '*.png' -newer "$M" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1); SZ=$(stat -f%z "$NEW" 2>/dev/null || echo 0)`,   // NEWEST BY MTIME (not lexicographic sort — that picked the wrong file in multi-image runs)
-    `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; H=$(shasum -a 256 "${out}" 2>/dev/null | cut -d' ' -f1); echo "GEN_OK ${out} $SZ sha=$H"; else echo "GEN_FAIL size=$SZ (image_gen errored / rate-limited)"; fi`,
+    `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; H=$(shasum -a 256 "${out}" 2>/dev/null | cut -d' ' -f1); echo "GEN_OK ${out} $SZ sha=$H"; else if grep -qiE 'rate.?limit|429|quota|server_?error|too many requests|overloaded|unavailable|50[23]' /tmp/cm_${pid}_${aTag}.log 2>/dev/null; then K=throttle; else K=other; fi; echo "GEN_FAIL size=$SZ FAILKIND=$K"; fi`,
     '```',
-    `STEP 3 — return GEN_SCHEMA: status MUST be "panel_ready" ONLY if you saw "GEN_OK" and "${out}" is >500KB, else "generation_failed". image_path="${out}", bytes (the real size), image_sha256 (the value printed after "sha=" on the GEN_OK line — REQUIRED on success, it binds the gate verdict to this exact image), text_mode="${cfg.text_mode}", content_figure_png="${cpng}", gen_failed_reason (quote the codex/image_gen error if failed), notes. Do NOT self-attest the numbers — faithfulness is judged by the gate.`,
+    `STEP 3 — return GEN_SCHEMA: status MUST be "panel_ready" ONLY if you saw "GEN_OK" and "${out}" is >500KB, else "generation_failed". image_path="${out}", bytes (the real size), image_sha256 (the value printed after "sha=" on the GEN_OK line — REQUIRED on success, it binds the gate verdict to this exact image), failure_kind (on failure, copy the token after "FAILKIND=" — "throttle" or "other" — this is the DETERMINISTIC class, do NOT infer it from prose), text_mode="${cfg.text_mode}", content_figure_png="${cpng}", gen_failed_reason (quote the codex/image_gen error if failed), notes. Do NOT self-attest the numbers — faithfulness is judged by the gate.`,
   ].join('\n'), { label: `gen:${pid}#${ai}`, phase: 'Panels', schema: GEN_SCHEMA })
 }
 
@@ -297,9 +303,9 @@ for (let i = 0; i < PANEL_IDS.length && !throttled && !escalated; i++) {
     // STRICT accept: only a genuine panel_ready with a real >500KB image reaches the gate (no loose status string slips through)
     if (!gen || gen.status !== 'panel_ready' || !gen.image_path || (gen.bytes || 0) <= 500000) {
       const reason = gen?.gen_failed_reason || `not panel_ready (status=${gen?.status} bytes=${gen?.bytes})`
-      log(`  ✗ gen failed: ${reason}`)
-      if (/rate|limit|throttl|server|unavailable|429|quota/i.test(reason)) {  // image_gen throttled → stop cleanly, resume after cooldown
-        throttled = true; escalated = { pid, why: 'image_gen rate-limited mid-run — stop + resume after cooldown' }; break
+      log(`  ✗ gen failed [${gen?.failure_kind || '?'}]: ${reason}`)
+      if (isThrottle(gen, reason)) {  // image_gen throttled → stop cleanly, resume after cooldown
+        throttled = true; escalated = { pid, why: 'image_gen throttled mid-run — stop + resume after cooldown' }; break
       }
       continue  // non-throttle gen failure → retry this panel (until cap)
     }
@@ -362,12 +368,16 @@ if (!escalated && kept.length >= 2) {
     for (const pid of drifters) {
       if (throttled) break
       const cfg = CONFIG[pid] || {}
+      if ((totalByPanel[pid] || 0) >= MAX_TOTAL + MAX_ROLLBACKS) {   // unified per-panel generation budget — cross-frame repair does NOT bypass the '4/panel + 6 repair' cap
+        log(`  ⚑ ${pid} hit the generation budget (${MAX_TOTAL + MAX_ROLLBACKS}) → flagged for HUMAN, not re-baked`); if (!flagged.includes(pid)) flagged.push(pid); continue
+      }
       const ai = (totalByPanel[pid] || 0) + 1; totalByPanel[pid] = ai
-      const inv = [`CROSS-PANEL CONSISTENCY REPAIR: this panel drifted from the rest of page ${PAGE} — match the canonical duo identity AND the page's flat pixel-art style EXACTLY (same chibi proportions, the exact hoodie/hair/beard colors, the same line + 1-step shading as the sibling panels). Assembly flagged: ${asm.verdict.reason}`]
+      // carry the panel's accumulated repair invariants so a re-bake can't reintroduce an earlier-fixed failure mode
+      const inv = [`CROSS-PANEL CONSISTENCY REPAIR: this panel drifted from the rest of page ${PAGE} — match the canonical duo identity AND the page's flat pixel-art style EXACTLY (same chibi proportions, the exact hoodie/hair/beard colors, the same line + 1-step shading as the sibling panels). Assembly flagged: ${asm.verdict.reason}`, ...(pending[pid] || [])]
       const gen = await generatePanel(pid, cfg, { attemptIndex: ai, invariants: inv })
       if (!gen || gen.status !== 'panel_ready' || !gen.image_path || (gen.bytes || 0) <= 500000) {
         const reason = gen?.gen_failed_reason || 'no image'
-        if (/rate|limit|throttl|server|unavailable|429|quota/i.test(reason)) { throttled = true; escalated = { pid, why: 'image_gen throttled during cross-frame repair — stop + resume' } }
+        if (isThrottle(gen, reason)) { throttled = true; escalated = { pid, why: 'image_gen throttled during cross-frame repair — stop + resume' } }
         log(`  ✗ ${pid} re-bake failed: ${reason}`); continue
       }
       const gate = await panelGate(pid, gen, cfg, ai)
