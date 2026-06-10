@@ -114,7 +114,7 @@ function assemblyVerdict(cc, gem, mode = 'html') {
 // ── schemas ──
 const GEN_SCHEMA = { type: 'object', required: ['status', 'image_path'], properties: {
   status: { type: 'string', enum: ['panel_ready', 'generation_failed'] }, image_path: { type: 'string' }, bytes: { type: 'number' }, gen_failed_reason: { type: 'string' },
-  text_mode: { type: 'string' }, content_figure_png: { type: 'string' }, baked_numbers_verified: { type: 'string' }, notes: { type: 'string' } } }
+  text_mode: { type: 'string' }, content_figure_png: { type: 'string' }, image_sha256: { type: 'string' }, baked_numbers_verified: { type: 'string' }, notes: { type: 'string' } } }
 const COND_SCHEMA = { type: 'object', required: ['panels'], properties: { panels: { type: 'object' } } }
 const CC_SCHEMA = { type: 'object', required: ['narrative_beat_fidelity', 'composition_story'], properties: {
   narrative_beat_fidelity: { type: 'number' }, composition_story: { type: 'number' }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
@@ -189,22 +189,23 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     `M=/tmp/cm_${pid}_${aTag}; touch "$M"`,
     `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${CANON}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
     `( sleep 480; pkill -9 -P $P 2>/dev/null; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // watchdog kills codex's children then codex → no orphan image_gen polluting the next panel
-    `NEW=$(find ~/.codex/generated_images -name '*.png' -newer "$M" 2>/dev/null | sort | tail -1); SZ=$(stat -f%z "$NEW" 2>/dev/null || echo 0)`,
-    `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; echo "GEN_OK ${out} $SZ"; else echo "GEN_FAIL size=$SZ (image_gen errored / rate-limited)"; fi`,
+    `NEW=$(find ~/.codex/generated_images -name '*.png' -newer "$M" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1); SZ=$(stat -f%z "$NEW" 2>/dev/null || echo 0)`,   // NEWEST BY MTIME (not lexicographic sort — that picked the wrong file in multi-image runs)
+    `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; H=$(shasum -a 256 "${out}" 2>/dev/null | cut -d' ' -f1); echo "GEN_OK ${out} $SZ sha=$H"; else echo "GEN_FAIL size=$SZ (image_gen errored / rate-limited)"; fi`,
     '```',
-    `STEP 3 — return GEN_SCHEMA: status MUST be "panel_ready" ONLY if you saw "GEN_OK" and "${out}" is >500KB, else "generation_failed". image_path="${out}", bytes (the real size), text_mode="${cfg.text_mode}", content_figure_png="${cpng}", gen_failed_reason (quote the codex/image_gen error if failed), notes. Do NOT self-attest the numbers — faithfulness is judged by the gate.`,
+    `STEP 3 — return GEN_SCHEMA: status MUST be "panel_ready" ONLY if you saw "GEN_OK" and "${out}" is >500KB, else "generation_failed". image_path="${out}", bytes (the real size), image_sha256 (the value printed after "sha=" on the GEN_OK line — REQUIRED on success, it binds the gate verdict to this exact image), text_mode="${cfg.text_mode}", content_figure_png="${cpng}", gen_failed_reason (quote the codex/image_gen error if failed), notes. Do NOT self-attest the numbers — faithfulness is judged by the gate.`,
   ].join('\n'), { label: `gen:${pid}#${ai}`, phase: 'Panels', schema: GEN_SCHEMA })
 }
 
 // ── panel_gate: 3 independent cross-model reviewers → deterministic JS verdict ──
-async function panelGate(pid, gen, cfg = {}) {
+async function panelGate(pid, gen, cfg = {}, ai = 1) {
   const mode = cfg.text_mode || gen.text_mode || 'html'   // comic.json (cfg) is the SOURCE OF TRUTH for mode, not the generator's self-report
   const baked = mode === 'baked'
   const img = absImg(gen.image_path)
+  const sha = (gen.image_sha256 || '').slice(0, 12)   // BIND each reviewer's verdict to THIS attempt's exact image (label+prompt) → a resume can't replay a stale verdict onto a different file
   const cc = agent([
     `You are the CC NARRATIVE reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}). Judge STORY only (you may glance at the panel at "${gen.image_path}" but score narrative, not pixels).`,
     `Read panel ${pid} from "${COMICJSON}": its .condition.scene, its .bubbles (the intended dialogue), .caption, and the page's beat narration. Score 0-5: narrative_beat_fidelity (does this panel deliver its beat in the audit story?), composition_story (does the staging${baked ? ' + the baked figure/dialogue' : ''} read the story right?). Return CC_SCHEMA.`,
-  ].join('\n'), { label: `gate-cc:${pid}`, phase: 'Panels', schema: CC_SCHEMA })
+  ].join('\n'), { label: `gate-cc:${pid}#${ai}`, phase: 'Panels', schema: CC_SCHEMA })
 
   // Visual reviewers get ONLY the panel + canonical duo + ART_BIBLE — NOT the content blueprint. baked faithfulness is judged by a
   // BLIND transcription (observed_literals) deterministically diffed against authored ground truth in JS, so reviewers must never
@@ -215,11 +216,11 @@ async function panelGate(pid, gen, cfg = {}) {
   const gem = agent([
     `You are the GEMINI VISUAL reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}, independent — do not consult other scores). Use watchdog-bounded CLI:`,
     '```bash',
-    `( gemini --model auto-gemini-3 -p "@${img} @${CANON} @${BIBLE} 评这张漫画面板(第1张):对照 canonical 双人(蓝executor棕发无须/绿reviewer黑发有须)与 ART_BIBLE。打分0-5并只输出一行紧凑JSON: ${gemJson}" < /dev/null > /tmp/gg_${pid}.txt 2>&1 ) & P=$!`,
-    `( sleep 240; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1500 /tmp/gg_${pid}.txt`,
+    `( gemini --model auto-gemini-3 -p "@${img} @${CANON} @${BIBLE} 评这张漫画面板(第1张,文件 ${pid}#${ai} sha ${sha}):对照 canonical 双人(蓝executor棕发无须/绿reviewer黑发有须)与 ART_BIBLE。打分0-5并只输出一行紧凑JSON: ${gemJson}" < /dev/null > /tmp/gg_${pid}_${ai}.txt 2>&1 ) & P=$!`,
+    `( sleep 240; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1500 /tmp/gg_${pid}_${ai}.txt`,
     '```',
     `Parse the JSON gemini emitted into VIS_SCHEMA. If gemini gave no parseable scores, set timed_out=true.`,
-  ].join('\n'), { label: `gate-gem:${pid}`, phase: 'Panels', schema: VIS_SCHEMA })
+  ].join('\n'), { label: `gate-gem:${pid}#${ai}`, phase: 'Panels', schema: VIS_SCHEMA })
 
   const cdxJson = baked
     ? `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"baked_text_quality\\":n,\\"observed_literals\\":[\\"...\\"],\\"content_corruption_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"} (0-5)。baked_text_quality=气泡烤字是否清晰不乱码;observed_literals=逐字转录画中技术图你确实看清的数字/标签/代码,严禁猜测;content_corruption_present=有无明显乱码/残缺/不合法数字或代码。`
@@ -227,14 +228,14 @@ async function panelGate(pid, gen, cfg = {}) {
   const cdx = agent([
     `You are the CODEX VISUAL reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}, independent SECOND visual model — covers what Gemini's eye misses). Use watchdog-bounded CLI (codex vision review is NOT image_gen, not rate-limited):`,
     '```bash',
-    `( codex exec "审这张漫画面板(第1张):对照 canonical 双人参考与 ART_BIBLE,评身份/画风/构图/瑕疵${baked ? ' + 气泡烤字清晰度 + 逐字转录技术图数字' : '/留白/有无杂字'}。只输出一行JSON: ${cdxJson}" -i "${img}" -i "${CANON}" -i "${BIBLE}" --skip-git-repo-check < /dev/null > /tmp/cc_${pid}.txt 2>&1 ) & P=$!`,
-    `( sleep 300; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1500 /tmp/cc_${pid}.txt`,
+    `( codex exec "审这张漫画面板(第1张,文件 ${pid}#${ai} sha ${sha}):对照 canonical 双人参考与 ART_BIBLE,评身份/画风/构图/瑕疵${baked ? ' + 气泡烤字清晰度 + 逐字转录技术图数字' : '/留白/有无杂字'}。只输出一行JSON: ${cdxJson}" -i "${img}" -i "${CANON}" -i "${BIBLE}" --skip-git-repo-check < /dev/null > /tmp/cc_${pid}_${ai}.txt 2>&1 ) & P=$!`,
+    `( sleep 300; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1500 /tmp/cc_${pid}_${ai}.txt`,
     '```',
     `Parse codex's JSON into VIS_SCHEMA. If none, timed_out=true.`,
-  ].join('\n'), { label: `gate-cdx:${pid}`, phase: 'Panels', schema: VIS_SCHEMA })
+  ].join('\n'), { label: `gate-cdx:${pid}#${ai}`, phase: 'Panels', schema: VIS_SCHEMA })
 
   const [ccR, gemR, cdxR] = await Promise.all([cc, gem, cdx])
-  return { cc: ccR, gem: gemR, cdx: cdxR, mode, verdict: panelVerdict(ccR, gemR, cdxR, cfg) }
+  return { cc: ccR, gem: gemR, cdx: cdxR, mode, image_sha256: gen.image_sha256 || null, verdict: panelVerdict(ccR, gemR, cdxR, cfg) }
 }
 
 function writeWiki(pid, gen, gate, ai) {
@@ -289,15 +290,15 @@ for (let i = 0; i < PANEL_IDS.length && !throttled && !escalated; i++) {
       continue  // non-throttle gen failure → retry this panel (until cap)
     }
     lastGen = gen
-    const gate = await panelGate(pid, gen, cfg)
+    const gate = await panelGate(pid, gen, cfg, ai)
     await writeWiki(pid, gen, gate, ai)
     log(`  panel_gate ${pid}#${ai}: ${gate.verdict.v} — ${gate.verdict.reason}`)
-    if (gate.verdict.v === 'keep') { kept.push({ pid, image_path: gen.image_path, attempt: ai, needs_human: false }); done = true; break }
+    if (gate.verdict.v === 'keep') { kept.push({ pid, image_path: gen.image_path, image_sha256: gen.image_sha256 || null, attempt: ai, needs_human: false }); done = true; break }
     if (gate.verdict.invariant) pending[pid] = [...(pending[pid] || []), gate.verdict.invariant]  // retry SAME panel w/ repair
   }
   if (throttled) break
   if (!done) {
-    if (lastGen) { kept.push({ pid, image_path: lastGen.image_path, attempt: totalByPanel[pid], needs_human: true }); flagged.push(pid); log(`  ⚑ ${pid} exhausted ${MAX_TOTAL} attempts → best-so-far flagged for HUMAN review (R10), continuing`) }
+    if (lastGen) { kept.push({ pid, image_path: lastGen.image_path, image_sha256: lastGen.image_sha256 || null, attempt: totalByPanel[pid], needs_human: true }); flagged.push(pid); log(`  ⚑ ${pid} exhausted ${MAX_TOTAL} attempts → best-so-far flagged for HUMAN review (does NOT auto-finalize), continuing`) }
     else { escalated = escalated || { pid, why: 'no panel ever generated (image_gen down?)' }; break }
   }
 }
@@ -355,12 +356,12 @@ if (!escalated && kept.length >= 2) {
         if (/rate|limit|throttl|server|unavailable|429|quota/i.test(reason)) { throttled = true; escalated = { pid, why: 'image_gen throttled during cross-frame repair — stop + resume' } }
         log(`  ✗ ${pid} re-bake failed: ${reason}`); continue
       }
-      const gate = await panelGate(pid, gen, cfg)
+      const gate = await panelGate(pid, gen, cfg, ai)
       await writeWiki(pid, gen, gate, ai)
       log(`  panel_gate ${pid}#${ai} (cross-frame): ${gate.verdict.v}`)
       if (gate.verdict.v === 'keep') {
         const idx = kept.findIndex(k => k.pid === pid)
-        if (idx >= 0) kept[idx] = { pid, image_path: gen.image_path, attempt: ai, needs_human: false }
+        if (idx >= 0) kept[idx] = { pid, image_path: gen.image_path, image_sha256: gen.image_sha256 || null, attempt: ai, needs_human: false }
         anyFixed = true
       }
     }
@@ -370,14 +371,21 @@ if (!escalated && kept.length >= 2) {
   }
 }
 
+// SHIPPABLE gate (audit P0 #4): a run finalizes ONLY if nothing needs a human, nothing escalated/throttled,
+// and (if assembled) assembly accepted. A gate-FAILING best-so-far panel (needs_human) can no longer ride
+// assembly-accept + finalize:true into downstream consumers.
+const anyNeedsHuman = kept.some(k => k.needs_human) || flagged.length > 0
+const shippable = !escalated && !throttled && !anyNeedsHuman && (asm ? asm.verdict.v === 'accept' : kept.length >= 1)
 return {
   page: PAGE,
   panel_ids: PANEL_IDS,
   kept: kept,
   flagged_for_human: flagged,
+  needs_human: anyNeedsHuman,
+  shippable,
   throttled,
   escalated,
   assembly: asm ? asm.verdict : null,
   attempts_per_panel: totalByPanel,
-  finalize: FINALIZE,
+  finalize: FINALIZE && shippable,   // a FINALIZE request is HONORED only when the page is actually shippable
 }

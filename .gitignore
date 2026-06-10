@@ -8,4 +8,10 @@ __pycache__/
 # secrets — never commit
 *.env
 **/secrets*
-\n# Build artifacts\n**/outputs/index.html\n**/outputs/\n
+# build artifacts (regenerable; the viewer is rebuilt from comic.json + panels)
+**/outputs/
+# stray / intermediate panel bakes (only the active SXX_panel_aNN.png are tracked)
+**/panels/*_baked_text_*.png
+**/panels/*_warm_lab_*.png
+**/panels/*_cleaned*.png
+**/panels/*_textfix*.png
