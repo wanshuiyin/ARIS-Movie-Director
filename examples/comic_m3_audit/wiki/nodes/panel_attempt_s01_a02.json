@@ -1,0 +1,14 @@
+{
+  "node_id": "attempt:s01_a02",
+  "node_type": "panel_attempt",
+  "status": "under_review",
+  "title": "S01 panel attempt 2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "source_panel_id": "panel:s01_aris_comic_v1",
+    "image_path": "/Users/yangruofeng/Desktop/aris-movie-director/examples/comic_m3_audit/panels/S01_panel_a02.png",
+    "attempt_index": 2,
+    "model": "codex_image_gen",
+    "is_baked_duo": true
+  }
+}

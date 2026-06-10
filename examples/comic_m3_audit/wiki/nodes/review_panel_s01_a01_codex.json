@@ -1,0 +1,19 @@
+{
+  "node_id": "review:panel_s01_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S01 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s01_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 4,
+    "style_consistency": 5,
+    "composition_readability": 4,
+    "artifact_severity": 2,
+    "baked_text_quality": 3,
+    "timed_out": false,
+    "observed_literals": ["x RUN FAILED x", "experiment: schema_mask_span", "status: FAILED", "reason: parse_error", "error: span crosses schema boundary", "invalid_output:", "{\"name\": \"a"]
+  }
+}

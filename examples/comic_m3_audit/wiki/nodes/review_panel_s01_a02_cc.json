@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s01_a02_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S01 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s01_a02",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 5,
+    "composition_story": 4,
+    "timed_out": false,
+    "notes": "Beat fully delivered: solo exhausted researcher at T-24h with a dark RUN FAILED log, both expected literals (DDL / T-24:00:00) baked on the desk chip, temperature-origin steaming ML RESEARCH mug, TODO note and bookshelf spines all present."
+  }
+}

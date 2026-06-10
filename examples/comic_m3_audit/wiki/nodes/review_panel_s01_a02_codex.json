@@ -1,0 +1,19 @@
+{
+  "node_id": "review:panel_s01_a02_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S01 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s01_a02",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 4,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 4,
+    "timed_out": false,
+    "observed_literals": ["LLM DECODING", "STRUCTURED OUTPUTS", "EVALS FIRST", "DDL", "T-24:00:00", "RUN FAILED", "schema boundary", "0.000", "better masks", "schema locks", "evals", "dllm-schema-keyword-first"]
+  }
+}
