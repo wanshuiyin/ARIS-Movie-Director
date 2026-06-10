@@ -86,17 +86,85 @@
       ]
     },
     {
+      "id": "P_B08_1",
+      "type": "single",
+      "beat": "B08",
+      "beat_title": {
+        "zh": "B08-1 诱人的胜利",
+        "en": "B08-1 The Tempting Win"
+      },
+      "skill": "experiment-bridge :: evidence is provisional",
+      "narration": {
+        "zh": "第一轮就开出漂亮的成绩：schema-keyword-first 领先 +6.2，executor 已经举起了手。但在 ARIS 里证据只是暂定的（experiment-bridge）——这张曲线还没资格变成 claim，庆祝被按下了暂停。",
+        "en": "The first pass looked clean: schema-keyword-first led by +6.2 and the executor's arm was already up. In ARIS, evidence is provisional (experiment-bridge) — the curve hasn't earned claim status yet, so the celebration stays on hold."
+      },
+      "panel_ids": [
+        "S12"
+      ]
+    },
+    {
+      "id": "P_B08_2",
+      "type": "single",
+      "beat": "B08",
+      "beat_title": {
+        "zh": "B08-2 暗藏的修复",
+        "en": "B08-2 The Hidden Repair"
+      },
+      "skill": "experiment-audit :: check the apparatus, not just outputs",
+      "narration": {
+        "zh": "审计扒开评分管线：评测器在打分之前，偷偷把坏 JSON 修好了。experiment-audit 审的是仪器而不只是输出——代价是，刚刚那 +6.2 当场失去资格。",
+        "en": "The audit cut the pipeline open: the evaluator had been silently repairing broken JSON before scoring it. experiment-audit checks the apparatus, not just the outputs — and the cost is that the +6.2 is disqualified on the spot."
+      },
+      "panel_ids": [
+        "S13"
+      ]
+    },
+    {
+      "id": "P_B08_3",
+      "type": "single",
+      "beat": "B08",
+      "beat_title": {
+        "zh": "B08-3 裸重评坍缩",
+        "en": "B08-3 The Raw Re-eval Collapse"
+      },
+      "skill": "honest re-run :: correct the overclaim before the paper exists",
+      "narration": {
+        "zh": "同一批输出绕开修复器裸跑重评，+6.2 当场坍缩成 +1.4，多出来的 +4.8 是评测器自己修出来的。honest re-run 在论文存在之前就纠正了自己的 overclaim——executor 的得意被压到整夜最低点。",
+        "en": "The same outputs were rescored raw, bypassing the sanitizer: +6.2 collapsed to +1.4, and the extra +4.8 turned out to be the evaluator's own repairs. The honest re-run corrects its own overclaim before the paper exists — and the executor's pride hits its lowest point of the night."
+      },
+      "panel_ids": [
+        "S14"
+      ]
+    },
+    {
+      "id": "P_B08_4",
+      "type": "single",
+      "beat": "B08",
+      "beat_title": {
+        "zh": "B08-4 判决 · WARN_corrected",
+        "en": "B08-4 Verdict · WARN_corrected"
+      },
+      "skill": "verdict :: honest, not killed",
+      "narration": {
+        "zh": "判决落下：WARN_corrected——结果没有被删除，而是被降级、标注、带着边界继续往前走。ARIS 保住有用的信号、把不确定写在明面上——代价是，论文里再也写不出 +6.2。",
+        "en": "The verdict lands: WARN_corrected — the result isn't deleted, it's downgraded, labeled, and carried forward with its scope. ARIS keeps the useful signal and marks the uncertainty out loud — the cost: +6.2 can never appear in the paper."
+      },
+      "panel_ids": [
+        "S15"
+      ]
+    },
+    {
       "id": "P02_b08",
       "type": "grid2x2",
       "beat": "B08",
       "beat_title": {
-        "zh": "通胀审计 · 全片高潮",
-        "en": "The Inflation Audit · the centerpiece"
+        "zh": "通胀审计 · 全景回顾",
+        "en": "The Inflation Audit · recap"
       },
       "skill": "experiment-audit :: sanitizer ≠ validator → raw re-eval → WARN_corrected",
       "narration": {
-        "zh": "schema-first 初看 +6.2。但 adversarial 审计发现评估器偷用了 JSON sanitizer 补键——纯 raw 重评后只剩 +1.4。效应真，范围缩小：诚实但不杀稿。",
-        "en": "schema-first looked like +6.2. But the adversarial audit found the evaluator secretly ran a JSON sanitizer — on a raw re-eval only +1.4 holds. Real but narrowed: honest, not killed."
+        "zh": "四格连读：+6.2 的假象 → 修复器现形 → 坍缩到 +1.4 → 诚实判决。一夜审计的全景。",
+        "en": "The four beats at a glance: the +6.2 mirage → the sanitizer exposed → the collapse to +1.4 → the honest verdict. The audit night, whole."
       },
       "panel_ids": [
         "S12",
