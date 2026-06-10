@@ -1,0 +1,18 @@
+{
+  "verdict": "PASS",
+  "checks": {
+    "source_hash_match": "pass",
+    "information_fidelity": "pass",
+    "structure": "pass",
+    "math_code_tables": "pass",
+    "callouts": "not_applicable",
+    "safety_escaping": "pass",
+    "placeholder_leak": "pass"
+  },
+  "blocking_issues": [],
+  "warnings": [],
+  "summary": "Generated HTML preserves the source README content and structure: headings, paragraphs, code block, table, inline formatting, and lists are present with no material alteration. Source SHA256 metadata matches the README hash. No source callouts or math are present, and no placeholder leakage or source-derived unsafe HTML was found.",
+  "reviewer": "codex gpt-5.5 xhigh (fresh MCP thread 019eaf6f-6d6a-7100-b1f6-09e911ca3e64)",
+  "source": "wiki/README.md (sha256 9205f79735c2...)",
+  "generated": "wiki/wiki_trace.html"
+}
