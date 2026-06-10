@@ -19,9 +19,14 @@ const BIBLE = PROJ + '/ART_BIBLE.md'
 const COMICJSON = PROJ + '/comic.json'
 const STORY = COMICJSON  // comic.json carries per-panel beat/narration/dialogue (replaces the video storyboard)
 
-// P0 default target = the B08 wiki-rollback page (the centerpiece, 4 panels). Override via args.panelIds.
+// P0 default target = the B08 audit page (the centerpiece, 4 panels). Override via args.panelIds.
 const PAGE = (args && args.page) || 'P02_b08'
 const PANEL_IDS = (args && args.panelIds) || ['S12', 'S13', 'S14', 'S15']
+// fail fast: PAGE + every panel id flow into shell paths, /tmp filenames and wiki node filenames → whitelist them up front
+const ID_RE = /^[A-Za-z0-9_-]+$/
+if (!ID_RE.test(PAGE) || !Array.isArray(PANEL_IDS) || !PANEL_IDS.every(p => typeof p === 'string' && ID_RE.test(p))) {
+  throw new Error(`unsafe page/panelIds (must match ${ID_RE}): page=${JSON.stringify(PAGE)} panelIds=${JSON.stringify(PANEL_IDS)}`)
+}
 const MAX_LOCAL = 3, MAX_TOTAL = 4, MAX_ROLLBACKS = 6
 const FINALIZE = (args && args.finalize === true) || false
 const absImg = (p) => !p ? '' : (p.startsWith('/') ? p : PROJ + '/' + p)  // resolve panel image path (abs or project-rel) — one helper
@@ -149,6 +154,9 @@ function loadConditions() {
 function generatePanel(pid, cfg = {}, ctx = {}) {
   const ai = ctx.attemptIndex || 1
   const aTag = 'a' + String(ai).padStart(2, '0')
+  if (!/^[A-Za-z0-9_-]+$/.test(pid)) {   // pid flows into /tmp paths + output filenames + bash → whitelist it (no metachars/traversal)
+    return Promise.resolve({ status: 'generation_failed', image_path: '', text_mode: cfg.text_mode || '', gen_failed_reason: `unsafe panel id ${JSON.stringify(pid)} (must match [A-Za-z0-9_-])` })
+  }
   const out = `${PANELS}/${pid}_panel_${aTag}.png`
   const cdir = `${PANELS}/_content_refs`
   const cpng = `${cdir}/${pid}_${aTag}.png`   // PERSISTENT blueprint (NOT /tmp) — the gate + wiki reference it across resume/cleanup
@@ -171,6 +179,12 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     `ONE coherent flat pixel-art comic panel. No watermark. No UI text beyond the integrated figure and the two bubbles.`,
     repairLine,
   ].filter(Boolean).join('\n')
+  // heredoc-injection guard: project text (scene/bubbles) is written via a quoted heredoc; if any body line equaled the
+  // delimiter the rest would execute as shell. Use an unlikely fixed delimiter AND assert the body can't contain it (fail closed).
+  const BAKE_DELIM = 'ARIS_BAKE_HEREDOC_EOF_b7f3a91c'
+  if (promptBody.split('\n').some(l => l.trim() === BAKE_DELIM)) {
+    return Promise.resolve({ status: 'generation_failed', image_path: '', text_mode: cfg.text_mode || '', gen_failed_reason: 'prompt body collided with the heredoc delimiter (refusing to risk shell injection)' })
+  }
   return agent([
     `You are the Codex CONTENT-CONDITIONED BAKE executor for ARIS comic panel ${pid} (attempt ${ai}, mode=${cfg.text_mode}). Bake ONE pixel-art panel fusing a deterministic technical FIGURE (the content blueprint = GROUND TRUTH; its numbers must survive verbatim) with the canonical chibi duo + baked dialogue.`, '',
     `STEP 1 — render the content blueprint SVG → a PERSISTENT PNG (watchdog-bounded):`,
@@ -182,9 +196,9 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     '```',
     `STEP 2 — assemble the bake prompt = ART_BIBLE rules + the panel body below, then BAKE (codex image_gen; EXACTLY 2 refs: blueprint #1 + canonical duo #2). image_gen may be RATE-LIMITED — on error DO NOT fall back to PIL/SVG, report generation_failed:`,
     '```bash',
-    `cat > /tmp/bake_${pid}_${aTag}.txt <<'PROMPTEOF'`,
+    `cat > /tmp/bake_${pid}_${aTag}.txt <<'${BAKE_DELIM}'`,
     promptBody,
-    `PROMPTEOF`,
+    `${BAKE_DELIM}`,
     `( printf 'Paste these style rules first:\\n%s\\n\\nThen render this panel:\\n' "$(cat "${BIBLE}")"; cat /tmp/bake_${pid}_${aTag}.txt ) > /tmp/bakefull_${pid}_${aTag}.txt`,
     `M=/tmp/cm_${pid}_${aTag}; touch "$M"`,
     `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${CANON}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
