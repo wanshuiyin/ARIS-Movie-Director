@@ -21,7 +21,11 @@ const STORY = COMICJSON  // comic.json carries per-panel beat/narration/dialogue
 
 // P0 default target = the B08 audit page (the centerpiece, 4 panels). Override via args.panelIds.
 const PAGE = (args && args.page) || 'P02_b08'
-const PANEL_IDS = (args && args.panelIds) || ['S12', 'S13', 'S14', 'S15']
+// panelIds accepts an ARRAY or a COMMA-STRING ("S01,S02") — array args have been observed not to forward
+// through some Workflow harness paths, so the string form is the reliable override.
+const _rawIds = args && args.panelIds
+const PANEL_IDS = Array.isArray(_rawIds) ? _rawIds
+  : (typeof _rawIds === 'string' && _rawIds.trim() ? _rawIds.split(',').map(s => s.trim()).filter(Boolean) : ['S12', 'S13', 'S14', 'S15'])
 // fail fast: PAGE + every panel id flow into shell paths, /tmp filenames and wiki node filenames → whitelist them up front
 const ID_RE = /^[A-Za-z0-9_-]+$/
 if (!ID_RE.test(PAGE) || !Array.isArray(PANEL_IDS) || !PANEL_IDS.every(p => typeof p === 'string' && ID_RE.test(p))) {
@@ -152,7 +156,7 @@ const BAKE_LANG = (args && args.bakeLang) || 'zh'   // which bubble language to 
 function loadConditions() {
   return agent([
     `Read "${COMICJSON}" and return the per-panel generation config for EXACTLY these panels: ${JSON.stringify(PANEL_IDS)}.`,
-    `For each pid return an object with: text_mode (the panel's .text_mode), content_svg (.condition.content_svg, a project-relative path or null), world (.condition.world), scene (.condition.scene), chibi_executor (.condition.chibi_action.executor), chibi_reviewer (.condition.chibi_action.reviewer), bubble_executor (the .bubbles entry with speaker=="executor" → its text.${BAKE_LANG}, else ""), bubble_reviewer (speaker=="reviewer" → text.${BAKE_LANG}, else ""), expected_literals (copy the panel's .condition.expected_literals array verbatim, or []).`,
+    `For each pid return an object with: text_mode (the panel's .text_mode), content_svg (.condition.content_svg, a project-relative path or null), world (.condition.world), scene (.condition.scene), identity_ref (.condition.identity_ref, a project-relative .png path or null), identity_desc (.condition.identity_desc or ""), characters (.condition.characters or ""), chibi_executor (.condition.chibi_action.executor or ""), chibi_reviewer (.condition.chibi_action.reviewer or ""), bubbles_all (an ARRAY with one string per .bubbles entry, each formatted "<speaker> says: <text.${BAKE_LANG}>" — empty array if the panel has no bubbles), expected_literals (copy the panel's .condition.expected_literals array verbatim, or []).`,
     `Return COND_SCHEMA: {panels: {"S12": {...}, ...}}. READ ONLY — do not generate or render anything.`,
   ].join('\n'), { label: 'load-conditions', phase: 'Panels', schema: COND_SCHEMA })
 }
@@ -171,6 +175,21 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
   if (!/^[\w][\w./-]*\.svg$/.test(svgRel) || svgRel.includes('..')) {
     return Promise.resolve({ status: 'generation_failed', image_path: '', text_mode: cfg.text_mode || '', gen_failed_reason: `unsafe/empty content_svg: ${JSON.stringify(svgRel)} (expected project-relative *.svg)` })
   }
+  // Per-panel IDENTITY (boundary fix): the identity ref + description come from cfg (comic.json), defaulting to
+  // the duo for back-compat. identity_ref is shell-safe-validated like content_svg (it lands in a bash -i arg).
+  const idRel = cfg.identity_ref || ''
+  if (idRel && (!/^[\w][\w./-]*\.png$/.test(idRel) || idRel.includes('..'))) {
+    return Promise.resolve({ status: 'generation_failed', image_path: '', text_mode: cfg.text_mode || '', gen_failed_reason: `unsafe identity_ref: ${JSON.stringify(idRel)} (expected project-relative *.png)` })
+  }
+  const idRefAbs = idRel ? `${PROJ}/${idRel}` : CANON
+  const idDesc = cfg.identity_desc || 'the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard'
+  const charsLine = cfg.characters || [cfg.chibi_executor ? `executor action: ${cfg.chibi_executor}.` : '', cfg.chibi_reviewer ? `reviewer action: ${cfg.chibi_reviewer}.` : ''].filter(Boolean).join(' ')
+  const bubblesArr = Array.isArray(cfg.bubbles_all) ? cfg.bubbles_all.filter(b => typeof b === 'string' && b.trim()) : []
+  const bubbleLine = bubblesArr.length
+    ? `Bake these speech bubbles as clean readable comic lettering (${BAKE_LANG}): ${bubblesArr.join('  ||  ')}`
+    : (cfg.bubble_executor || cfg.bubble_reviewer
+      ? `Bake these speech bubbles as clean readable comic lettering (${BAKE_LANG}): executor says: ${cfg.bubble_executor}  ||  reviewer says: ${cfg.bubble_reviewer}`
+      : `This panel has NO speech bubbles — bake NO dialogue text (the technical figure's text is the only text).`)
   const repairLine = (ctx.invariants || []).filter(Boolean).length
     ? 'REPAIR CONSTRAINTS (earlier attempts failed for these reasons — honor every one): ' + ctx.invariants.filter(Boolean).join('  |  ')
     : ''
@@ -179,10 +198,10 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
   const promptBody = [
     `WORLD = ${cfg.world}  → apply the ART_BIBLE §0.5 two-world lighting (warm-lab = warm Edison-glow human world; dark-cyber = dark screen-lit digital world).`,
     `SCENE: ${cfg.scene}`,
-    `Render the CANONICAL DUO from reference image #2 (blue executor: brown hair, NO beard; green reviewer: dark hair, beard). executor action: ${cfg.chibi_executor}. reviewer action: ${cfg.chibi_reviewer}.`,
+    `Render the character(s) from reference image #2 EXACTLY as depicted there — ${idDesc}. ${charsLine}`,
     `Integrate the technical figure from reference image #1 onto a board/screen/dashboard in the scene. Reproduce its numbers, labels and code EXACTLY as they appear in image #1 — do NOT alter, re-spell, round, or invent any number or token.`,
-    `Bake these two speech bubbles as clean readable comic lettering (${BAKE_LANG}): executor says: ${cfg.bubble_executor}  ||  reviewer says: ${cfg.bubble_reviewer}`,
-    `ONE coherent flat pixel-art comic panel. No watermark. No UI text beyond the integrated figure and the two bubbles.`,
+    bubbleLine,
+    `ONE coherent flat pixel-art comic panel. No watermark. No UI text beyond the integrated figure and the bubbles (if any).`,
     repairLine,
   ].filter(Boolean).join('\n')
   // heredoc-injection guard: project text (scene/bubbles) is written via a quoted heredoc; if any body line equaled the
@@ -207,7 +226,7 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     `${BAKE_DELIM}`,
     `( printf 'Paste these style rules first:\\n%s\\n\\nThen render this panel:\\n' "$(cat "${BIBLE}")"; cat /tmp/bake_${pid}_${aTag}.txt ) > /tmp/bakefull_${pid}_${aTag}.txt`,
     `M=/tmp/cm_${pid}_${aTag}; touch "$M"`,
-    `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${CANON}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
+    `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${idRefAbs}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
     `( sleep 480; pkill -9 -P $P 2>/dev/null; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // watchdog kills codex's children then codex → no orphan image_gen polluting the next panel
     `NEW=$(find ~/.codex/generated_images -name '*.png' -newer "$M" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1); SZ=$(stat -f%z "$NEW" 2>/dev/null || echo 0)`,   // NEWEST BY MTIME (not lexicographic sort — that picked the wrong file in multi-image runs)
     `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; H=$(shasum -a 256 "${out}" 2>/dev/null | cut -d' ' -f1); echo "GEN_OK ${out} $SZ sha=$H"; else if grep -qiE 'rate.?limit|429|quota|server_?error|too many requests|overloaded|unavailable|50[23]' /tmp/cm_${pid}_${aTag}.log 2>/dev/null; then K=throttle; else K=other; fi; echo "GEN_FAIL size=$SZ FAILKIND=$K"; fi`,
@@ -222,6 +241,10 @@ async function panelGate(pid, gen, cfg = {}, ai = 1) {
   const baked = mode === 'baked'
   const img = absImg(gen.image_path)
   const sha = (gen.image_sha256 || '').slice(0, 12)   // BIND each reviewer's verdict to THIS attempt's exact image (label+prompt) → a resume can't replay a stale verdict onto a different file
+  // per-panel identity (mirrors generatePanel): reviewers judge identity against THIS panel's ref + description
+  const gIdRel = cfg.identity_ref && /^[\w][\w./-]*\.png$/.test(cfg.identity_ref) && !cfg.identity_ref.includes('..') ? cfg.identity_ref : ''
+  const gIdRef = gIdRel ? `${PROJ}/${gIdRel}` : CANON
+  const gIdDesc = cfg.identity_desc || '蓝executor棕发无须/绿reviewer黑发有须'
   const cc = agent([
     `You are the CC NARRATIVE reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}). Judge STORY only (you may glance at the panel at "${gen.image_path}" but score narrative, not pixels).`,
     `Read panel ${pid} from "${COMICJSON}": its .condition.scene, its .bubbles (the intended dialogue), .caption, and the page's beat narration. Score 0-5: narrative_beat_fidelity (does this panel deliver its beat in the audit story?), composition_story (does the staging${baked ? ' + the baked figure/dialogue' : ''} read the story right?). Return CC_SCHEMA.`,
@@ -236,7 +259,7 @@ async function panelGate(pid, gen, cfg = {}, ai = 1) {
   const gem = agent([
     `You are the GEMINI VISUAL reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}, independent — do not consult other scores). Use watchdog-bounded CLI:`,
     '```bash',
-    `( gemini --model auto-gemini-3 -p "@${img} @${CANON} @${BIBLE} 评这张漫画面板(第1张,文件 ${pid}#${ai} sha ${sha}):对照 canonical 双人(蓝executor棕发无须/绿reviewer黑发有须)与 ART_BIBLE。打分0-5并只输出一行紧凑JSON: ${gemJson}" < /dev/null > /tmp/gg_${pid}_${ai}.txt 2>&1 ) & P=$!`,
+    `( gemini --model auto-gemini-3 -p "@${img} @${gIdRef} @${BIBLE} 评这张漫画面板(第1张,文件 ${pid}#${ai} sha ${sha}):对照第2张身份参考(${gIdDesc})与 ART_BIBLE。打分0-5并只输出一行紧凑JSON: ${gemJson}" < /dev/null > /tmp/gg_${pid}_${ai}.txt 2>&1 ) & P=$!`,
     `( sleep 240; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1500 /tmp/gg_${pid}_${ai}.txt`,
     '```',
     `Parse the JSON gemini emitted into VIS_SCHEMA. If gemini gave no parseable scores, set timed_out=true.`,
@@ -248,7 +271,7 @@ async function panelGate(pid, gen, cfg = {}, ai = 1) {
   const cdx = agent([
     `You are the CODEX VISUAL reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}, independent SECOND visual model — covers what Gemini's eye misses). Use watchdog-bounded CLI (codex vision review is NOT image_gen, not rate-limited):`,
     '```bash',
-    `( codex exec "审这张漫画面板(第1张,文件 ${pid}#${ai} sha ${sha}):对照 canonical 双人参考与 ART_BIBLE,评身份/画风/构图/瑕疵${baked ? ' + 气泡烤字清晰度 + 逐字转录技术图数字' : '/留白/有无杂字'}。只输出一行JSON: ${cdxJson}" -i "${img}" -i "${CANON}" -i "${BIBLE}" --skip-git-repo-check < /dev/null > /tmp/cc_${pid}_${ai}.txt 2>&1 ) & P=$!`,
+    `( codex exec "审这张漫画面板(第1张,文件 ${pid}#${ai} sha ${sha}):对照第2张身份参考(${gIdDesc})与 ART_BIBLE,评身份/画风/构图/瑕疵${baked ? ' + 气泡烤字清晰度 + 逐字转录技术图数字' : '/留白/有无杂字'}。只输出一行JSON: ${cdxJson}" -i "${img}" -i "${gIdRef}" -i "${BIBLE}" --skip-git-repo-check < /dev/null > /tmp/cc_${pid}_${ai}.txt 2>&1 ) & P=$!`,
     `( sleep 300; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1500 /tmp/cc_${pid}_${ai}.txt`,
     '```',
     `Parse codex's JSON into VIS_SCHEMA. If none, timed_out=true.`,

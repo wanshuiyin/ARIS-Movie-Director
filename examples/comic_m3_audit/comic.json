@@ -78,8 +78,8 @@
       },
       "skill": "$ aris run --task dllm-schema-keyword-first --deadline 24h",
       "narration": {
-        "zh": "他把这一轮交给 ARIS，去睡了。蓝衣 executor、绿衣 reviewer 在笔记本里醒来。",
-        "en": "He hands the round to ARIS and goes to sleep. The blue executor and green reviewer wake inside the laptop."
+        "zh": "23:58，她按下 Enter，把最后 24 小时整个交了出去。ARIS 的自主交接从这一刻生效——此后每一个错误都没有人类兜底，得它自己抓出来。",
+        "en": "At 23:58 she hits Enter and hands over the entire final 24 hours. ARIS's autonomous hand-off begins here — from now on no human catches its mistakes; it must catch its own."
       },
       "panel_ids": [
         "S02"
@@ -144,7 +144,23 @@
       ],
       "bubbles": [],
       "overlays": [],
-      "caption": null
+      "caption": {
+        "zh": "离截止还有 24 小时。",
+        "en": "Twenty-four hours to the deadline."
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/s01_ddl_anchor_v1.svg",
+        "expected_literals": [
+          "DDL",
+          "T-24:00:00"
+        ],
+        "world": "warm",
+        "identity_ref": "assets/identity/researcher_chibi_canonical_ref_v001.png",
+        "identity_desc": "the researcher (she): black rectangular glasses slipping down her nose, dark short hair, plain black tee — exactly as in the reference",
+        "characters": "the researcher slumped at her desk, chin propped on one hand, EXHAUSTED, staring at a dark failed-run log on the laptop; her backpack slumped on the chair back; NO other characters (the duo does not exist yet in this panel)",
+        "scene": "late-night warm bedroom-study (density target cal_S12): Edison desk lamp over a desk buried in printed papers with red-pen margins; bookshelf spines legible 'LLM DECODING' / 'STRUCTURED OUTPUTS' / 'EVALS FIRST'; a hand-written TODO note 'better masks / schema locks / evals'; the laptop screen shows a DARK failed-experiment log (do NOT draw any aris command — that is the next panel); on the desk corner HER 'ML RESEARCH' mug HOT with two steady steam plumes (the film's temperature origin); a bright sticky note 'dllm-schema-keyword-first' on the monitor bezel (decorative, small); outside the window a COOL blue night-city skyline contrasts the warm room. The technical figure from image #1 (the amber DDL countdown chip 'DDL T-24:00:00') sits ON the desk beside the laptop as a small physical widget. COMPOSITION CONSTRAINT: this panel doubles as the COVER base — keep the LEFT 55% of the frame LOW-DETAIL (soft warm gradients, no text, no busy props) for the HTML title overlay; place ALL baked anchors (DDL chip, sticky notes, laptop, her) in the RIGHT half."
+      }
     },
     "S02": {
       "wiki_node_id": "panel:s02_aris_comic_v1",
@@ -183,38 +199,49 @@
       ],
       "bubbles": [
         {
-          "speaker": "user",
+          "speaker": "researcher",
           "style": "say",
-          "anchor": "tl",
-          "tail": "tl",
           "text": {
-            "zh": "这一轮交给 ARIS 了。我睡几个小时，明早上课。",
-            "en": "This round's on ARIS. I'll sleep a few hours — class in the morning."
+            "zh": "这一轮交给 ARIS 了，我去睡了。",
+            "en": "This round's on ARIS. I'm going to sleep."
           }
         },
         {
           "speaker": "executor",
           "style": "shout",
-          "anchor": "tc",
-          "tail": "tc",
           "text": {
-            "zh": "包在我们身上！",
-            "en": "Leave it to us!"
+            "zh": "交给我！",
+            "en": "Leave it to me!"
           }
         },
         {
           "speaker": "reviewer",
           "style": "terse",
-          "anchor": "tr",
-          "tail": "tr",
           "text": {
-            "zh": "别冲。",
-            "en": "Don't rush."
+            "zh": "我盯着。",
+            "en": "I'm watching."
           }
         }
       ],
       "overlays": [],
-      "caption": null
+      "caption": {
+        "zh": "23:58，她把最后 24 小时整个交了出去。",
+        "en": "At 23:58 she hands over the entire final 24 hours."
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/handoff_terminal_v1.svg",
+        "expected_literals": [
+          "T-24:00:00",
+          "ARIS ONLINE",
+          "$ aris run"
+        ],
+        "world": "seam",
+        "identity_ref": "assets/identity/trio_identity_sheet_v001.png",
+        "identity_desc": "LEFT of the ref sheet = the researcher (black glasses, dark short hair, black tee); RIGHT of the ref sheet = the ARIS duo (blue-hoodie executor: brown hair NO beard; green-hoodie reviewer: dark hair WITH beard)",
+        "characters": "the researcher on the WARM left side, fingers just lifted off the Enter key, tired but relieved, rising from the chair; on the DARK right side the duo wakes — the blue executor leaps with BOTH arms thrown up in his HIGHEST jump of the whole film (bounce MAX, the arc's origin), the green reviewer lands steady, arms crossed, eyes already locked on the terminal card",
+        "scene": "ONE panel split diagonally along the laptop screen into two worlds (ART_BIBLE §0.5 seam): LEFT half = the same warm bedroom at night (Edison lamp, the SAME 'ML RESEARCH' mug still HOT with two plumes — same heat as S01, no higher; a hand-written note 'submit / sleep'; backpack on the chair; cool blue night-city out the window); RIGHT half = the laptop screen torn open into the #0A0E27 dark-cyber void (neon grid floor, faint wiki glow, idea ghosts). The technical figure from image #1 (the HAND-OFF terminal card: '$ aris run --task dllm-schema-keyword-first --deadline 24h' + green 'ARIS ONLINE' stamp + amber DDL chip 'T-24:00:00') RIDES THE SEAM — half on her screen, half floating in the dark world (density target cal_S12 on both sides)."
+      }
     },
     "S12": {
       "wiki_node_id": "panel:s12_aris_comic_v1",
