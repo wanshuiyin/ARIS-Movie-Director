@@ -38,7 +38,7 @@
   .sidebar .foot{margin-top:auto;font-family:var(--mono);font-size:10.5px;color:#5b577d;}
   .single{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:2px solid #2a2a46;overflow:hidden;}
   .grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;background:var(--gutter);padding:8px;border:2px solid #2a2a46;}
-  .cell{position:relative;aspect-ratio:1/1;overflow:hidden;background:#000;}
+  .cell{position:relative;aspect-ratio:16/9;overflow:hidden;background:#000;}  /* 16:9 cells: panels are generated 16:9, so a square cell cropped off the wide diagrams' left/right. A 2x2 of 16:9 cells is ~16:9 overall (fits screen) and shows each panel in full. */
   .panel-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;}
   .bubble{position:absolute;max-width:46%;padding:9px 12px;z-index:3;background:var(--paper);color:var(--ink);
     border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(0,0,0,.55);border-radius:0;font-size:14px;line-height:1.5;font-weight:600;}
