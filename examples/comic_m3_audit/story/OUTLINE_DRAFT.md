@@ -1,4 +1,4 @@
-<!-- OUTLINE v2 — 3-lens debate → codex synthesis → codex design pass (B08 density + wiki) → user decisions. 2026-06-10. PENDING final user approval before storyboard. -->
+<!-- OUTLINE v2 — 3-lens debate → codex synthesis → codex design pass (B08 density + wiki) → user decisions. 2026-06-10. ✅ APPROVED by user 2026-06-10 ("都可以"): B08 5-page split + B09.5 wiki star-map page + side-narration rules. Now the SOURCE OF TRUTH for the storyboard layer. -->
 
 # 漫画大纲 v2 / Comic Outline — "ARIS：我把那 24 小时交出去了 / I Handed Over Those 24 Hours"
 
