@@ -1,5 +1,5 @@
 # 分镜稿 / STORYBOARD — 「ARIS：我把那 24 小时交出去了 / I Handed Over Those 24 Hours」
-storyboard layer draft v1 — revised per codex cross-model critique (verdict REVISE applied); PENDING USER APPROVAL before baking
+storyboard layer draft v1 — revised per codex cross-model critique (verdict REVISE applied); ✅ APPROVED by user 2026-06-10 ("批了") — asset-library build started
 PAGE ORDER (1/3): P00_cover[S01·full-bleed·cover base] → P01_b02[S02·single·in-panel seam split] → P02_b03[2-up: S03(L warm)|S04(R dark)] → P03_b04[S05·single] → P04_b05[S06·single] → P05_b06[vertical-3: S07 / S08 / S09 big-frame dominant bottom]
 PAGE ORDER (2/3): P06_b07[2-up mirror: S10(L)|S11(R)] → P_B08_0[S12a·single·NEW] → P_B08_1[S12·single·reuse] → P_B08_2[S13·single·reuse] → P_B08_3[S14·single·reuse] → P_B08_4[S15·single·reuse] → P02_b08[grid2x2 recap/hero: S12,S13,S14,S15·existing, kept]
 PAGE ORDER (3/3): P_B09[S16·single·mirror-of-S11] → P_B09_5[S16b·big-frame·wiki star-map] → P_B10[S17·single] → P_B11[2-up seam: S18(L warm)|S19(R dark)] → P_B12[2-up: S20(L warm)|S21(R seam)] → P03_end[S22·endcard·full-bleed]

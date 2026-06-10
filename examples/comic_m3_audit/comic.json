@@ -41,6 +41,13 @@
       "hoodie": "#30582D",
       "hair": "#0F0D16",
       "beard": true
+    },
+    "researcher": {
+      "ref": "assets/identity/researcher_chibi_canonical_ref_v001.png",
+      "glasses": "black rectangular frames",
+      "hair": "dark short",
+      "tee": "black",
+      "backpack_straps": true
     }
   },
   "pages": [
