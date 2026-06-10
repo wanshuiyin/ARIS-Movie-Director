@@ -86,6 +86,24 @@
       ]
     },
     {
+      "id": "P_B03",
+      "type": "grid",
+      "beat": "B03",
+      "beat_title": {
+        "zh": "B03 双线 · 人间∥空洞",
+        "en": "B03 Parallel · Her World ∥ The Void"
+      },
+      "skill": "idea-creator :: spread the possibilities",
+      "narration": {
+        "zh": "她回到人间上课，家里那杯咖啡的热气正一点点变淡；同一时刻，executor 在空洞里撒出 20 张想法卡。ARIS 不占用她的任何一分钟——代价是，接下来每个岔路口都没人替它拍板，而可能性铺得越多，等会儿被烧掉的也越多。",
+        "en": "She returns to class while the coffee back home loses its steam; at the same moment the executor fans 20 idea cards across the void. ARIS costs her zero minutes — the price: no one makes its calls at the forks ahead, and the more possibilities it spreads, the more will burn."
+      },
+      "panel_ids": [
+        "S03",
+        "S04"
+      ]
+    },
+    {
       "id": "P_B08_1",
       "type": "single",
       "beat": "B08",
@@ -529,6 +547,96 @@
       "bubbles": [],
       "overlays": [],
       "caption": null
+    },
+    "S03": {
+      "wiki_node_id": "panel:s03_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/s03_phone_lock_v1.svg",
+        "expected_literals": [
+          "ARIS RUNNING",
+          "T-19:42"
+        ],
+        "world": "warm",
+        "identity_ref": "assets/identity/researcher_chibi_canonical_ref_v001.png",
+        "identity_desc": "the researcher (she): black rectangular glasses, dark short hair, black tee — exactly as in the reference",
+        "characters": "ONLY the researcher (no duo): mid-row in a morning lecture hall, left hand pinning her notebook, right hand nudging her phone half-an-inch into the desk, forcing herself to focus while her eyes drift to the phone",
+        "scene": "warm morning lecture hall (density cal_S12): tiered seats, soft sunlight; her open notebook shows a readable doodle 'decoding order?'; the technical figure from image #1 (the glowing phone lock-screen card 'ARIS RUNNING' + amber DDL 'T-19:42') lies ON her desk, small but crisp and razor-sharp; in the lower-right corner a small WARM INSET window cuts back to her home desk — the same 'ML RESEARCH' mug in place, its steam now FADING to one thin wisp (time passing); out the lecture-hall window a cool blue daytime city skyline contrasts the warm room"
+      },
+      "bubbles": [
+        {
+          "speaker": "researcher",
+          "style": "thought",
+          "text": {
+            "zh": "专心上课……专心。",
+            "en": "Focus on class... focus."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "她回到人间上课。",
+        "en": "She returns to the human world."
+      }
+    },
+    "S04": {
+      "wiki_node_id": "panel:s04_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/idea_deck_20_v1.svg",
+        "expected_literals": [
+          "20 IDEAS",
+          "#01 schema-first",
+          "T-19:42"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the blue executor leaps at the center of the card fan, excitedly fanning the cards open like a card dealer — bounce HIGH but clearly LOWER than his hand-off MAX jump; the green reviewer stands at the bench edge already sorting cards into an order, brow slightly furrowed",
+        "scene": "the 'idea workshop' inside the #0A0E27 dark void (density cal_S12): a neon-edged generator bench, floating idea cards trailing light, dark shelf spines 'LLM DECODING' / 'IDEA SPACE' on a hovering rack, ONE small warm desk lamp breaking the cool gloom, neon grid floor converging to a vanishing point (background atmospheric gradients allowed). The technical figure from image #1 (the IDEA DECK fan: '20 IDEAS' badge, the single readable card '#01 schema-first', the amber DDL chip 'T-19:42') IS the centerpiece of the scene"
+      },
+      "bubbles": [
+        {
+          "speaker": "executor",
+          "style": "shout",
+          "text": {
+            "zh": "二十个方向，随便挑！",
+            "en": "Twenty directions — take your pick!"
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "先过查新，再说挑。",
+            "en": "Novelty check first. Then pick."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "同一时刻，空洞里撒出 20 张想法卡。",
+        "en": "At the same moment, twenty idea cards fan across the void."
+      }
     }
   }
 }
