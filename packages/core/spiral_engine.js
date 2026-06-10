@@ -366,10 +366,16 @@ async function runAssembly() {
   const ids = kept.map(k => k.pid).join(',')
   const textKey = pageMode === 'baked' ? '\\"baked_text_legibility\\":n' : '\\"text_fits_safezone\\":n'
   const textDesc = pageMode === 'baked' ? 'baked_text_legibility=各格烤字是否都清晰' : 'text_fits_safezone=各格留白是否够放气泡'
+  // CAST-AWARE assembly (fix after the false B03 rollback): a parallel 2-up may have DISJOINT casts and
+  // different worlds BY DESIGN — identity is judged per-character across the panels where that character
+  // appears (+ vs the identity refs), never penalised for a character being absent from a panel.
+  const castLines = kept.map(k => `${k.pid}=「${((CONFIG[k.pid] || {}).characters || (CONFIG[k.pid] || {}).identity_desc || 'the duo').slice(0, 90)}」`).join(' ')
+  const asmRefs = [...new Set(kept.map(k => { const r = (CONFIG[k.pid] || {}).identity_ref; return r && /^[\w][\w./-]*\.png$/.test(r) && !r.includes('..') ? `${PROJ}/${r}` : CANON }))].slice(0, 3)
+  const refsStr = asmRefs.map(r => `@${r}`).join(' ')
   const avis = agent([
     `You are the GEMINI visual reviewer for ARIS comic PAGE assembly (page ${PAGE}, mode=${pageMode}); judge the panels SIDE BY SIDE for cross-panel DRIFT. Watchdog CLI:`,
     '```bash',
-    `( gemini --model auto-gemini-3 -p "@${CANON} 这些是同一页并排的漫画格,顺序=[${ids}]: ${list} . 并排看跨格一致性。只输出一行JSON {\\"cross_panel_identity\\":n,\\"cross_panel_style\\":n,${textKey},\\"drift_panels\\":[\\"漂移格id\\"]} (0-5; identity=双人跨格是否同一身份;style=画风是否一致;${textDesc};drift_panels=列出明显与其他格不一致(身份断裂/画风跑偏)的格id如S14,没有就[])。gutter 容差:轻微光照差正常,只标可识别的断裂。" < /dev/null > /tmp/asm_${PAGE}.txt 2>&1 ) & P=$!`,
+    `( gemini --model auto-gemini-3 -p "${refsStr} 这些是同一页并排的漫画格,顺序=[${ids}]: ${list} . 每格的预期阵容: ${castLines} 。并排审跨格一致性。只输出一行JSON {\\"cross_panel_identity\\":n,\\"cross_panel_style\\":n,${textKey},\\"drift_panels\\":[\\"漂移格id\\"]} (0-5; identity=同一角色在TA出现的各格之间、以及与身份参考图,是否同一人——**阵容不同/某格没有某角色 = 分镜设计,绝不扣分**;style=像素画风是否同一部片——**冷暖世界差异是设计,不是漂移**;${textDesc};drift_panels=只列出现可识别角色断裂或画风崩坏的格id,没有就[])。" < /dev/null > /tmp/asm_${PAGE}.txt 2>&1 ) & P=$!`,
     `( sleep 240; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; tail -c 1400 /tmp/asm_${PAGE}.txt`,
     '```',
     `Parse into ASM_VIS_SCHEMA (timed_out=true if none; drift_panels = the panel ids that visibly drift from the rest).`,

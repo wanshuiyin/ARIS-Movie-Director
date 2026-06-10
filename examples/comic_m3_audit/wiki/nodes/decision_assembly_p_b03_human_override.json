@@ -1,0 +1,18 @@
+{
+ "node_id": "decision:assembly_p_b03_human_override",
+ "node_type": "decision",
+ "status": "final",
+ "title": "assembly P_B03 → HUMAN OVERRIDE accept (false drift: disjoint casts)",
+ "created_at": "2026-06-11T00:00:00+00:00",
+ "payload": {
+  "gate_kind": "assembly",
+  "target_node_id": "page:p_b03",
+  "verdict": "accept_by_human",
+  "reasoning": "assembly scored min=0 twice with IDENTICAL scores: cross-panel identity compared the duo across panels, but B03 is a PARALLEL 2-up with disjoint casts by design (S03 researcher-only / S04 duo-only). Panels individually passed the sound gate; human inspected both and accepted. Engine fix shipped: assembly reviewer now receives each panel's intended cast.",
+  "human": "user+claude 2026-06-11",
+  "kept": {
+   "S03": "S03_panel_a02.png",
+   "S04": "S04_panel_a01.png"
+  }
+ }
+}
