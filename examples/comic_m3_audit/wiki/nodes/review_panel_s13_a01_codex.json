@@ -9,13 +9,15 @@
     "reviewer": "codex",
     "gate_kind": "panel",
     "identity_consistency": 5,
-    "style_consistency": 4,
-    "composition_readability": 4,
+    "style_consistency": 5,
+    "composition_readability": 5,
     "artifact_severity": 1,
+    "baked_text_quality": 4,
+    "content_corruption_present": false,
     "safezone_present": true,
     "stray_text_present": false,
-    "failure_mode_positive_invariant": "双人身份锁定稳定：executor蓝帽衫棕发无须，reviewer绿帽衫黑发有络腮；无烤字，左上/左侧留白可承接HTML文字层",
     "timed_out": false,
-    "notes": "Codex vision review returned (GPT-5.5 xhigh) independent read of S13_panel_a01.png, CLI -i path, RC=0。双人身份锁定稳定：executor 为蓝帽衫棕发无须，reviewer 为绿帽衫黑发有络腮，与 identity_refs 一致，identity_consistency=5。像素霓虹风格整体统一、配色贴合基调，但背景 wiki/graph 透视层仍偏密，style_consistency=4。构图可读、视线导向被诊断的失败节点，composition_readability=4；上方左侧/左侧诊断标题安全区在我读图中干净可辨（safezone_present=true）。面板内未见模拟 wiki 字形/残留文本（stray_text_present=false），可干净承接 HTML 文本层。粒子与背景边缘有轻度伪影（artifact_severity=1），不影响主体。与 Gemini 在 identity 上零分歧（disagreeId=0）。正向不变量：双人身份锁定稳定，无烤字，左上/左侧留白可承接 HTML 文字层。"
+    "observed_literals": ["EVALUATOR INTEGRITY — sanitizer ≠ external validator", "same model outputs · two ways to SCORE them · the gap is an artifact", "model output (malformed)", "{\"c", "json_sanitizer", "jsonschema.validate", "1603", "+6.2", "+1.4", "+4.8"],
+    "notes": "Codex VISUAL second-model review completed (GPT-5.5 xhigh) independent read of S13_panel_a01.png, mode=baked-duo, CLI -i path, RC=0。双人身份锁稳定:executor 为蓝衣棕发无须,reviewer 为绿衣黑发有须,与 identity_refs 一致,identity_consistency=5。像素chibi风格整体统一、配色贴合霓虹基调,style_consistency=5。构图可读、视线导向双列分解对照(same model outputs · two ways to SCORE them · the gap is an artifact),核心数字 1603 / +6.2 / +1.4 / +4.8 与代码字面 json_sanitizer / jsonschema.validate 逐字可读,composition_readability=5。本稿为 baked-duo:baked CJK 气泡与技术图标题 EVALUATOR INTEGRITY、integrity caption 烤字清晰,语义正确、无内容变形 content_corruption_present=false;malformed-output 列内 '{\"c' 等截断 JSON 字形为预期内的'恶意/畸形输出'示意,非烤字错误,但其低密度字形边缘略有抖动使整体烤字质量 baked_text_quality=4。粒子与浮动面板边缘轻度伪影 artifact_severity=1。安全区保留 safezone_present=true,面板内无游离模拟字形 stray_text_present=false。与 Gemini 在 identity 上零分歧(disagreeId=0)。整体 KEEP 倾向:身份/构图/核心数字/标题语义全部稳,唯一扣分为 malformed-output 列字形边缘轻抖,不影响 catch beat 的可读性。"
   }
 }

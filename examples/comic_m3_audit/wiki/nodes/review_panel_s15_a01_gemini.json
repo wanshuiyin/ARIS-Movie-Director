@@ -11,11 +11,18 @@
     "identity_consistency": 5,
     "style_consistency": 5,
     "composition_readability": 5,
-    "artifact_severity": 5,
-    "safezone_present": true,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
+    "safezone_present": false,
     "stray_text_present": false,
-    "failure_mode_positive_invariant": "保持当前角色边缘的硬像素处理与背景大气光效的清晰分层",
+    "observed_literals": [
+      "VERDICT - WARN_corrected",
+      "WARN_corrected",
+      "claim_id"
+    ],
+    "failure_mode_positive_invariant": "保持当前 baked-duo 排版：'VERDICT - WARN_corrected' 标题 + WARN_corrected 戳记 + claim_id/research-wiki 记录三段清晰分区，角色 flat 像素与深蓝 wiki 背景渐变氛围光的组合维持不变。",
     "timed_out": false,
-    "notes": "Gemini (auto-gemini-3) visual review of S15_panel_a01.png vs duo_canonical_ref。双人身份（executor 与 reviewer 各自帽衫配色、黑发、reviewer 络腮胡）在像素风格下完全稳定，与 identity_refs 一致，identity_consistency=5。像素霓虹风格统一，深蓝 wiki void 背景与角色边缘的硬像素处理、背景大气光效形成清晰分层，style_consistency=5。构图清晰、视线导向干净，中心到右侧留白可承接 HTML 文字层，composition_readability=5。未见冒出可读文字/伪代码字形（stray_text_present=false），背景与角色边缘干净、无明显噪点或拼接伪影（artifact_severity=5）。已预留干净文字安全区（safezone_present=true）。failure_mode_positive_invariant：保持当前角色边缘的硬像素处理与背景大气光效的清晰分层。视觉层面无需返工——本面板的 retry 触发来自 CC 叙事节拍读数（narrative_beat_fidelity=3），非视觉缺陷。"
+    "notes": "Gemini auto-gemini-3 visual review of panels/S15_panel_a01.png (baked-duo 面板)。executor 蓝 hoodie 棕发无须、reviewer 绿 hoodie 黑发有须双人身份与 duo_canonical_ref 完全一致，identity_consistency=5。像素霓虹风格统一、深蓝 wiki 空间与中心 verdict/claim-audit 可视化配色贴合基调，style_consistency=5。构图可读、视线导向中心 verdict 戳记与 wiki 写入动作，composition_readability=5。本面板为 is_baked_duo=true，刻意烘焙的英文文案清晰可读、拼写正确、版式整齐，baked_text_quality=5；observed_literals=['VERDICT - WARN_corrected','WARN_corrected','claim_id'] 与 S15 B08 通胀审计裁决/收尾语义一致，无错别字/无语义损坏，content_corruption_present=false。无非预期杂散字形（stray_text_present=false），无明显噪点或拼接伪影，artifact_severity=0。文字密度较高、未额外预留独立 HTML 文字净空区（safezone_present=false），属 baked-duo 设计内可接受。正向不变量：保持当前 baked-duo 三段分区与角色 flat 像素 + 背景渐变氛围光组合。"
   }
 }

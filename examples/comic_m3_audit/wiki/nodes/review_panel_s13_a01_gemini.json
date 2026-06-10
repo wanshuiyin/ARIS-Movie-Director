@@ -12,10 +12,13 @@
     "style_consistency": 5,
     "composition_readability": 5,
     "artifact_severity": 0,
-    "safezone_present": true,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
     "stray_text_present": false,
-    "failure_mode_positive_invariant": "none",
+    "safezone_present": true,
     "timed_out": false,
-    "notes": "GEMINI VISUAL reviewer for S13_panel_a01.png. The gemini CLI path failed: its worker returned no usable read on this invocation, so scores below are the transcribed Gemini visual verdict from the working fallback read. 双人身份在像素风格下保持稳定：蓝衣 executor（棕发无须）与绿衣 reviewer（黑发络腮）区分清晰，与 duo_canonical_ref 一致，identity_consistency=5。像素霓虹风格统一，背景 wiki/graph 层密度收敛，未与前景抢位，style_consistency=5。构图可读、视线导向被诊断的失败节点，composition_readability=5。无明显伪影（artifact_severity=0），上方左侧/左侧诊断标题安全区干净留白（safezone_present=true），面板内未出现模拟 wiki 字形/残留文本（stray_text_present=false），可干净承接 HTML 文本层。failure_mode_positive_invariant=none（无需修复不变量）。[transcribed Gemini visual verdict; gemini CLI read unavailable this run]"
+    "observed_literals": ["+6.2", "+1.4", "+4.8", "json_sanitizer", "jsonschema.validate", "1603", "EVALUATOR INTEGRITY", "sanitizer != external validator", "model output (malformed)"],
+    "failure_mode_positive_invariant": "baked-duo 技术对比图渲染干净:双列对照(json_sanitizer vs jsonschema.validate)、核心数字 1603 / +6.2 / +1.4 / +4.8 与标题 EVALUATOR INTEGRITY 全部逐字烤字正确、无拼写偏差、无杂散字形——保持这种低密度双列对照布局 + 充足安全区的烤字方式。",
+    "notes": "Gemini auto-gemini-3 VISUAL review of S13_panel_a01.png, mode=baked-duo。双人身份在像素chibi风格下保持稳定:executor(蓝衣+棕发+无须)与reviewer(绿衣+黑发+有须)区分清晰,与 duo_canonical_ref 一致,identity_consistency=5。像素霓虹风格统一、配色与构图层次贴合基调,style_consistency=5。技术对比图可读、视线导向清晰(duo -> 双列分解对照 -> integrity caption),核心数字 1603 / +6.2 / +1.4 / +4.8 与代码字面 json_sanitizer / jsonschema.validate 逐字可读,composition_readability=5。无肢体崩坏/融合伪影,artifact_severity=0。本稿为 baked-duo:baked CJK 气泡与技术图英文(标题 EVALUATOR INTEGRITY 拼写正确、'sanitizer != external validator' caption)烤字清晰高质,baked_text_quality=5,content_corruption_present=false。安全区保留 safezone_present=true;无游离 HTML-冲突字形 stray_text_present=false。正向不变量:双列对照低密度烤字布局应保持。[transcribed from gemini auto-gemini-3 CLI read, RC=0]"
   }
 }

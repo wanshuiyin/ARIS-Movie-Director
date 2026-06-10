@@ -8,6 +8,6 @@
     "active": true,
     "affected_shot_ids": ["S13"],
     "layer": "panel_visual",
-    "repair_pattern": "蓝棕无须executor与绿黑有须reviewer身份锁成立，像素chibi与深蓝wiki空间一致；主要风险是顶部/左侧留白偏大但可作为HTML文字安全区。"
+    "repair_pattern": "双人身份锁成立(executor 蓝/棕/无须左, reviewer 绿/黑/络腮须右, 对齐 canonical ref); 气泡中文烤字清晰无乱码; 技术图核心对比可读且数值内部自洽 —— reported +6.2 (INFLATED) − true +1.4 (REAL) = +4.8 gap label 一致, 恰是 sanitizer self-repair artifact 的正确叙事。malformed {\"city\":\"Tok|yo\"} 是 by-design 的 bug 演示, 非乱码。"
   }
 }

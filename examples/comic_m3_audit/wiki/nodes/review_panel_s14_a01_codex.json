@@ -8,14 +8,20 @@
     "target_node_id": "attempt:s14_a01",
     "reviewer": "codex",
     "gate_kind": "panel",
-    "identity_consistency": 4,
-    "style_consistency": 4,
+    "identity_consistency": 5,
+    "style_consistency": 5,
     "composition_readability": 4,
-    "artifact_severity": 2,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
     "safezone_present": false,
-    "stray_text_present": true,
-    "failure_mode_positive_invariant": "reviewer绿 hoodie、黑发、有须身份稳定；中心紫色wiki光核和像素终端氛围可保留，但需清掉伪代码字形并预留低细节文字安全区",
+    "stray_text_present": false,
+    "observed_literals": [
+      "HONEST RE-EVAL - the gap collapses",
+      "re-score with raw json.loads + jsonschema"
+    ],
     "timed_out": false,
-    "notes": "Codex visual review returned (GPT-5.5 xhigh) independent read of S14_panel_a01.png, CLI -i path, RC=0。reviewer 绿帽衫、黑发、有络腮身份在像素风格下稳定，与 identity_refs 基本一致，identity_consistency=4。像素霓虹风格整体统一、深蓝 wiki 空间与中心紫色 I-K3 光核配色贴合，但背景终端 UI 层偏密，style_consistency=4。构图可读、视线导向中心 wiki 光核与 K3->I-K3 升级动作，composition_readability=4。面板内终端/浮窗出现模拟伪代码字形与残留文本（stray_text_present=true），违反 ART_BIBLE 禁止可读字形规则；当前未预留干净文字安全区（safezone_present=false）。字形噪点与背景边缘构成中度伪影（artifact_severity=2）。与 Gemini 在 identity 上有 1 分分歧（Gemini=5 / Codex=4，disagreeId=1）。正向不变量：reviewer 绿 hoodie、黑发、有须身份稳定；中心紫色 wiki 光核和像素终端氛围可保留，但需清掉伪代码字形并预留低细节文字安全区。"
+    "failure_mode_positive_invariant": "executor=blue hoodie+brown hair+no beard, reviewer=green hoodie+near-black hair+beard; pixel chibi; baked English caption legible+correct ('HONEST RE-EVAL', 'the gap collapses', 'raw json.loads + jsonschema'); keep three-band layout.",
+    "notes": "Codex visual review returned (GPT-5.5 xhigh) independent read of panels/S14_panel_a01.png, CLI -i path, RC=0。本面板 is_baked_duo=true。executor 蓝 hoodie 棕发无须、reviewer 绿 hoodie 黑发有须双人身份在像素风格下稳定，与 identity_refs 一致，identity_consistency=5。像素霓虹风格整体统一、深蓝 wiki 空间与中心坍缩间隙可视化配色贴合，style_consistency=5。构图可读、视线导向中心坍缩间隙与 honest re-eval 动作，composition_readability=4。刻意烘焙的英文文案清晰、拼写正确、无字形损坏，baked_text_quality=5；observed_literals=['HONEST RE-EVAL - the gap collapses','re-score with raw json.loads + jsonschema']，与 B08 通胀审计高潮语义一致，content_corruption_present=false。无非预期杂散字形（stray_text_present=false），近乎无字形噪点，artifact_severity=1（极轻微）。文字密度较高、未额外预留独立 HTML 文字净空区（safezone_present=false），但属 baked-duo 设计内可接受。与 Gemini 在 identity 上完全一致（均=5，disagreeId=0）。正向不变量：双人身份锚定 + baked 英文文案可读正确 + 三段分区版式保持。"
   }
 }

@@ -12,10 +12,12 @@
     "style_consistency": 4,
     "composition_readability": 4,
     "artifact_severity": 1,
-    "safezone_present": true,
-    "stray_text_present": false,
-    "failure_mode_positive_invariant": "蓝棕无须executor与绿黑有须reviewer身份锁成立，像素chibi与深蓝wiki空间一致；主要风险是顶部/左侧留白偏大但可作为HTML文字安全区。",
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
+    "safezone_present": false,
+    "stray_text_present": true,
     "timed_out": false,
-    "notes": "CODEX VISUAL reviewer (GPT-5.5 xhigh) independent read of S13_panel_a02.png, CLI -i path, RC=0. 双人身份锁正确：蓝衣棕发无须者为 executor，绿衣黑发有须者为 reviewer，与 identity_refs 一致，identity_consistency=5。像素 chibi 风格与 dark_navy wiki 空间整体一致，配色贴合基调，style_consistency=4。构图可读、视线从角色导向被检视的 failure trace，composition_readability=4。伪影轻微（artifact_severity=1），无肢体崩坏/融合，未见独立失控的烤字或模拟字形（stray_text_present=false），左上/顶部深色留白可辨、可承接 HTML 文本层（safezone_present=true）。正向不变量：蓝棕无须 executor 与绿黑有须 reviewer 身份锁成立，像素 chibi 与深蓝 wiki 空间一致；主要风险是顶部/左侧留白偏大但可作为 HTML 文字安全区。"
+    "observed_literals": ["EVALUATOR INTEGRITY — sanitizer ≠ external validator", "reported +6.2 (INFLATED)", "true +1.4 (REAL)", "+4.8 gap", "{\"city\":\"Tok|yo\"}"],
+    "notes": "Codex VISUAL second-model review completed (GPT-5.5 xhigh) independent read of S13_panel_a02.png, mode=baked, CLI -i path, RC=0。双人身份锁稳定：executor 为蓝衣棕发无须（左），reviewer 为绿衣黑发络腮须（右），与 identity_refs/duo_canonical_ref 一致，identity_consistency=5。像素chibi风格整体统一、配色贴合霓虹基调，但技术分解图网格与背景透视层偏密，style_consistency=4。构图可读、视线从角色导向分解图表，核心对比 reported +6.2 (INFLATED) − true +1.4 (REAL) = +4.8 gap 逐字可读且内部自洽，composition_readability=4。baked CJK 气泡与数字拼写清晰、质量高，baked_text_quality=5；标题烤为 'EVALUATOR INTEGRITY — sanitizer ≠ external validator'，无拼写变形 content_corruption_present=false（malformed {\"city\":\"Tok|yo\"} 是 by-design 的 bug 演示，非乱码）。面板内除 baked 文本外仍有零星模拟字形残留 stray_text_present=true；安全区被 baked 标题与分解图占据 safezone_present=false（baked 模式预期内）。伪影轻微 artifact_severity=1，无肢体崩坏/融合。与 Gemini 在 identity 上零分歧（disagreeId=0）。整体 RETRY 倾向：身份/核心对比稳，技术图层略密，建议轻量化网格再重烤一版。"
   }
 }

@@ -10,12 +10,19 @@
     "gate_kind": "panel",
     "identity_consistency": 5,
     "style_consistency": 5,
-    "composition_readability": 4,
-    "artifact_severity": 0,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
     "safezone_present": true,
     "stray_text_present": false,
-    "failure_mode_positive_invariant": "双人配色/胡子身份锁定正确,像素chibi稳定,中心到右侧留白干净可承接HTML文字层",
+    "observed_literals": [
+      "CLAIM AUDIT",
+      "RESEARCH WIKI",
+      "VERDICT - WARN_corrected"
+    ],
     "timed_out": false,
-    "notes": "Codex visual review of panels/S15_panel_a01.png (GPT-5.5 xhigh) independent read, CLI -i path, RC=0。双人身份锁定正确：executor 与 reviewer 帽衫配色、黑发、reviewer 络腮胡均与 identity_refs 一致，identity_consistency=5。像素 chibi 风格稳定、深蓝 wiki void 与霓虹配色统一，style_consistency=5。构图可读、视线导向干净，中心到右侧留白干净可承接 HTML 文字层，composition_readability=4（轻微扣分：左侧细节略密，但不挤占文字安全区）。未见可读文字/伪代码字形（stray_text_present=false），无明显伪影（artifact_severity=0）。已预留干净文字安全区（safezone_present=true）。与 Gemini 在 identity 上零分歧（Gemini=5 / Codex=5，disagreeId=0）。正向不变量：双人配色/胡子身份锁定正确,像素chibi稳定,中心到右侧留白干净可承接HTML文字层。视觉无返工项——retry 由 CC 叙事读数驱动。"
+    "failure_mode_positive_invariant": "executor=blue hoodie+brown hair+no beard, reviewer=green hoodie+near-black hair+beard; pixel chibi; baked English caption legible+correct ('CLAIM AUDIT', 'RESEARCH WIKI', 'VERDICT - WARN_corrected'); keep three-band layout + clean text safezone.",
+    "notes": "Codex visual review returned (GPT-5.5 xhigh) independent read of panels/S15_panel_a01.png, CLI -i path, RC=0。本面板 is_baked_duo=true。executor 蓝 hoodie 棕发无须、reviewer 绿 hoodie 黑发有须双人身份在像素风格下稳定，与 identity_refs 一致，identity_consistency=5。像素霓虹风格整体统一、深蓝 wiki 空间与中心 claim-audit/verdict 可视化配色贴合，style_consistency=5。构图可读、视线导向中心 verdict 戳记与 research-wiki 写入动作，composition_readability=5。刻意烘焙的英文文案清晰、拼写正确、无字形损坏，baked_text_quality=5；observed_literals=['CLAIM AUDIT','RESEARCH WIKI','VERDICT - WARN_corrected']，与 B08 通胀审计裁决/收尾语义一致，content_corruption_present=false。无非预期杂散字形（stray_text_present=false），近乎无字形噪点，artifact_severity=1（极轻微）。已预留干净文字安全区（safezone_present=true）。与 Gemini 在 identity 上完全一致（均=5，disagreeId=0）。正向不变量：双人身份锚定 + baked 英文文案可读正确 + 三段分区版式 + 文字安全区保持。"
   }
 }

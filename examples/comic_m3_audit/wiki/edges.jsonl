@@ -1,0 +1,26 @@
+{"src": "attempt:s12_a01", "dst": "panel:s12_aris_comic_v1", "type": "attempt_of"}
+{"src": "review:panel_s12_a01_cc", "dst": "attempt:s12_a01", "type": "reviews", "reviewer": "cc"}
+{"src": "review:panel_s12_a01_gemini", "dst": "attempt:s12_a01", "type": "reviews", "reviewer": "gemini"}
+{"src": "review:panel_s12_a01_codex", "dst": "attempt:s12_a01", "type": "reviews", "reviewer": "codex"}
+{"src": "decision:panel_s12_a01", "dst": "attempt:s12_a01", "type": "decides", "verdict": "keep"}
+{"src": "attempt:s13_a01", "dst": "panel:s13_aris_comic_v1", "type": "attempt_of"}
+{"src": "review:panel_s13_a01_cc", "dst": "attempt:s13_a01", "type": "reviews", "reviewer": "cc"}
+{"src": "review:panel_s13_a01_gemini", "dst": "attempt:s13_a01", "type": "reviews", "reviewer": "gemini"}
+{"src": "review:panel_s13_a01_codex", "dst": "attempt:s13_a01", "type": "reviews", "reviewer": "codex"}
+{"src": "decision:panel_s13_a01", "dst": "attempt:s13_a01", "type": "decides", "verdict": "keep"}
+{"src": "attempt:s13_a02", "dst": "panel:s13_aris_comic_v1", "type": "attempt_of"}
+{"src": "review:panel_s13_a02_cc", "dst": "attempt:s13_a02", "type": "reviews", "reviewer": "cc"}
+{"src": "review:panel_s13_a02_gemini", "dst": "attempt:s13_a02", "type": "reviews", "reviewer": "gemini"}
+{"src": "review:panel_s13_a02_codex", "dst": "attempt:s13_a02", "type": "reviews", "reviewer": "codex"}
+{"src": "decision:panel_s13_a02", "dst": "attempt:s13_a02", "type": "decides", "verdict": "retry_panel"}
+{"src": "fail:s13_a02", "dst": "attempt:s13_a02", "type": "failure_of"}
+{"src": "attempt:s14_a01", "dst": "panel:s14_aris_comic_v1", "type": "attempt_of"}
+{"src": "review:panel_s14_a01_cc", "dst": "attempt:s14_a01", "type": "reviews", "reviewer": "cc"}
+{"src": "review:panel_s14_a01_gemini", "dst": "attempt:s14_a01", "type": "reviews", "reviewer": "gemini"}
+{"src": "review:panel_s14_a01_codex", "dst": "attempt:s14_a01", "type": "reviews", "reviewer": "codex"}
+{"src": "decision:panel_s14_a01", "dst": "attempt:s14_a01", "type": "decides", "verdict": "keep"}
+{"src": "attempt:s15_a01", "dst": "panel:s15_aris_comic_v1", "type": "attempt_of"}
+{"src": "review:panel_s15_a01_cc", "dst": "attempt:s15_a01", "type": "reviews", "reviewer": "cc"}
+{"src": "review:panel_s15_a01_gemini", "dst": "attempt:s15_a01", "type": "reviews", "reviewer": "gemini"}
+{"src": "review:panel_s15_a01_codex", "dst": "attempt:s15_a01", "type": "reviews", "reviewer": "codex"}
+{"src": "decision:panel_s15_a01", "dst": "attempt:s15_a01", "type": "decides", "verdict": "keep"}

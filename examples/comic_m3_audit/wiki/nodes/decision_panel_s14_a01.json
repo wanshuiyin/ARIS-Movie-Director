@@ -2,13 +2,13 @@
   "node_id": "decision:panel_s14_a01",
   "node_type": "decision",
   "status": "final",
-  "title": "panel_gate S14 a1 → retry_panel",
+  "title": "panel_gate S14 a1 → keep",
   "created_at": "2026-06-08T00:00:00+00:00",
   "payload": {
     "gate_kind": "panel",
     "target_node_id": "attempt:s14_a01",
-    "verdict": "retry_panel",
-    "reasoning": "RETRY — narr=4.5 identity=4 style=4/5 comp=4/4 art(g/c)=2/2 safezone=false stray=true disagreeId=1",
-    "repair_instruction": "reviewer绿 hoodie、黑发、有须身份稳定；中心紫色wiki光核和像素终端氛围可保留，但需清掉伪代码字形并预留低细节文字安全区"
+    "verdict": "keep",
+    "reasoning": "KEEP — [baked] narr=4 identity=5 style=5/5 comp=4/5 art(g/c)=1/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[] disagreeId=0",
+    "repair_instruction": ""
   }
 }

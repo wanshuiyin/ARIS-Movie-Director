@@ -12,10 +12,12 @@
     "style_consistency": 5,
     "composition_readability": 5,
     "artifact_severity": 5,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
     "safezone_present": true,
     "stray_text_present": false,
-    "failure_mode_positive_invariant": "继续锁定角色色块采样与胡子特征，维持左上角深色区域无细节以确保双语文字可读性。",
     "timed_out": false,
-    "notes": "Gemini auto-gemini-3 visual review of S13_panel_a02.png。双人身份在像素风格下保持稳定：蓝衣 executor 与绿衣 reviewer 区分清晰，发色、轮廓与胡子特征与 duo_canonical_ref 一致，identity_consistency=5。像素风格自洽、硬边离散、配色贴合 dark_navy_void 基调，style_consistency=5。构图可读、视线导向被检视的 failure trace，composition_readability=5；左上角深色区域保持纯净、无细节，可承接双语系统叠层文字，safezone_present=true。未见模拟字形泄漏，stray_text_present=false。但本稿仍判定存在最严重级别的像素风格性伪影 artifact_severity=5（最差），故未通过。修复正向不变量：继续锁定角色色块采样与胡子特征，维持左上角深色区域无细节以确保双语文字可读性。[transcribed from gemini auto-gemini-3 CLI read, RC=0]"
+    "observed_literals": ["EVALUATOR INTEGRITY", "sanitizer", "external validator", "+6.2", "+1.4", "+4.8", "{\"city\":\"Tok|yo\"}"],
+    "notes": "Gemini auto-gemini-3 VISUAL review of S13_panel_a02.png, mode=baked。双人身份在像素chibi风格下保持稳定：executor（蓝衣+棕发+无须，左）与reviewer（绿衣+黑发+络腮须，右）区分清晰，与duo_canonical_ref一致，identity_consistency=5。像素霓虹风格统一、配色与构图层次贴合基调，style_consistency=5。技术图可读、视线导向清晰（duo → 分解图表 → caution），核心对比 reported +6.2 / true +1.4 / +4.8 gap 逐字可读且内部自洽，composition_readability=5。baked CJK 气泡与技术图数字拼写清晰、质量高，baked_text_quality=5；标题烤为 'EVALUATOR INTEGRITY — sanitizer ≠ external validator'，无拼写偏差，content_corruption_present=false（malformed {\"city\":\"Tok|yo\"} 属 by-design 的 bug 演示，非乱码）。安全区保留 safezone_present=true；无游离模拟字形 stray_text_present=false。本稿仍判定存在最严重级别的像素风格性伪影 artifact_severity=5（最差），故未通过。[transcribed from gemini auto-gemini-3 CLI read, RC=0]"
   }
 }

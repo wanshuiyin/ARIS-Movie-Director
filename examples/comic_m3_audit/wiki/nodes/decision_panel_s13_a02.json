@@ -2,13 +2,13 @@
   "node_id": "decision:panel_s13_a02",
   "node_type": "decision",
   "status": "final",
-  "title": "panel_gate S13 a2 → rollback",
+  "title": "panel_gate S13 a2 → retry_panel",
   "created_at": "2026-06-08T00:00:00+00:00",
   "payload": {
     "gate_kind": "panel",
     "target_node_id": "attempt:s13_a02",
-    "verdict": "rollback",
-    "reasoning": "ROLLBACK — identity/style/artifact break (narr=4 identity=5 style=4 comp=4 worstArt=5 safezone=true stray=false disagree=0)",
-    "repair_instruction": "蓝棕无须executor与绿黑有须reviewer身份锁成立，像素chibi与深蓝wiki空间一致；主要风险是顶部/左侧留白偏大但可作为HTML文字安全区。"
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — [baked] narr=5 identity=5 style=4/5 comp=4/5 art(g/c)=5/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[jsonschema] disagreeId=0",
+    "repair_instruction": "双人身份锁成立(executor 蓝/棕/无须左, reviewer 绿/黑/络腮须右, 对齐 canonical ref); 气泡中文烤字清晰无乱码; 技术图核心对比可读且数值内部自洽 —— reported +6.2 (INFLATED) − true +1.4 (REAL) = +4.8 gap label 一致, 恰是 sanitizer self-repair artifact 的正确叙事。malformed {\"city\":\"Tok|yo\"} 是 by-design 的 bug 演示, 非乱码。"
   }
 }

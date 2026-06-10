@@ -2,13 +2,13 @@
   "node_id": "decision:panel_s15_a01",
   "node_type": "decision",
   "status": "final",
-  "title": "panel_gate S15 a1 → retry_panel",
+  "title": "panel_gate S15 a1 → keep",
   "created_at": "2026-06-08T00:00:00+00:00",
   "payload": {
     "gate_kind": "panel",
     "target_node_id": "attempt:s15_a01",
-    "verdict": "retry_panel",
-    "reasoning": "RETRY — narr=3 identity=5 style=5/5 comp=4/5 art(g/c)=5/0 safezone=true stray=false disagreeId=0",
-    "repair_instruction": "双人配色/胡子身份锁定正确,像素chibi稳定,中心到右侧留白干净可承接HTML文字层"
+    "verdict": "keep",
+    "reasoning": "KEEP — [baked] narr=5 identity=5 style=5/5 comp=5/5 art(g/c)=0/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[] disagreeId=0",
+    "repair_instruction": ""
   }
 }
