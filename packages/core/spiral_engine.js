@@ -9,8 +9,11 @@ export const meta = {
 
 // The engine runs in the Workflow sandbox (NO process.env / fs) → paths MUST come from `args`, not env.
 // Caller passes args.projectRoot = ABSOLUTE path to the project/example dir (manifest-driven). No hardcoded paths.
-const PROJ = (args && args.projectRoot) || ''
-const REPO = (args && args.repoRoot) || PROJ.replace(/\/examples\/[^/]+\/?$/, '')
+// The Workflow harness has been observed to deliver `args` as a raw JSON STRING (not a parsed object) —
+// every key read off it silently came back undefined and the engine ran its defaults. Normalize once:
+const ARGS = (() => { if (typeof args === 'string') { try { return JSON.parse(args) } catch { return {} } } return args || {} })()
+const PROJ = ARGS.projectRoot || ''
+const REPO = ARGS.repoRoot || PROJ.replace(/\/examples\/[^/]+\/?$/, '')
 const SEEDS = PROJ + '/seeds'
 const PANELS = PROJ + '/panels'
 const NODES = PROJ + '/wiki/nodes'
@@ -20,10 +23,10 @@ const COMICJSON = PROJ + '/comic.json'
 const STORY = COMICJSON  // comic.json carries per-panel beat/narration/dialogue (replaces the video storyboard)
 
 // P0 default target = the B08 audit page (the centerpiece, 4 panels). Override via args.panelIds.
-const PAGE = (args && args.page) || 'P02_b08'
+const PAGE = ARGS.page || 'P02_b08'
 // panelIds accepts an ARRAY or a COMMA-STRING ("S01,S02") — array args have been observed not to forward
 // through some Workflow harness paths, so the string form is the reliable override.
-const _rawIds = args && args.panelIds
+const _rawIds = ARGS.panelIds
 const PANEL_IDS = Array.isArray(_rawIds) ? _rawIds
   : (typeof _rawIds === 'string' && _rawIds.trim() ? _rawIds.split(',').map(s => s.trim()).filter(Boolean) : ['S12', 'S13', 'S14', 'S15'])
 // fail fast: PAGE + every panel id flow into shell paths, /tmp filenames and wiki node filenames → whitelist them up front
@@ -32,7 +35,7 @@ if (!ID_RE.test(PAGE) || !Array.isArray(PANEL_IDS) || !PANEL_IDS.every(p => type
   throw new Error(`unsafe page/panelIds (must match ${ID_RE}): page=${JSON.stringify(PAGE)} panelIds=${JSON.stringify(PANEL_IDS)}`)
 }
 const MAX_TOTAL = 4, MAX_ROLLBACKS = 6   // per-panel bakes in the main loop / extra repair rounds at assembly (unified budget = MAX_TOTAL + MAX_ROLLBACKS)
-const FINALIZE = (args && args.finalize === true) || false
+const FINALIZE = ARGS.finalize === true
 const absImg = (p) => !p ? '' : (p.startsWith('/') ? p : PROJ + '/' + p)  // resolve panel image path (abs or project-rel) — one helper
 // throttle = the DETERMINISTIC class set by the bash wrapper (failure_kind), with the old prose regex only as a fallback
 const isThrottle = (gen, reason) => gen?.failure_kind === 'throttle' || (!gen?.failure_kind && /rate|limit|throttl|server|unavailable|429|quota/i.test(reason || ''))
@@ -149,7 +152,7 @@ const ASM_VIS_SCHEMA = { type: 'object', properties: { cross_panel_identity: SCO
 // content_svg → a deterministic PNG blueprint, then bakes ONE comic panel with codex image_gen using EXACTLY TWO refs
 // (the blueprint #1 + the canonical duo #2 — a 3rd ref dilutes identity). The blueprint is the CONTENT AUTHORITY: its
 // numbers/labels/code are ground truth and must survive verbatim (verified in STEP 4 = the gate's faithfulness contract).
-const BAKE_LANG = (args && args.bakeLang) || 'zh'   // which bubble language to bake (image bakes one); zh proven clean
+const BAKE_LANG = ARGS.bakeLang || 'zh'   // which bubble language to bake (image bakes one); zh proven clean
 
 // loadConditions: read comic.json ONCE (the sandbox has no fs) → structured per-panel config. This is the source of truth
 // for text_mode + expected_literals + concrete scene/bubbles (so the gen command has NO placeholders for an agent to fill).
@@ -301,7 +304,7 @@ phase('Panels')
 // + the concrete scene/bubbles the gen command interpolates — so the gate's mode + faithfulness check can't be bypassed.
 let CONFIG = (await loadConditions())?.panels || {}
 if (CONFIG.panels && !CONFIG[PANEL_IDS[0]]) CONFIG = CONFIG.panels   // tolerate the agent double-wrapping its output as {panels:{panels:{...}}}
-log(`args.projectRoot=${args?.projectRoot ? 'set' : 'MISSING'} args.panelIds=${JSON.stringify(args?.panelIds)} PANEL_IDS=${JSON.stringify(PANEL_IDS)} | loaded cfg keys: ${Object.keys(CONFIG).join(' ') || '(NONE)'}`)
+log(`args(typeof ${typeof args}) projectRoot=${ARGS.projectRoot ? 'set' : 'MISSING'} panelIds=${JSON.stringify(ARGS.panelIds)} PANEL_IDS=${JSON.stringify(PANEL_IDS)} | loaded cfg keys: ${Object.keys(CONFIG).join(' ') || '(NONE)'}`)
 let kept = []
 const totalByPanel = {}, pending = {}
 let escalated = null, throttled = false
