@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/wanshuiyin/ARIS-Movie/schemas/node_schema_v2.json",
-  "title": "ARIS-Movie Node Schema v2.1 (spiral patch)",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/schemas/node_schema_v2.json",
+  "title": "ARIS-Movie-Director Node Schema v2.1 (spiral patch)",
   "description": "Schema for every node stored under movie-wiki/nodes/<node_id>.json. v2.0 supports ARIS-Movie v4's 3-layer architecture (intent/outline/storyboard+shot) plus v3.5 legacy types for backward compatibility. v3.5 -> v4 migration map: movie_brief->intent, character/location->asset, segment_attempt/accepted->clip_attempt/accepted, segment_intent->shot. The node_type string 'storyboard' is shared between v1.1 (lineage+beat_list) and v4 (shot_ids) shapes via an inner oneOf in payload_storyboard. See ARCHITECTURE.md section 4 for full migration rules.\n\nv2.1 (2026-05-26) adds the spiral patch: new node type `assembly_attempt`, extended decision verdict enum (continue_forward / rollback_to_shot / rewrite_storyboard_from / final_accept / escalate_to_human), extended failure_mode payload (encoding_style positive_invariant, semantic_signature, occurrence_count, layer/scope), extended clip_accepted (acceptance_stage). New $defs: cc_narrative_assembly_scores, gemini_visual_assembly_scores, payload_assembly_attempt. See ARCHITECTURE.md §16.",
   "type": "object",
   "required": [
@@ -47,7 +47,8 @@
         "clip_accepted",
         "audio_profile",
         "service_job",
-        "assembly_attempt"
+        "assembly_attempt",
+        "panel_attempt"
       ],
       "description": "Node type tag. v1.1 (15 types, kept for backward compatibility): movie_brief, storyboard, segment_intent, prompt_bundle, segment_attempt, segment_accepted, review, decision, character, location, style_anchor, continuity_constraint, failure_mode, baseline_run, comparison. v4 new (11 types): intent, outline, asset, asset_review, shot, frame_condition, continuity_anchor, clip_attempt, clip_accepted, audio_profile, service_job. 'storyboard' is shared between v1.1 and v4 — payload_storyboard uses an inner oneOf to accept either shape."
     },
@@ -70,9 +71,11 @@
         "cancelled",
         "superseded_by_rollback",
         "assembly_checked",
-        "final_accepted"
+        "final_accepted",
+        "complete",
+        "final"
       ],
-      "description": "Lifecycle status. v1.1 statuses kept: candidate, active, accepted, rejected, superseded, failed, pending_download, archived. v4 additions: under_review (waiting for adv-review gate), locked (passed all gates, immutable; used by asset and outline), cancelled (service_job killed before completion)."
+      "description": "Lifecycle status. v1.1 statuses kept: candidate, active, accepted, rejected, superseded, failed, pending_download, archived. v4 additions: under_review (waiting for adv-review gate), locked (passed all gates, immutable; used by asset and outline), cancelled (service_job killed before completion). comic spiral: complete (a finished review node), final (a finalized decision node)."
     },
     "created_at": {
       "type": "string",

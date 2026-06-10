@@ -1,5 +1,9 @@
 # Validation Report — B08 wiki (clean pass, 2026-06-10)
 
+> **Reproducible, not hand-written:** `python3 cli/validate_wiki.py examples/comic_m3_audit` → **PASS**
+> (26 nodes, 26 edges conform to `schemas/node_schema.json` — required fields + node_type/status enums).
+> The schema was synced to the comic spiral in this pass (added `panel_attempt`, `final`, `complete`).
+
 | check | result |
 |---|---|
 | total nodes | **26** |

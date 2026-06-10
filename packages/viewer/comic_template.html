@@ -115,6 +115,10 @@ const TEXT_MODE = (COMIC.defaults && COMIC.defaults.text_mode) || "html";
 let LOC = (COMIC.defaults && COMIC.defaults.default_locale) || "en";
 
 function T(v){ if(v==null) return ""; if(typeof v==="string") return v; return v[LOC]!=null?v[LOC]:(v.en!=null?v.en:(v.zh!=null?v.zh:"")); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+// XSS-safe rich text: escape EVERYTHING, then re-allow ONLY <br> + paired <b/i/em/strong> (no attributes →
+// no onerror/onclick/javascript:). title/narration is the only rich field; <img onerror=…> becomes inert text.
+function richSafe(s){ return esc(s).replace(/&lt;br\s*\/?&gt;/gi,"<br>").replace(/&lt;(\/?)(b|i|em|strong)&gt;/gi,"<$1$2>"); }
 function el(tag, cls, txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
 // panel image: NO runtime image_path fallback (single-file contract); honor crop {position,zoom}; missing -> visible box
 function panelImg(p){
@@ -162,7 +166,7 @@ function renderPage(pg){
     const ht=el("div","htext");
     if(pg.type==="cover"){
       ht.appendChild(el("div","kicker",pg.kicker||""));
-      const h1=el("h1"); h1.innerHTML=T(pg.title); ht.appendChild(h1);   // title is the ONE rich field (intentional <br>)
+      const h1=el("h1"); h1.innerHTML=richSafe(T(pg.title)); ht.appendChild(h1);   // title is the ONE rich field (intentional <br>) — sanitized
       ht.appendChild(el("div","tag",T(pg.tag)));
     } else {
       ht.appendChild(el("div","logo",pg.logo||"ARIS"));
@@ -190,7 +194,7 @@ function renderPage(pg){
   sb.appendChild(el("div","beatno",pg.beat||""));
   sb.appendChild(el("h2",null,T(pg.beat_title)));
   if(pg.skill) sb.appendChild(el("div","skill",pg.skill));
-  const narr=el("div","narr"); narr.innerHTML=T(pg.narration); sb.appendChild(narr);  // narration may carry light markup
+  const narr=el("div","narr"); narr.innerHTML=richSafe(T(pg.narration)); sb.appendChild(narr);  // narration light markup — sanitized (only <br>/<b/i/em/strong>)
   sb.appendChild(el("div","foot","research-journal"));
   page.appendChild(sb); return page;
 }

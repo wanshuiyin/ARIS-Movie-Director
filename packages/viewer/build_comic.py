@@ -40,6 +40,24 @@ def data_uri(path: Path):
     return f"data:{mime};base64,{b64}"
 
 
+_IMG_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+
+
+def _safe_rel_image(ip):
+    """image_path must be PROJECT-RELATIVE (no absolute path, no '..'), an image, and resolve UNDER PROJ.
+    Otherwise return None — a publishable single-file artifact must never base64-inline arbitrary local files."""
+    if not isinstance(ip, str) or not ip or ip.startswith("/") or ".." in ip.replace("\\", "/").split("/"):
+        return None
+    if Path(ip).suffix.lower() not in _IMG_EXT:
+        return None
+    ap = (PROJ / ip).resolve()
+    try:
+        ap.relative_to(PROJ.resolve())
+    except ValueError:
+        return None
+    return ap
+
+
 def validate(comic):
     panels = comic.get("panels", {})
     errs = []
@@ -67,6 +85,25 @@ def validate(comic):
             a = b.get("anchor")
             if a is not None and a not in zone_ids:
                 errs.append(f"panel {pid}: bubble.anchor '{a}' not in safe_zones {sorted(zone_ids)}")
+    # 4) page shape: no empty pages; a grid2x2 needs exactly 4 panels
+    for pg in comic.get("pages", []):
+        n = len(pg.get("panel_ids", []))
+        if n == 0:
+            errs.append(f"page {pg.get('id')}: zero panel_ids")
+        if pg.get("type") == "grid2x2" and n != 4:
+            errs.append(f"page {pg.get('id')}: grid2x2 needs exactly 4 panels, got {n}")
+    # 5) per panel: image_path must be a SAFE project-relative image; crop in range
+    for pid, p in panels.items():
+        ip = p.get("image_path")
+        if ip and _safe_rel_image(ip) is None:
+            errs.append(f"panel {pid}: unsafe image_path {ip!r} (must be a project-relative .png/.jpg/.webp under the project — no absolute path, no '..')")
+        c = p.get("crop") or {}
+        pos = c.get("position")
+        if pos is not None and (not isinstance(pos, list) or len(pos) != 2 or not all(isinstance(x, (int, float)) and 0 <= x <= 1 for x in pos)):
+            errs.append(f"panel {pid}: crop.position must be [x,y] in 0..1, got {pos!r}")
+        z = c.get("zoom")
+        if z is not None and not (isinstance(z, (int, float)) and z >= 1):
+            errs.append(f"panel {pid}: crop.zoom must be >= 1, got {z!r}")
     return errs
 
 
@@ -85,8 +122,9 @@ def main():
         ip = p.get("image_path")
         if not ip:
             missing.append(pid); continue
-        abs_path = Path(ip) if Path(ip).is_absolute() else (PROJ / ip)
-        abs_path = abs_path.resolve()
+        abs_path = _safe_rel_image(ip)   # rejects absolute / '..' / non-image (validate() already flagged it; this is the inline-time backstop)
+        if abs_path is None:
+            missing.append(pid); continue
         if INLINE:
             uri = data_uri(abs_path)
             if uri:
@@ -113,7 +151,9 @@ def main():
     tpl = TEMPLATE.read_text(encoding="utf-8")
     if "{{COMIC_JSON}}" not in tpl:
         die("template has no {{COMIC_JSON}} slot")
-    blob = json.dumps(comic, ensure_ascii=False).replace("</", "<\\/")  # neutralize </script early-terminate
+    # Escape EVERY < and > as </> (valid JSON, JSON.parse decodes them back). The old `</`-only replace
+    # left `<!--<script>` able to break out of the <script type=application/json> island; this closes all of them.
+    blob = json.dumps(comic, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(tpl.replace("{{COMIC_JSON}}", blob), encoding="utf-8")
     kb = OUT.stat().st_size / 1024
