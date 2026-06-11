@@ -314,6 +314,41 @@
       ]
     },
     {
+      "id": "P_B10",
+      "type": "single",
+      "beat": "B10",
+      "beat_title": {
+        "zh": "B10 诚实成稿",
+        "en": "B10 The Honest Paper"
+      },
+      "skill": "paper-writing :: the boundary goes inside the conclusion",
+      "narration": {
+        "zh": "论文照实落笔：+1.4，scope-limited，连那个整夜碎着的 Tokyo 也以修好的样子进了结果页。paper-writing 把边界写进结论——代价是数字变小了，但每一个都敢被检查。",
+        "en": "The paper goes down honestly: +1.4, scope-limited, and the Tokyo that spent the night in pieces enters the results page repaired. paper-writing puts the boundary inside the conclusion — the number got smaller, but every digit can survive inspection."
+      },
+      "panel_ids": [
+        "S17"
+      ]
+    },
+    {
+      "id": "P_B11",
+      "type": "grid",
+      "beat": "B11",
+      "beat_title": {
+        "zh": "B11 深夜 · 投出去",
+        "en": "B11 Small Hours · Submission"
+      },
+      "skill": "autonomous submission :: the final 42 minutes leave her hands",
+      "narration": {
+        "zh": "凌晨的街上她往家走，不知道论文正在此刻上传；T-00:42，ARIS 替她按下提交。它敢按,是因为这个数字先被自己人砍过——从 +6.2 砍到 +1.4——所以 executor 的拳头只敢握得很小。",
+        "en": "She walks home through the small hours, not knowing the paper is uploading; at T-00:42, ARIS presses submit on her behalf. It dares to press because the number was first cut by its own hand — +6.2 down to +1.4 — which is why the executor's fist pump stays small."
+      },
+      "panel_ids": [
+        "S18",
+        "S19"
+      ]
+    },
+    {
       "id": "P03_end",
       "type": "endcard",
       "beat": "B13",
@@ -1229,6 +1264,136 @@
       "caption": {
         "zh": "黎明前，这一夜被写进 research wiki。",
         "en": "Before dawn, the night is written into the research wiki."
+      }
+    },
+    "S17": {
+      "wiki_node_id": "panel:s17_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/paper_scope_limited_v1.svg",
+        "expected_literals": [
+          "+1.4",
+          "scope-limited",
+          "Tokyo"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the green reviewer sits at the keyboard typing the limitations line, calm authority; the blue executor leans on the desk edge pointing at the healed Tokyo in the terminal with a small relieved smile — bounce: tempered NOD, not a jump",
+        "scene": "a late-night dark writing room (density cal_S12): the glowing paper page is the brightest object in the room, pixel drafts and crossed-out printouts scattered on the desk, shelf spines 'CLAIM AUDIT' / 'STRUCTURED OUTPUTS', the claim-ledger board from the verdict glowing faintly behind, the empty '</>' mug pushed aside, one warm lamp over the keyboard. The technical figure from image #1 (PAPER — RESULTS: the headline 'schema-keyword-first +1.4 (scope-limited)', the struck ghost +6.2 in the margin, the limitations line, the side terminal with the REPAIRED {\"city\":\"Tokyo\"} ✓ parsed, the claim ledger, DDL T-01:57) IS the desk"
+      },
+      "bubbles": [
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "照实写，边界也写上。",
+            "en": "Write it as it is — scope included."
+          }
+        },
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "Tokyo 修好了。",
+            "en": "Tokyo parses now."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "+1.4，scope-limited——每一个数字都敢被检查。",
+        "en": "+1.4, scope-limited — every digit can survive inspection."
+      }
+    },
+    "S18": {
+      "wiki_node_id": "panel:s18_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/street_24h_sign_v1.svg",
+        "expected_literals": [
+          "OPEN",
+          "24H"
+        ],
+        "world": "warm",
+        "identity_ref": "assets/identity/researcher_chibi_canonical_ref_v001.png",
+        "identity_desc": "the researcher (she): black rectangular glasses, dark short hair, black tee, backpack — exactly as in the reference",
+        "characters": "ONLY the researcher: walking home through the pool of warm light in front of the store, backpack on, steps tired but loose, NOT looking at her phone — she doesn't know what's happening right now",
+        "scene": "an empty street in the small hours (density cal_S12): warm yellow streetlamps relay one after another; the convenience-store sign pours warm light onto the sidewalk; inside the auto-door the shelves are lit but unmanned (ALL shelf labels and price tags blurred to unreadable — the sign is the ONLY readable text in the panel); a zebra crossing, a cat heading home, abstract pixel graffiti on a rolled-down shutter (shapes only, NO letters); the far cool blue night skyline and a few stars overhead — warm lamp ribbon vs cold night depth. The technical figure from image #1 (the neon OPEN / 24H sign) hangs above the store door"
+      },
+      "bubbles": [],
+      "overlays": [],
+      "caption": {
+        "zh": "她往家走，不知道论文正在此刻上传。",
+        "en": "She walks home, not knowing the paper is uploading right now."
+      }
+    },
+    "S19": {
+      "wiki_node_id": "panel:s19_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/submit_terminal_v1.svg",
+        "expected_literals": [
+          "SUBMITTED",
+          "T-00:42",
+          "paper.pdf"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the blue executor watches the progress bar fill and gives a SMALL fist pump — bounce: small, tempered, ground down by the REJECT and the audit, not daring his old heights; the green reviewer stands behind at an angle and nods ONCE",
+        "scene": "the dark-cyber submission bay (density cal_S12): the central submit terminal glows over the #0A0E27 void with the green stamp's afterglow still hanging, a side screen scrolling the upload log, dark shelf spines 'CLAIM AUDIT' / 'RESEARCH WIKI', neon grid floor, the '</>' mug down to its dregs, one warm lamp. The technical figure from image #1 (SUBMIT terminal: paper.pdf ✓, the 100% progress bar, the centered green SUBMITTED stamp from the family, the RED DDL T-00:42 in its final-urgency state) dominates"
+      },
+      "bubbles": [
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "投出去了。",
+            "en": "It's in."
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "边界也写上了。",
+            "en": "Scope and all."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "T-00:42，论文带着写明的边界投了出去。",
+        "en": "At T-00:42, the paper goes in with its scope spelled out."
       }
     }
   }
