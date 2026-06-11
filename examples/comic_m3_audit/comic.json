@@ -349,6 +349,24 @@
       ]
     },
     {
+      "id": "P_B12",
+      "type": "grid",
+      "beat": "B12",
+      "beat_title": {
+        "zh": "B12 归家 · 凉掉的咖啡",
+        "en": "B12 Homecoming · The Cold Mug"
+      },
+      "skill": "the arc pays off :: the bill was charged to a coffee no one drank",
+      "narration": {
+        "zh": "她到家，伸手握住那只杯子——咖啡在她不在的 24 小时里彻底凉透了；隔着一块玻璃，她和 executor 击了一掌，他只是微微一弹。ARIS 交还给她的不是最漂亮的数字，而是敢署她名字的数字。",
+        "en": "She gets home and wraps her hand around the mug — the coffee went stone cold in the 24 hours she was away; through the glass she and the executor share a high-five, and he gives only the smallest bounce. What ARIS hands back is not the prettiest number, but one that can carry her name."
+      },
+      "panel_ids": [
+        "S20",
+        "S21"
+      ]
+    },
+    {
       "id": "P03_end",
       "type": "endcard",
       "beat": "B13",
@@ -695,15 +713,24 @@
       "safe_zones": [
         {
           "id": "main",
-          "x": 0.0,
-          "y": 0.3,
-          "w": 1.0,
-          "h": 0.4
+          "x": 0.08,
+          "y": 0.74,
+          "w": 0.84,
+          "h": 0.2
         }
       ],
       "bubbles": [],
       "overlays": [],
-      "caption": null
+      "caption": null,
+      "text_mode": "html",
+      "condition": {
+        "content_svg": "assets/constellation_layout_v1.svg",
+        "expected_literals": [],
+        "world": "starfield",
+        "identity_desc": "NO characters — the duo are absent; they ARE the constellation",
+        "characters": "NONE. No characters, no figures, no text anywhere in the image",
+        "scene": "a full-bleed pixel night sky over a sleeping city: the night's work cooled into a constellation whose shape echoes the wiki star-map (reproduce the star LAYOUT from image #1 faithfully — bright white/green main-path stars, dim ember-red side stars, NO labels, NO text, NO glyphs anywhere); the brightest star (paper) trails one thin warm thread of light down to a TINY amber-lit bedroom window at the bottom edge — the only warm pixels; rooftop silhouettes; keep the LOWER BAND of the sky sparse and low-detail (a safe zone for the HTML tagline)"
+      }
     },
     "S03": {
       "wiki_node_id": "panel:s03_aris_comic_v1",
@@ -1394,6 +1421,104 @@
       "caption": {
         "zh": "T-00:42，论文带着写明的边界投了出去。",
         "en": "At T-00:42, the paper goes in with its scope spelled out."
+      }
+    },
+    "S20": {
+      "wiki_node_id": "panel:s20_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/s20_submitted_bar_v1.svg",
+        "expected_literals": [
+          "SUBMITTED",
+          "T-00:27"
+        ],
+        "world": "warm",
+        "identity_ref": "assets/identity/researcher_chibi_canonical_ref_v001.png",
+        "identity_desc": "the researcher (she): black rectangular glasses, dark short hair, black tee — exactly as in the reference",
+        "characters": "the researcher pushes the door open, one hand still holding her bag strap, the other reaching to WRAP AROUND the mug — and freezing there; the duo does NOT appear (the screen shows only the status band)",
+        "scene": "the SAME warm room, SAME desk, SAME camera angle as the very first bedroom panel (set continuity — density cal_S12): the backpack slipping by the door, the desk lamp still on, the sticky notes ('dllm-schema-keyword-first' etc.) and paper stacks untouched, and on the desk THE SAME 'ML RESEARCH' mug — now stone COLD: not a wisp of steam, a thin milk film on the surface; the laptop screen shows ONLY one green status band (the technical figure from image #1: 'SUBMITTED ✓' + green 'T-00:27'), the rest of the screen dark and low-detail; the night city outside deeper and colder — everything as it was, only the temperature has changed"
+      },
+      "bubbles": [
+        {
+          "speaker": "researcher",
+          "style": "whisper",
+          "text": {
+            "zh": "……凉了。",
+            "en": "...It's gone cold."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "咖啡在她不在的 24 小时里彻底凉透了。",
+        "en": "The coffee went stone cold in the 24 hours she was away."
+      }
+    },
+    "S21": {
+      "wiki_node_id": "panel:s21_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/screen_highfive_frame_v1.svg",
+        "expected_literals": [
+          "SUBMITTED",
+          "ARIS"
+        ],
+        "world": "seam",
+        "identity_ref": "assets/identity/trio_identity_sheet_v001.png",
+        "identity_desc": "LEFT of the ref = the researcher (black glasses, dark short hair, black tee); RIGHT of the ref = the duo (blue executor brown hair NO beard / green reviewer dark hair beard)",
+        "characters": "the researcher leans in and raises her palm to the OUTSIDE of the glass; INSIDE the screen the blue executor raises his palm to meet hers through the glass — bounce: his SMALLEST bounce of the whole film (the mirror landing of his hand-off MAX; the arc's final reading); the green reviewer stands aside inside the screen and nods",
+        "scene": "a close-up on the laptop in the same warm room (density cal_S12): inside the dark screen the duo stand in their cyber space, the executor's palm meeting hers through the glass with a soft ring of contact glow (background atmospheric glow allowed); the screen top bar reads 'SUBMITTED ✓' LARGE and crisp with the small ARIS tag in the corner (the technical figure from image #1 — the screen frame); outside the glass on the warm side: her fingertips, the corner of the COLD mug, the warm lamp halo — the warm human world and the dark digital world meeting on one pane of glass"
+      },
+      "bubbles": [
+        {
+          "speaker": "researcher",
+          "style": "say",
+          "text": {
+            "zh": "我回来了。",
+            "en": "I'm home."
+          }
+        },
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "欢迎回来。",
+            "en": "Welcome back."
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "去睡吧。",
+            "en": "Get some sleep."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "隔着一块玻璃，他只是微微一弹。",
+        "en": "Through the glass, he gives only the smallest bounce."
       }
     }
   }
