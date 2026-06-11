@@ -157,6 +157,24 @@
       ]
     },
     {
+      "id": "P_B07",
+      "type": "grid",
+      "beat": "B07",
+      "beat_title": {
+        "zh": "B07 第三轮 · REJECT 与碎 JSON",
+        "en": "B07 · REJECT and the Broken JSON"
+      },
+      "skill": "auto-review-loop :: adversarial review keeps no polite hours",
+      "narration": {
+        "zh": "整批跑完，reviewer 把一条坏 JSON 钉到屏幕正中央——曲线应声跌到 0.66；红章砸下：第一轮，打回。auto-review-loop 里两个人不同心是设计——它打断的不是外人，是队友刚攒起来的庆祝，这一夜的进度条先为诚实倒退了一格。",
+        "en": "The full batch lands and the reviewer pins one broken JSON dead-center — the curve sags to 0.66; the red stamp comes down: round one, rejected. In auto-review-loop the two are designed to disagree — what it interrupts is its own teammate's celebration, and tonight's progress bar steps backward first, to stay honest."
+      },
+      "panel_ids": [
+        "S10",
+        "S11"
+      ]
+    },
+    {
       "id": "P_B08_1",
       "type": "single",
       "beat": "B08",
@@ -915,6 +933,104 @@
       ],
       "overlays": [],
       "caption": null
+    },
+    "S10": {
+      "wiki_node_id": "panel:s10_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/tokyo_parse_error_zoom_v1.svg",
+        "expected_literals": [
+          "Tok|yo",
+          "ParseError",
+          "0.66"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the green reviewer in the foreground decisively PINS the broken chip to the screen's dead center — calm, beard set tight; the blue executor behind him is FROZEN mid-jump, arms still half-raised, face falling — bounce: deflate, frozen in mid-air",
+        "scene": "the machine room turned interrogation room (density cal_S12): the giant pinned JSON chip floods the dark void with red edge-light; S09's OK-chip glow dims behind it; a pinboard thread visually links the hero chip back to the tiny corner thumbnail; dark shelf spines 'JSON SCHEMA' / 'EVAL INTEGRITY'; the forgotten '</>' mug (environment prop) pushed aside; the lone warm lamp is the only warm pixel. The technical figure from image #1 (the hero {\"city\":\"Tok|yo\"} chip with the hard crack, the json.loads → ParseError terminal line, the 0.71→0.66 dip strip with the red 0.66 tick, batch 2048/2048 · 37 malformed, the thread to the S09 corner) IS the room"
+      },
+      "bubbles": [
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "这解析不了。",
+            "en": "This won't parse."
+          }
+        },
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "只是……个别样本吧？",
+            "en": "Just... a few samples, right?"
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "整批跑完，曲线应声跌到 0.66。",
+        "en": "The full batch lands; the curve sags to 0.66 on cue."
+      }
+    },
+    "S11": {
+      "wiki_node_id": "panel:s11_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/reject_verdict_round1_v1.svg",
+        "expected_literals": [
+          "REJECT",
+          "37",
+          "T-16:05"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the green reviewer swings the stamp DOWN with calm authority (this exact pose will be mirrored when he stamps ACCEPT later); the blue executor is shrunk into the lower corner, shoulders collapsed, arms hanging — bounce: SILENT/small, his lowest so far",
+        "scene": "the dark verdict chamber (density cal_S12): the stamped card glows red over the #0A0E27 void with pixel impact sparks; behind it in shadow the dimmed 0.66 flatline and dark spines 'REVIEW LOG' / 'ROUND 1'; a loop-arrow relief on the floor hints the loop restarts; the warm lamp pushed to the frame's far end, barely holding against the red. The technical figure from image #1 (the REVIEW · ROUND 1 verdict card: 2048 samples scored, the huge red 37 malformed chip, the Tok|yo evidence thumbnail clipped on, the diagonal REJECT stamp, and the LARGE amber DDL T-16:05 — the burned time is the visible cost) dominates"
+      },
+      "bubbles": [
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "打回。修好再来。",
+            "en": "Rejected. Fix it, then come back."
+          }
+        },
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "……收到。",
+            "en": "...Copy that."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "第一轮，打回。",
+        "en": "Round one: rejected."
+      }
     }
   }
 }

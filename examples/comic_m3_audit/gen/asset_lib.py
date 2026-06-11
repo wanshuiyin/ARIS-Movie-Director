@@ -172,3 +172,25 @@ STARMAP_EDGES = [
     ["idea", "idea_dup1"], ["idea", "idea_dup2"], ["audit", "sanitizer"], ["sanitizer", "inflated_62"],
 ]
 STAR_COLOR = {"main": INK, "fail": RED, "audit": AMBER, "ok": GREEN, "paper": "#FFFFFF", "ember": RED}
+
+
+# ── shared verdict-card geometry — S11 REJECT and S16 ACCEPT instantiate the SAME card (mirror pair) ──
+def verdict_card(x, y, header, body_rows, stamp_label, big_chip=None, scale=1.0, tilt=-4):
+    """body_rows: list of (text, color, size). big_chip: (value, label, color) rendered huge.
+    The card face/geometry is identical across instantiations; only contents + stamp differ."""
+    s = scale
+    w_, h_ = 560 * s, 360 * s
+    o = [rect(x, y, w_, h_, "#0E1322", 16 * s, ST, 2.5 * s)]
+    o.append(rect(x, y, w_, 54 * s, "#10162B", 16 * s))
+    o.append(text(x + w_ / 2, y + 36 * s, header, DIM, 20 * s, "800"))
+    ty = y + 100 * s
+    for t_, c_, sz in body_rows:
+        o.append(text(x + 36 * s, ty, t_, c_, sz * s, "700", "start"))
+        ty += (sz + 18) * s
+    if big_chip:
+        val, lbl, c_ = big_chip
+        o.append(rect(x + w_ - 220 * s, y + 86 * s, 184 * s, 120 * s, "#241019" if c_ == RED else "#0E2A22", 12 * s, c_, 2.5 * s))
+        o.append(text(x + w_ - 128 * s, y + 162 * s, val, c_, 56 * s, "800"))
+        o.append(text(x + w_ - 128 * s, y + 192 * s, lbl, DIM, 13 * s, "400"))
+    o.append(stamp(x + w_ * 0.16, y + h_ - 110 * s, stamp_label, scale=1.5 * s, tilt=tilt))
+    return "".join(o)
