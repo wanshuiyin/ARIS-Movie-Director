@@ -657,8 +657,8 @@
     },
     "S05": {
       "wiki_node_id": "panel:s05_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S05_a01",
+      "image_path": "panels/S05_panel_a01.png",
       "crop": {
         "shape": "wide",
         "position": [
