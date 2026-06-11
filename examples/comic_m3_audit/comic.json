@@ -802,8 +802,8 @@
     },
     "S07": {
       "wiki_node_id": "panel:s07_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S07_a01",
+      "image_path": "panels/S07_panel_a01.png",
       "crop": {
         "shape": "wide",
         "position": [
@@ -851,8 +851,8 @@
     },
     "S08": {
       "wiki_node_id": "panel:s08_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S08_a01",
+      "image_path": "panels/S08_panel_a01.png",
       "crop": {
         "shape": "wide",
         "position": [
@@ -899,8 +899,8 @@
     },
     "S09": {
       "wiki_node_id": "panel:s09_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S09_a02",
+      "image_path": "panels/S09_panel_a02.png",
       "crop": {
         "shape": "wide",
         "position": [
