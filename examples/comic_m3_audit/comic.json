@@ -936,8 +936,8 @@
     },
     "S10": {
       "wiki_node_id": "panel:s10_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S10_a04",
+      "image_path": "panels/S10_panel_a04.png",
       "crop": {
         "shape": "wide",
         "position": [
@@ -985,8 +985,8 @@
     },
     "S11": {
       "wiki_node_id": "panel:s11_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S11_a01",
+      "image_path": "panels/S11_panel_a01.png",
       "crop": {
         "shape": "wide",
         "position": [
