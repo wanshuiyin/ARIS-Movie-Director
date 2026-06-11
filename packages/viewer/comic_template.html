@@ -38,6 +38,8 @@
   .sidebar .foot{margin-top:auto;font-family:var(--mono);font-size:10.5px;color:#5b577d;}
   .single{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:2px solid #2a2a46;overflow:hidden;}
   .grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;background:var(--gutter);padding:8px;border:2px solid #2a2a46;}
+  .featgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--gutter);padding:8px;border:2px solid #2a2a46;}
+  .featgrid .cell.span2{grid-column:1/3;}  /* feature page: top row of panels + a dominant full-width last panel */
   .cell{position:relative;aspect-ratio:16/9;overflow:hidden;background:#000;}  /* 16:9 cells: panels are generated 16:9, so a square cell cropped off the wide diagrams' left/right. A 2x2 of 16:9 cells is ~16:9 overall (fits screen) and shows each panel in full. */
   .panel-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;}
   .bubble{position:absolute;max-width:46%;padding:9px 12px;z-index:3;background:var(--paper);color:var(--ink);
@@ -183,6 +185,16 @@ function renderPage(pg){
     });
     stage.appendChild(g);
     const caps=(pg.panel_ids||[]).map(pid=>PANELS[pid]).filter(p=>p&&p.caption).map(p=>T(p.caption));
+    if(caps.length){ const c=el("div","caption"); c.textContent=caps.join("　·　"); stage.appendChild(c); }
+  } else if(pg.type==="feature"){ // N-1 panels in a 2-col row + the LAST panel dominant full-width below
+    const g=el("div","featgrid");
+    const ids=pg.panel_ids||[];
+    ids.forEach((pid,k)=>{
+      const panel=PANELS[pid]||{}; const c=el("div","cell"+(k===ids.length-1?" span2":""));
+      c.appendChild(panelImg(panel)); addBubbles(c,panel); addOverlays(c,panel); g.appendChild(c);
+    });
+    stage.appendChild(g);
+    const caps=ids.map(pid=>PANELS[pid]).filter(p=>p&&p.caption).map(p=>T(p.caption));
     if(caps.length){ const c=el("div","caption"); c.textContent=caps.join("　·　"); stage.appendChild(c); }
   } else { // single
     const w=el("div","single"); const panel=first;

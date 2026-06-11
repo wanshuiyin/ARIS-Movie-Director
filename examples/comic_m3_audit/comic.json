@@ -138,6 +138,25 @@
       ]
     },
     {
+      "id": "P_B06",
+      "type": "feature",
+      "beat": "B06",
+      "beat_title": {
+        "zh": "B06 实验 · 曲线起飞",
+        "en": "B06 Experiment · The Curve Lifts"
+      },
+      "skill": "experiment-bridge :: plan → deployment, evidence is provisional",
+      "narration": {
+        "zh": "她睡着的第一个小时，实验已经真的跑在八张卡上；凌晨曲线从 0.60 爬到 0.71，executor 蹦得老高。experiment-bridge 回传的每个点都只是暂定证据——这份得意，后面每一分都要还。最下面那格,没有人说话。",
+        "en": "Within her first hour asleep the experiment is really running on eight GPUs; by the small hours the curve climbs 0.60 → 0.71 and the executor bounces sky-high. Every point experiment-bridge streams back is provisional — and every bit of this pride will be paid back. In the bottom panel, nobody says a word."
+      },
+      "panel_ids": [
+        "S07",
+        "S08",
+        "S09"
+      ]
+    },
+    {
       "id": "P_B08_1",
       "type": "single",
       "beat": "B08",
@@ -762,6 +781,140 @@
         "zh": "那 24 小时已经不在她手里了。",
         "en": "Those 24 hours are no longer hers."
       }
+    },
+    "S07": {
+      "wiki_node_id": "panel:s07_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/gpu_launch_console_v1.svg",
+        "expected_literals": [
+          "8/8",
+          "RUNNING",
+          "T-18:30"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the blue executor leaps at the console slamming the launch key — bounce: a HIGH launch jump but clearly below his hand-off MAX; the green reviewer stands behind, arms crossed, eyes already on the log screen",
+        "scene": "a dark neon machine room at night (density cal_S12): the wall of 8 glowing GPU slot-cards floats in the #0A0E27 void, neon grid floor, dark shelf spines 'DIFFUSION LM' / 'SCHEDULERS', a side screen scrolling allocation logs, a '</>' mug (environment prop) and one warm Edison lamp breaking the cool. The technical figure from image #1 (GPU LAUNCH CONSOLE: the $ aris exp launch terminal line, the 2x4 GPU grid with green status lights, the big 8/8 counter + green RUNNING chip, the amber DDL T-18:30) IS the room's centerpiece"
+      },
+      "bubbles": [
+        {
+          "speaker": "executor",
+          "style": "shout",
+          "text": {
+            "zh": "上 GPU！八张全开！",
+            "en": "To the GPUs — all eight!"
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "日志我盯着。",
+            "en": "I'm watching the logs."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "她睡着的第一个小时，实验已经跑在八张卡上。",
+        "en": "Within her first hour asleep, the experiment is on eight GPUs."
+      }
+    },
+    "S08": {
+      "wiki_node_id": "panel:s08_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/wandb_exact_parse_060_071_v1.svg",
+        "expected_literals": [
+          "0.60",
+          "0.71"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the blue executor has leapt ONTO the desk, both hands pointing at the 0.71 tick — bounce: high/proud; the green reviewer leans over the step-log side screen instead of the curve, one eyebrow raised, unmoved",
+        "scene": "the same dark machine room tightened onto the metrics wall (density cal_S12): the big wandb chart card floats over the void — gray flat 'random-mask' baseline ending 0.60, rising green 'schema-first' series ending 0.71, amber callout 0.60 → 0.71; a side screen scrolls 'step 4200…', dark spines 'EVALS FIRST' / 'MASKING', a sticky note 'full batch ☐', the '</>' mug (environment prop) under the warm lamp still faintly steaming, cold neon beneath"
+      },
+      "bubbles": [
+        {
+          "speaker": "executor",
+          "style": "shout",
+          "text": {
+            "zh": "0.71！起飞了！",
+            "en": "0.71 — we're flying!"
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "整批跑完再说。",
+            "en": "Wait for the full batch."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "凌晨的曲线从 0.60 爬到 0.71。",
+        "en": "In the small hours the curve climbs 0.60 → 0.71."
+      }
+    },
+    "S09": {
+      "wiki_node_id": "panel:s09_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/sample_stream_wall_tokyo_seed_v1.svg",
+        "expected_literals": [
+          "0.71",
+          "1024/2048"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the blue executor leaps front-and-center toward the big curve, BACK TURNED to the stream's lower corner — bounce: proud peak, below his hand-off MAX (the pre-fall high); the green reviewer stands at the wall half-turned toward the downstream flow, EYES NARROWING — only he faces that corner. He says nothing",
+        "scene": "the machine room opens into a cathedral-scale log wall hanging in the #0A0E27 void (density cal_S12): neon flow columns, the floor grid reflecting the green OK-chip light, dark spines 'STRUCTURED OUTPUTS' / 'RAW LOGS', archive drawers with disk icons, the '</>' mug lukewarm beside the lone warm lamp, the executor's warm confetti pixels drifting against the cold wall. The technical figure from image #1 (RAW SAMPLE STREAM wall: the curve holding 0.71, the 1024/2048 counter, countless tiny OK rows — and in the stream's LOWER CORNER one TINY broken chip, deliberately minuscule, NO callout, NO arrow, nothing pointing at it) fills the frame. PRESERVE that tiny corner chip exactly as in image #1 — small, unremarked, easy to miss"
+      },
+      "bubbles": [
+        {
+          "speaker": "executor",
+          "style": "shout",
+          "text": {
+            "zh": "全绿！她醒来会有惊喜！",
+            "en": "All green! She'll wake up to a surprise!"
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": null
     }
   }
 }
