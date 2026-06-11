@@ -121,6 +121,23 @@
       ]
     },
     {
+      "id": "P_B05",
+      "type": "single",
+      "beat": "B05",
+      "beat_title": {
+        "zh": "B05 教室 · 一拍怀疑",
+        "en": "B05 Classroom · A Beat of Doubt"
+      },
+      "skill": "autonomous overnight run :: no human in the loop",
+      "narration": {
+        "zh": "第二天的课上，她望向窗外——那 24 小时已经不在她手里了。把研究交出去换来了讲台前的安稳，代价是连怀疑都只能隔着口袋里那块 T-18:40 的屏幕。",
+        "en": "In next morning's class she stares out the window — those 24 hours are no longer hers. Handing the research over bought her this seat in a lecture hall; the price is that even her doubt must wait behind a pocket screen reading T-18:40."
+      },
+      "panel_ids": [
+        "S06"
+      ]
+    },
+    {
       "id": "P_B08_1",
       "type": "single",
       "beat": "B08",
@@ -702,6 +719,48 @@
       "caption": {
         "zh": "6 个想法当场烧掉——早有人做过了。",
         "en": "Six ideas burn on the spot — someone got there first."
+      }
+    },
+    "S06": {
+      "wiki_node_id": "panel:s06_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/phone_aris_status_v1.svg",
+        "expected_literals": [
+          "ARIS",
+          "RUNNING",
+          "T-18:40"
+        ],
+        "world": "warm",
+        "identity_ref": "assets/identity/researcher_chibi_canonical_ref_v001.png",
+        "identity_desc": "the researcher (she): black rectangular glasses, dark short hair, black tee — exactly as in the reference",
+        "characters": "ONLY the researcher (no duo): seated by the window, chin in hand, gazing OUT the window, her pen resting mid-doodle; tired, quietly anxious",
+        "scene": "late-morning golden lecture hall (density cal_S12): sunlight slants across the desks; the blackboard carries readable attention/denoising equations and little sketches; in her notebook margin she has absent-mindedly doodled TWO tiny stick figures in a blue hoodie and a green hoodie; a paper coffee cup on the desk with NO steam (her motif mug is at home); classmates are blurred pixel silhouettes; outside the window cool daylight and a far teaching building contrast the warm room. The technical figure from image #1 (the phone lock-screen widget: green dot + 'ARIS · RUNNING' + amber 'T-18:40') is her phone lying FACE-UP on the desk, small but razor-crisp"
+      },
+      "bubbles": [
+        {
+          "speaker": "researcher",
+          "style": "thought",
+          "text": {
+            "zh": "它真能跑出……能写进论文的东西吗？",
+            "en": "Can it really produce something that belongs in a paper?"
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "那 24 小时已经不在她手里了。",
+        "en": "Those 24 hours are no longer hers."
       }
     }
   }
