@@ -121,6 +121,7 @@ for n in STARMAP_NODES:
     o.append(star(x, y, STAR_COLOR[n["kind"]], n["mag"] * (0.7 if n["kind"] == "ember" else 1.0)))
 o.append(text(W / 2, 52, "RESEARCH WIKI", INK, 30, "800", spacing="6"))
 o.append(text(W / 2, 76, "the night, written into memory", DIM, 12, "400"))
+o.append(ddl_chip(W - 210, 44, "T-02:41", "amber", "dash", scale=0.95))
 for nid, dy in [("REJECT", 30), ("WARN_corrected", 30), ("ACCEPT", -18)]:
     x, y = pos[nid]
     o.append(text(x, y + dy, nid, STAR_COLOR[next(n["kind"] for n in STARMAP_NODES if n["id"] == nid)], 20, "800"))

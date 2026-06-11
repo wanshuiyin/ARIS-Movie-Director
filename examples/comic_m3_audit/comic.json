@@ -175,6 +175,23 @@
       ]
     },
     {
+      "id": "P_B08_0",
+      "type": "single",
+      "beat": "B08",
+      "beat_title": {
+        "zh": "B08-0 审计入口",
+        "en": "B08-0 The Audit Gate"
+      },
+      "skill": "auto-review-loop + experiment-audit :: numbers must survive hostile inspection",
+      "narration": {
+        "zh": "executor 正要庆祝，reviewer 把放大镜按在了评分管线上——最好看的数字，最先受审。ARIS 先审计、后庆祝——代价是 +6.2 被扣在审计门口，无法成为 claim。",
+        "en": "The executor was mid-cheer when the reviewer pressed a magnifier onto the evaluation pipeline — the prettiest number gets audited first. ARIS audits before it celebrates; the cost is that +6.2 is held at the gate and cannot become a claim."
+      },
+      "panel_ids": [
+        "S12a"
+      ]
+    },
+    {
       "id": "P_B08_1",
       "type": "single",
       "beat": "B08",
@@ -260,6 +277,40 @@
         "S13",
         "S14",
         "S15"
+      ]
+    },
+    {
+      "id": "P_B09",
+      "type": "single",
+      "beat": "B09",
+      "beat_title": {
+        "zh": "B09 重跑 · ACCEPT",
+        "en": "B09 Honest Re-run · ACCEPT"
+      },
+      "skill": "honest re-run :: what makes an ACCEPT trustworthy",
+      "narration": {
+        "zh": "绕开修复器重跑，exact_parse 从 0.78 涨到 0.89，这一次绿章 ACCEPT 落下。honest re-run 让 ACCEPT 变得可信——代价是它来得更晚、数字更小，但没有人需要替它脸红。",
+        "en": "Rerun with the sanitizer bypassed, exact_parse climbed 0.78 to 0.89, and this time the green ACCEPT lands. The honest re-run is what makes an ACCEPT trustworthy — it arrives later and smaller, but nobody has to blush for it."
+      },
+      "panel_ids": [
+        "S16"
+      ]
+    },
+    {
+      "id": "P_B09_5",
+      "type": "single",
+      "beat": "B09.5",
+      "beat_title": {
+        "zh": "B09.5 研究星图",
+        "en": "B09.5 The Research Star-Map"
+      },
+      "skill": "research-wiki :: failure is memory too",
+      "narration": {
+        "zh": "黎明前，ARIS 把这一夜写进 research wiki：想法、被否的 claim、审计、判决、论文决策，连成一条发光的路。research-wiki 把失败也存档成记忆——被拒的那颗星不亮，但它在，下一个 agent 不必再撞一次。",
+        "en": "Before dawn, ARIS writes the night into the research wiki: ideas, the rejected claim, the audit, the verdict, the paper decision — one glowing path. research-wiki keeps even the failures as memory — the rejected star stays dark, but it stays, so the next agent never has to hit it again."
+      },
+      "panel_ids": [
+        "S16b"
       ]
     },
     {
@@ -1030,6 +1081,154 @@
       "caption": {
         "zh": "第一轮，打回。",
         "en": "Round one: rejected."
+      }
+    },
+    "S12a": {
+      "wiki_node_id": "panel:s12a_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/audit_gate_v1.svg",
+        "expected_literals": [
+          "AUDIT",
+          "+6.2",
+          "EVAL PIPELINE"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the blue executor's celebration is intercepted MID-MOTION — caught halfway into a jump, the reviewer's hand gripping his hood, pixel confetti frozen mid-air (bounce: attempted celebration, ARRESTED before becoming a jump — NOT a full jump); the green reviewer, unhurried, presses the magnifier onto the evaluator block with his other hand",
+        "scene": "a late-night screen-lit audit room (density cal_SI2): dashboards lighting up block by block behind the holographic pipeline, dark shelf spines 'EVAL INTEGRITY' / 'CLAIM AUDIT', a side screen scrolling evaluator source, the '</>' mug (environment prop) gone cold, neon grid floor, one warm desk lamp breaking the cool. The technical figure from image #1 (EVAL PIPELINE — AUDIT GATE: outputs→evaluator→score pipeline, the glowing gate before 'claim', the AUDIT stamp, the +6.2 claim card physically HELD at the gate with its HOLD chip, the magnifier pressed on the evaluator, the tiny prior-evidence Tok|yo shard at the input, DDL T-05:12) IS the room"
+      },
+      "bubbles": [
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "先过审计门。",
+            "en": "Audit gate first."
+          }
+        },
+        {
+          "speaker": "executor",
+          "style": "shout",
+          "text": {
+            "zh": "现在吗？！",
+            "en": "Now?!"
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "最好看的数字，最先受审。",
+        "en": "The prettiest number gets audited first."
+      }
+    },
+    "S16": {
+      "wiki_node_id": "panel:s16_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/accept_rerun_v1.svg",
+        "expected_literals": [
+          "ACCEPT",
+          "0.78",
+          "0.89"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the green reviewer stamps the green ACCEPT with EXACTLY the same arm pose as his earlier red REJECT slam (a deliberate mirror); the blue executor stands by the curve and allows himself only a SMALL hop — bounce: tempered micro-bounce, proud but earned",
+        "scene": "the same dark re-eval war-room as the collapse panel but exhaling (density cal_S12): monitors switched from red diffs to steady green parse logs, the RAW switch glowing like a kept promise, shelf spines 'RESULT INTEGRITY' / 'EVAL INTEGRITY', neon grid floor, the '</>' mug half-finished, the lone warm lamp. The technical figure from image #1 (HONEST RE-RUN — RAW SCORING: the rising exact_parse strip with BOTH endpoints called out 0.78 and 0.89, the REVIEW·RE-RUN verdict card with the green 0.89 chip and the diagonal green ACCEPT stamp — same card geometry as the REJECT card, mirrored tilt — sanitizer BYPASSED, json.loads ✓ clean, DDL T-02:58) dominates"
+      },
+      "bubbles": [
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "这次是真的。",
+            "en": "This one's real."
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "裸跑也站得住。",
+            "en": "It holds even raw."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "这一次，绿章落下。",
+        "en": "This time, the green stamp lands."
+      }
+    },
+    "S16b": {
+      "wiki_node_id": "panel:s16b_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/wiki_starmap_v1.svg",
+        "expected_literals": [
+          "RESEARCH WIKI",
+          "REJECT",
+          "WARN_corrected",
+          "ACCEPT"
+        ],
+        "world": "starfield",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the executor and reviewer stand side by side at the table's edge, SMALL under the open sky, watching the path light up node by node — the executor's hand hovers above the dim red REJECT star, not touching it; bounce: small/quiet (settled, not deflated)",
+        "scene": "the dark room's far wall dissolves into an open pixel night sky (density: sparse and reverent, NOT cluttered): the holographic star-map TABLE floats where the desk was, its glow lighting the duo's faces from below; the abandoned dashboards dim to embers behind them; the lone warm desk lamp still burns at the frame's edge like a campfire under the stars; the '</>' mug nearly empty on the table edge. The technical figure from image #1 (the RESEARCH WIKI star-map: glowing star nodes joined by thin light lines, the night's main path idea→experiment→REJECT→audit→WARN_corrected→ACCEPT→paper, ONLY the four labels RESEARCH WIKI / REJECT / WARN_corrected / ACCEPT rendered large, small labels and unlabeled dim ember side-stars present, DDL T-02:41) IS the sky — reproduce its star LAYOUT faithfully"
+      },
+      "bubbles": [
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "连被拒的那条也在。",
+            "en": "Even the rejected branch is here."
+          }
+        },
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "失败也是记忆。",
+            "en": "Failure is memory too."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "黎明前，这一夜被写进 research wiki。",
+        "en": "Before dawn, the night is written into the research wiki."
       }
     }
   }
