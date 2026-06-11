@@ -700,8 +700,8 @@
     },
     "S22": {
       "wiki_node_id": "panel:s22_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "seeds/S22_seed.png",
+      "active_attempt_id": "S22_a01",
+      "image_path": "panels/S22_panel_a01.png",
       "crop": {
         "shape": "hero",
         "position": [
@@ -1425,8 +1425,8 @@
     },
     "S20": {
       "wiki_node_id": "panel:s20_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S20_a01",
+      "image_path": "panels/S20_panel_a01.png",
       "crop": {
         "shape": "wide",
         "position": [
@@ -1466,8 +1466,8 @@
     },
     "S21": {
       "wiki_node_id": "panel:s21_aris_comic_v1",
-      "active_attempt_id": null,
-      "image_path": "",
+      "active_attempt_id": "S21_a01",
+      "image_path": "panels/S21_panel_a01.png",
       "crop": {
         "shape": "wide",
         "position": [
