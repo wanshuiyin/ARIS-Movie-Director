@@ -104,6 +104,23 @@
       ]
     },
     {
+      "id": "P_B04",
+      "type": "single",
+      "beat": "B04",
+      "beat_title": {
+        "zh": "B04 查新 · 14/20 存活",
+        "en": "B04 Novelty Gate · 14/20 Survive"
+      },
+      "skill": "novelty-check :: kill duplicates before any experiment runs",
+      "narration": {
+        "zh": "20 个想法过查新闸门，6 个当场烧掉——早有人做过了。novelty-check 在动手实验之前先杀重复——代价是 executor 引以为傲的牌，三成没活过这一格。",
+        "en": "Twenty ideas hit the novelty gate; six burn on the spot — someone got there first. novelty-check kills duplicates before any experiment runs — the cost: a third of the executor's proud hand never survives this panel."
+      },
+      "panel_ids": [
+        "S05"
+      ]
+    },
+    {
       "id": "P_B08_1",
       "type": "single",
       "beat": "B08",
@@ -636,6 +653,55 @@
       "caption": {
         "zh": "同一时刻，空洞里撒出 20 张想法卡。",
         "en": "At the same moment, twenty idea cards fan across the void."
+      }
+    },
+    "S05": {
+      "wiki_node_id": "panel:s05_aris_comic_v1",
+      "active_attempt_id": null,
+      "image_path": "",
+      "crop": {
+        "shape": "wide",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "zoom": 1.0
+      },
+      "text_mode": "baked",
+      "condition": {
+        "content_svg": "assets/novelty_gate_14of20_v1.svg",
+        "expected_literals": [
+          "14/20",
+          "SURVIVES",
+          "DUP"
+        ],
+        "world": "dark-cyber",
+        "identity_desc": "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard",
+        "characters": "the green reviewer at the gate console stamps SURVIVES with calm authority; the blue executor watches six of his cards burn — shoulders shrink in a small deflate, then steady into a tempered half-bounce when he sees the fourteen green survivors line up (bounce: high→tempered, the first time reality trims him)",
+        "scene": "the dark-cyber 'gate hall' (density cal_S12): the gate itself is a glowing wall of literature — bricks are dense dark paper spines (only 'PRIOR ART' and 'STRUCTURED OUTPUTS' readable, the rest blurred), red pixel sparks rise from the ash of the burned cards, the fourteen survivors' green glow reflects on the neon grid floor, a '</>' mug rests on the console as the single warm accent (environment prop, NOT the motif cup). The technical figure from image #1 (the NOVELTY GATE diagram: queue → gate → 6 burned with DUP stamps incl. ONE large foreground DUP card with a small 'arXiv 2024' note → 14 green survivors → the 14/20 scoreboard + green SURVIVES stamp + DDL T-18:55 chip) IS the room"
+      },
+      "bubbles": [
+        {
+          "speaker": "reviewer",
+          "style": "terse",
+          "text": {
+            "zh": "够新，留下。",
+            "en": "Novel enough. They stay."
+          }
+        },
+        {
+          "speaker": "executor",
+          "style": "say",
+          "text": {
+            "zh": "我那六张牌啊……",
+            "en": "...my six cards..."
+          }
+        }
+      ],
+      "overlays": [],
+      "caption": {
+        "zh": "6 个想法当场烧掉——早有人做过了。",
+        "en": "Six ideas burn on the spot — someone got there first."
       }
     }
   }
