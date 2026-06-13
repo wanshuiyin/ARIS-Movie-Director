@@ -65,10 +65,12 @@
   .hero .scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,4,12,.86) 0%,rgba(5,4,12,.45) 42%,rgba(5,4,12,0) 70%);}
   .hero .scrim.bottom{background:linear-gradient(0deg,rgba(5,4,12,.92) 0%,rgba(5,4,12,0) 48%);}
   .htext{position:absolute;z-index:2;}
-  .cover .htext{left:6%;top:50%;transform:translateY(-50%);max-width:62%;}
-  .cover .kicker{font-family:var(--mono);color:var(--amber);font-size:12px;letter-spacing:.22em;}
-  .cover h1{font-family:var(--disp);font-weight:900;font-size:clamp(26px,4.2vw,46px);line-height:1.08;margin:.32em 0;text-shadow:3px 3px 0 #000;}
-  .cover .tag{font-size:clamp(15px,1.9vw,20px);color:#e9e4ff;}
+  /* deeper, wider cover scrim so the title sits IN the dark band (not floating on the half-lit scene = the "pasted" look) */
+  .cover .scrim{background:linear-gradient(90deg,rgba(4,3,10,.95) 0%,rgba(4,3,10,.86) 30%,rgba(4,3,10,.55) 50%,rgba(4,3,10,.12) 66%,rgba(4,3,10,0) 78%);}
+  .cover .htext{left:6.5%;top:50%;transform:translateY(-50%);max-width:50%;}
+  .cover .kicker{font-family:var(--mono);color:var(--amber);font-size:clamp(11px,1.05vw,13px);letter-spacing:.2em;display:inline-block;padding-bottom:9px;border-bottom:2px solid var(--amber);margin-bottom:4px;}
+  .cover h1{font-family:var(--disp);font-weight:900;font-size:clamp(26px,4.3vw,48px);line-height:1.06;margin:.3em 0 .26em;text-shadow:4px 4px 0 #000,0 2px 22px rgba(0,0,0,.7);}
+  .cover .tag{font-size:clamp(14px,1.75vw,19px);line-height:1.5;color:#d9d4f0;text-shadow:0 2px 10px rgba(0,0,0,.8);max-width:90%;}
   .endcard .htext{left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;}
   .endcard .logo{font-family:var(--disp);font-weight:900;font-size:clamp(34px,6vw,64px);letter-spacing:.04em;text-shadow:3px 3px 0 #000;}
   .endcard .sub{font-family:var(--mono);font-size:13px;letter-spacing:.34em;color:var(--success);margin-top:6px;}
