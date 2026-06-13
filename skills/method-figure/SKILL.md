@@ -51,7 +51,21 @@ blind-transcribe-then-hard-diff loop turns (a) into a reliable result and catche
 - **SERIALIZE BAKES** — never run two image generations at once; the global generated-images dir + the
   newest-after-marker pickup will cross-pollinate.
 
-## Workflow — execute all steps
+## Fast path — one command
+After you author `blueprint.json` (step ① below), the whole loop is one command:
+```bash
+python3 scripts/run_spiral.py blueprint.json --identity identity_sheet.png --out-dir figures/method_figure/<id>
+#  validates → renders condition(+png) → [bake (codex image_gen, read-only, serialized under a lock) →
+#  pickup+verify (fail-closed) → Gemini + Codex blind-transcribe → content_diff → consolidate blockers] × rounds
+#  → on PANEL-CLEAN writes figure.png + blueprint.json + trace.jsonl.
+#  --dry-run prints the round-1 bake prompt (no image gen);  --max-rounds N;  --effort high|xhigh.
+```
+Long-running (each bake ~3-8 min) — run it in the background; watch `trace.jsonl`. It converges to
+**PANEL-CLEAN** (Gemini approve + Codex no-veto + deterministic diff empty), then STOPS and hands to the
+calling agent (Claude) for the final **structural** sign-off — it never lets the generator family
+self-acquit. The manual steps below are exactly what `run_spiral.py` automates (run them to debug one stage).
+
+## Workflow (what run_spiral.py automates — or run by hand)
 
 ### ① Author the BLUEPRINT (content lock)
 Write `blueprint.json` per `schemas/blueprint.schema.json`. The `*_exact` fields (`label_exact`, `desc_exact`,
@@ -124,8 +138,11 @@ accepted_round, verdicts}`. Failures are kept — the fixes that were needed are
 A converged worked example ships in `examples/method_figure/`: the ARIS-Movie-Director Figure 1 — blueprint +
 figure.png + condition.svg + the real 4-round `trace.jsonl` (unanimous 3-model APPROVE).
 
-## v1 roadmap (not in v0)
-- `scripts/consolidate_reviews.py` (auto-merge blockers + emit the retry prompt) — v0 has the agent do it.
-- `scripts/overlay_labels.py` + `label_policy: hybrid/overlay` for paper zero-tolerance text.
-- `scripts/run_spiral.py` — a single orchestrator that runs bake→panel→diff→decide so the agent only authors
-  the blueprint (removes the multi-turn orchestration friction).
+## Implemented / roadmap
+- ✅ `scripts/run_spiral.py` — the one-command orchestrator (bake→pickup→panel→diff→consolidate→decide loop
+  to PANEL-CLEAN). Folds blocker-consolidation + invariant-carry inline, so a separate `consolidate_reviews.py`
+  isn't needed.
+- 🔭 `scripts/overlay_labels.py` + `label_policy: hybrid/overlay` — vector-overlay the structured labels on
+  the bake for paper zero-tolerance text. Default stays `baked` (fully generated).
+- 🔭 a Claude-vision reviewer inside the orchestrator (currently the automated panel is Gemini + Codex +
+  the deterministic diff; Claude — the calling agent — gives the structural sign-off on the converged figure).
