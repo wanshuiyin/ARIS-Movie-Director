@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>B08 Production Wiki — the multi-agent loop, as it actually ran</title>
+<title>Production Wiki — the full 24-panel film, as it actually ran</title>
 
 <meta name="generator" content="ARIS render-html (academic, v1)">
-<meta name="aris:source-path" content="wiki/README.md">
-<meta name="aris:source-sha256" content="9205f79735c2e2fa4b7267e32a30cb82db30a484ba15c725d8b573164c51d33c">
-<meta name="aris:generated-at" content="2026-06-10 02:47 UTC">
+<meta name="aris:source-path" content="README.md">
+<meta name="aris:source-sha256" content="759bf456cdf26079f0c08a33ee1924ee630d74b217a03462fb9230b054dfb0d0">
+<meta name="aris:generated-at" content="2026-06-13 10:07 UTC">
 
 <!-- MathJax 3 -->
 <script>
@@ -478,9 +478,9 @@ body.aris-blog h2.aris-active-h2 {
   <ol>
 <li><a href="#the-loop-per-panel">The loop (per panel)</a>
 </li>
-<li><a href="#what-this-trace-contains-26-nodes">What this trace contains (26 nodes)</a>
+<li><a href="#what-this-trace-contains--174-nodes">What this trace contains — **174 nodes**</a>
 </li>
-<li><a href="#the-real-rejection-s13-a02--why-its-kept">The real rejection (S13 a02) — why it&#x27;s kept</a>
+<li><a href="#the-loop-is-real-not-a-rubber-stamp--three-worked-examples-in-this-trace">The loop is real, not a rubber stamp — three worked examples in this trace</a>
 </li>
 <li><a href="#honesty-notes">Honesty notes</a>
 </li>
@@ -491,43 +491,46 @@ body.aris-blog h2.aris-active-h2 {
 
 <main>
 <header class="hero">
-  <div class="eyebrow">ARIS-Movie-Director · example #1</div>
-  <h1>B08 Production Wiki — the multi-agent loop, as it actually ran</h1>
-  
-  
+  <div class="eyebrow">ARIS-Movie-Director</div>
+  <h1>Production Wiki — the full 24-panel film, as it actually ran</h1>
+  <p class="subtitle">174 nodes · the multi-agent loop, traced</p>
+  <p class="byline">By <strong>Ruofeng Yang</strong></p>
   <div class="meta">
-    <span><strong>Source:</strong> <code>wiki/README.md</code></span>
-    <span><strong>SHA256:</strong> <code>9205f79735c2</code></span>
-    <span><strong>Rendered:</strong> 2026-06-10 02:47 UTC</span>
+    <span><strong>Source:</strong> <code>README.md</code></span>
+    <span><strong>SHA256:</strong> <code>759bf456cdf2</code></span>
+    <span><strong>Rendered:</strong> 2026-06-13 10:07 UTC</span>
     
   </div>
 </header>
 
-<h1 id="b08-production-wiki--the-multi-agent-loop-as-it-actually-ran">B08 Production Wiki — the multi-agent loop, as it actually ran</h1>
-<p>This is the <strong>research-wiki trace</strong> for the comic's centerpiece page (B08 <em>"The Inflation Audit"</em>, panels S12–S15). It is the authentic record of how each panel was produced and judged — the same spiral-engine active memory the pipeline writes on every gate decision.</p>
+<h1 id="production-wiki--the-full-24-panel-film-as-it-actually-ran">Production Wiki — the full 24-panel film, as it actually ran</h1>
+<p>This is the <strong>research-wiki trace</strong> for the entire reference comic (24 panels / 19 pages) — the authentic record of how every panel was produced and judged. It is the same spiral-engine active memory the pipeline writes on every gate decision; nothing here is reconstructed after the fact.</p>
 <h2 id="the-loop-per-panel">The loop (per panel)</h2>
-<pre><code>generatePanel  — codex bakes the panel from a deterministic content blueprint + the canonical duo
+<pre><code>generatePanel  — codex bakes the panel from a deterministic content blueprint + the canonical identity ref
    → panel_gate — 3 INDEPENDENT cross-model reviewers:
         • CC      narrative  (does the panel deliver its story beat?)
         • Gemini  visual     (identity / style / artifacts / baked-text legibility / number transcription)
         • Codex   visual     (a second, different-model-family eye)
-   → deterministic JS verdict   (no single model self-acquits)
-   → decision node (keep | retry) + a failure_mode node when rejected</code></pre>
-<h2 id="what-this-trace-contains-26-nodes">What this trace contains (26 nodes)</h2>
-<table><thead><tr><th>panel</th><th>outcome</th><th>confirmed figure literals</th></tr></thead><tbody><tr><td><strong>S12</strong></td><td>KEEP (a01)</td><td><code>+6.2</code></td></tr><tr><td><strong>S13</strong></td><td>a02 <strong>REJECTED</strong> → a01 KEEP</td><td><code>sanitizer</code>, <code>+6.2</code>, <code>+1.4</code></td></tr><tr><td><strong>S14</strong></td><td>KEEP (a01)</td><td><code>+6.2</code>, <code>+1.4</code>, <code>+4.8</code></td></tr><tr><td><strong>S15</strong></td><td>KEEP (a01)</td><td><code>WARN_corrected</code>, <code>+1.4</code></td></tr></tbody></table>
-<h2 id="the-real-rejection-s13-a02--why-its-kept">The real rejection (S13 a02) — why it's kept</h2>
-<p>The gate is <strong>sound, not a rubber stamp.</strong> Attempt <code>s13_a02</code> was <strong>REJECTED</strong> because a required figure literal was <strong>not independently transcribed by BOTH visual reviewers</strong>. Faithfulness here is a deterministic <em>token-diff</em> against the panel's authored <code>expected_literals</code>, and the reviewers are never shown the expected values (no confirmation bias) — a beautiful panel with an unconfirmed number does not pass. <code>fail_s13_a02</code> records the positive repair invariant fed back into the next bake. (This rejection also drove a real refinement: the required literals were re-chosen to the <em>salient</em> figure numbers reviewers reliably read, rather than a buried code token.)</p>
+   → deterministic JS verdict   (blind observed_literals token-diffed vs authored expected_literals;
+                                 content_corruption is a single-vote veto; no single model self-acquits)
+   → decision node (keep | retry | rollback) + a failure_mode node when rejected
+   → (cross-frame) page assembly_gate</code></pre>
+<h2 id="what-this-trace-contains--174-nodes">What this trace contains — <strong>174 nodes</strong></h2>
+<table><thead><tr><th>node_type</th><th>count</th><th>what it records</th></tr></thead><tbody><tr><td><code>panel_attempt</code></td><td>33</td><td>every bake attempt (24 panels, 33 total attempts)</td></tr><tr><td><code>review</code></td><td>99</td><td>3 per attempt (<code>_cc</code> narrative ‖ <code>_gemini</code> visual ‖ <code>_codex</code> visual), each with blind <code>observed_literals</code> + 5-dim scores</td></tr><tr><td><code>decision</code></td><td>34</td><td>the keep/retry/rollback verdict per attempt + 1 human-override</td></tr><tr><td><code>failure_mode</code></td><td>8</td><td>the positive repair invariant fed back into the next bake, per rejected attempt</td></tr></tbody></table>
+<p><strong>Generation stats</strong> (derivable from the nodes): 24 panels · <strong>33 attempts</strong> · 18 first-try keeps · <strong>6 panels needed retries</strong> — <code>S10×4</code>, <code>S03×3</code>, <code>S01 / S09 / S13 / S17 ×2</code>.</p>
+<h2 id="the-loop-is-real-not-a-rubber-stamp--three-worked-examples-in-this-trace">The loop is real, not a rubber stamp — three worked examples in this trace</h2>
+<ol><li><strong>S10 took four attempts (the hardest literal set).</strong> Attempts <code>s10_a01/a02/a03</code> were each vetoed by  <code>content_corruption_present=true</code> from <strong>both</strong> the codex and gemini visual reviewers (garbled baked  text in the hero <code>{&quot;city&quot;:&quot;Tok|yo&quot;}</code> crack / <code>json.loads → ParseError</code> / <code>0.66</code>). The deterministic  corruption veto drove three re-bakes; <code>s10_a04</code> finally passed. See <code>review_panel_s10_a0{1,2,3}_*</code> and  <code>fail_s10_a0{1,2,3}</code>.</li><li><strong>S13 a02 was rejected</strong> because a required figure literal was <strong>not independently transcribed by BOTH</strong>  visual reviewers — faithfulness is a token-diff against authored <code>expected_literals</code>, and reviewers are  never shown the expected values (no confirmation bias). A beautiful panel with an unconfirmed number  does not pass. See <code>fail_s13_a02</code>.</li><li><strong>A cross-frame FALSE drift, caught and corrected.</strong> On page B03 (a parallel 2-up with disjoint casts:  S03 researcher-only / S04 duo-only) the assembly gate scored "duo identity across panels" = 0 twice  with <strong>identical</strong> scores — the fingerprint of a broken rubric, not a broken artifact. The bounded loop  stopped and flagged a human; the human inspected, accepted, and recorded  <code>decision_assembly_p_b03_human_override</code>. The engine was then fixed to be cast-aware. The override node  is in this trace verbatim — failures are kept as memory.</li></ol>
 <p>This is exactly the discipline the comic is <em>about</em>: an evaluator that repairs output before scoring inflates the result — so the production loop refuses to score its own bake.</p>
 <h2 id="honesty-notes">Honesty notes</h2>
-<ul><li><strong>Cross-model:</strong> the executor (Claude) never judges its own bake; verdicts come from a different model family.</li><li>The gate itself was adversarially reviewed (codex gpt-5.5 xhigh, two rounds) and acquitted <strong>PASS</strong>.</li><li>Absolute paths / usernames <strong>redacted</strong> (see <code>../REDACTION.md</code>); <code>image_path</code> is project-relative.</li></ul>
+<ul><li><strong>Cross-model:</strong> the executor (Claude) never judges its own bake; visual verdicts come from a different model family (codex / gemini). No single model self-acquits.</li><li><strong>Timestamps are logical, not wall-clock.</strong> <code>Date.now()</code> is unavailable in the generation sandbox (it would break resume determinism), so <code>created_at</code> is a placeholder; node order is by attempt id, not real time. Do not read the timestamps as a real timeline.</li><li>Absolute paths / usernames are redacted (<code>image_path</code> is project-relative; verified 0 absolute paths in <code>nodes/</code>). See <code>../REDACTION.md</code>.</li></ul>
 <h2 id="files">Files</h2>
-<ul><li><code>nodes/</code> — <code>panel_attempt</code> / <code>review</code> (×3) / <code>decision</code> / <code>failure_mode</code> JSON nodes</li><li><code>edges.jsonl</code> — the graph (attempt→panel, review→attempt, decision→attempt, failure→attempt)</li><li><code>active_memory.md</code> — the live gate criteria + the rejection's standing lesson</li><li><code>validation_report.md</code> — node counts, final-decision check, redaction confirmation</li></ul>
+<ul><li><code>nodes/</code> — <code>panel_attempt</code> / <code>review</code> (×3) / <code>decision</code> / <code>failure_mode</code> JSON nodes (174 total)</li><li><code>edges.jsonl</code> — the graph (<code>attempt_of</code>, <code>reviews</code>, <code>decides</code>, <code>fails</code>)</li><li><code>active_memory.md</code> — the live gate criteria + standing lessons</li><li><code>validation_report.md</code> — node counts, schema-validation result, redaction confirmation</li></ul>
 
 <footer class="aris-footer">
   Generated by <a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/render-html/SKILL.md">ARIS <code>/render-html</code></a> ·
-  source path <code>wiki/README.md</code> ·
-  SHA256 <code>9205f79735c2</code> ·
-  generated at 2026-06-10 02:47 UTC.
+  source path <code>README.md</code> ·
+  SHA256 <code>759bf456cdf2</code> ·
+  generated at 2026-06-13 10:07 UTC.
   This is a generated view — edit the source Markdown, then re-render.
 </footer>
 </main>

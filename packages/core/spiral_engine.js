@@ -37,9 +37,10 @@ if (!ID_RE.test(PAGE) || !Array.isArray(PANEL_IDS) || !PANEL_IDS.every(p => type
 // PROJ/REPO flow UNQUOTED-ish into shell strings (bake heredoc, gate CLIs, /tmp paths). For an external
 // user whose checkout path contains a quote / $ / backtick / ; etc. that is a command-injection surface.
 // Require a plain ABSOLUTE path with no shell metacharacters; abort loudly otherwise.
-const PATH_RE = /^\/[A-Za-z0-9 ._/-]+$/
+// No spaces either: several shell uses (e.g. stat -f%z ${cpng}) are unquoted, so a space would word-split.
+const PATH_RE = /^\/[A-Za-z0-9._/-]+$/
 for (const [k, v] of [['projectRoot', PROJ], ['repoRoot', REPO]]) {
-  if (!v || !PATH_RE.test(v)) throw new Error(`unsafe ${k} (must be an absolute path with no shell metacharacters, matching ${PATH_RE}): ${JSON.stringify(v)}`)
+  if (!v || !PATH_RE.test(v)) throw new Error(`unsafe ${k} (must be an absolute path with no spaces or shell metacharacters, matching ${PATH_RE}): ${JSON.stringify(v)}`)
 }
 const MAX_TOTAL = 4, MAX_ROLLBACKS = 6   // per-panel bakes in the main loop / extra repair rounds at assembly (unified budget = MAX_TOTAL + MAX_ROLLBACKS)
 const FINALIZE = ARGS.finalize === true
@@ -248,7 +249,8 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     // lock serializes the generate+pickup critical section across any concurrent bakes on this machine; a stale
     // lock (>15 min, i.e. a crashed bake) is stolen so it can never deadlock. A single workflow bakes serially,
     // so its own bakes never contend — this only fences SEPARATE concurrent runs (the documented footgun).
-    `LOCK=/tmp/aris_imagegen.lock; for i in $(seq 1 600); do mkdir "$LOCK" 2>/dev/null && break; find "$LOCK" -maxdepth 0 -mmin +15 2>/dev/null | grep -q . && rmdir "$LOCK" 2>/dev/null; sleep 2; done; trap 'rmdir "$LOCK" 2>/dev/null' EXIT`,
+    `LOCK=/tmp/aris_imagegen.lock; HELD=0; for i in $(seq 1 600); do if mkdir "$LOCK" 2>/dev/null; then HELD=1; trap 'rmdir "$LOCK" 2>/dev/null' EXIT; break; fi; find "$LOCK" -maxdepth 0 -mmin +15 2>/dev/null | grep -q . && rmdir "$LOCK" 2>/dev/null; sleep 2; done`,
+    `if [ "$HELD" != 1 ]; then echo "GEN_FAIL size=0 FAILKIND=other lock_contended"; exit 0; fi`,   // never run unlocked: if we never acquired, abort the bake (transient → retried) rather than risk grabbing another run's image / removing a lock we don't own
     `M=/tmp/cm_${pid}_${aTag}; touch "$M"`,
     `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${idRefAbs}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
     `( sleep 480; pkill -9 -P $P 2>/dev/null; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // watchdog kills codex's children then codex → no orphan image_gen polluting the next panel

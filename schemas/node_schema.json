@@ -992,7 +992,9 @@
     "payload_review": {
       "type": "object",
       "required": [
-        "reviewer"
+        "reviewer",
+        "target_node_id",
+        "gate_kind"
       ],
       "additionalProperties": true,
       "properties": {
@@ -1129,8 +1131,10 @@
     "payload_decision": {
       "type": "object",
       "required": [
-        "verdict",
-        "reasoning"
+        "gate_kind",
+        "reasoning",
+        "target_node_id",
+        "verdict"
       ],
       "additionalProperties": true,
       "properties": {
@@ -1323,7 +1327,11 @@
     },
     "payload_failure_mode": {
       "type": "object",
-      "required": [],
+      "required": [
+        "layer",
+        "affected_shot_ids",
+        "active"
+      ],
       "additionalProperties": true,
       "properties": {
         "mode_name": {
