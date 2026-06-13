@@ -15,7 +15,7 @@ Outputs (all under ../assets/):
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from asset_lib import (svg_doc, text, rect, ddl_chip, stamp, mini_stamp_glyph, mug, curve_panel,
-                       tokyo_chip, STARMAP_NODES, STARMAP_EDGES, STAR_COLOR,
+                       tokyo_chip, STARMAP_NODES, STARMAP_EDGES, STARMAP_LOOP, STAR_COLOR,
                        INK, DIM, RED, AMBER, GREEN, ST, VOID, WARM)
 
 A = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
@@ -114,11 +114,29 @@ def edges_svg(dim=False):
     return "".join(s)
 
 
+def loop_svg(dim=False):
+    """The auto-review-loop arc: a curved DASHED stardust edge REJECT -> rerun that bows outward (left),
+    brightening toward the re-light star — reads as the night's path doubling back ONCE, not a flowchart
+    arrow and not a DAG cycle. ZERO text (a label is added separately for the S16b version only)."""
+    s = []
+    for a, b in STARMAP_LOOP:
+        (x1, y1), (x2, y2) = pos[a], pos[b]
+        cx, cy = (min(x1, x2) - 0.085 * W), (max(y1, y2) - 0.02 * H)   # control point bows out to the left
+        op = 0.30 if dim else 0.62
+        # quadratic bezier, amber, dashed; a faint glow underlay so it reads as stardust not a UI dash
+        s.append(f'<path d="M{x1:.0f},{y1:.0f} Q{cx:.0f},{cy:.0f} {x2:.0f},{y2:.0f}" stroke="{AMBER}" stroke-width="3.2" fill="none" opacity="{op*0.28:.2f}"/>')
+        s.append(f'<path d="M{x1:.0f},{y1:.0f} Q{cx:.0f},{cy:.0f} {x2:.0f},{y2:.0f}" stroke="{AMBER}" stroke-width="1.3" fill="none" opacity="{op}" stroke-dasharray="2 6" stroke-linecap="round"/>')
+    return "".join(s)
+
+
 # S16b — labeled star-map (only the 4 gated labels are BIG: RESEARCH WIKI / REJECT / WARN_corrected / ACCEPT)
-o = [edges_svg()]
+o = [edges_svg(), loop_svg()]
 for n in STARMAP_NODES:
     x, y = pos[n["id"]]
     o.append(star(x, y, STAR_COLOR[n["kind"]], n["mag"] * (0.7 if n["kind"] == "ember" else 1.0)))
+# the small "re-run" label on the loop arc (NOT one of the 4 gated literals; small, like idea/novelty)
+_rx, _ry = pos["rerun"]
+o.append(text(_rx - 4, _ry - 14, "re-run", AMBER, 11, "700"))
 o.append(text(W / 2, 52, "RESEARCH WIKI", INK, 30, "800", spacing="6"))
 o.append(text(W / 2, 76, "the night, written into memory", DIM, 12, "400"))
 o.append(ddl_chip(W - 210, 44, "T-02:41", "amber", "dash", scale=0.95))
@@ -131,7 +149,7 @@ for nid, lbl in [("idea", "idea"), ("novelty", "novelty"), ("experiment", "exper
 w("wiki_starmap_v1.svg", svg_doc(W, H, "".join(o)))
 
 # S22 — PURE constellation: ZERO text, derived from the SAME coordinates; paper-star thread → tiny warm window
-o = [edges_svg(dim=True)]
+o = [edges_svg(dim=True), loop_svg(dim=True)]   # the loop arc carries no text, so it's safe for the zero-text twin
 for n in STARMAP_NODES:
     x, y = pos[n["id"]]
     mag = n["mag"] * (0.6 if n["kind"] == "ember" else 1.0)

@@ -156,6 +156,7 @@ STARMAP_NODES = [
     {"id": "novelty",        "x": 0.20, "y": 0.58, "kind": "main",  "mag": 0.8},
     {"id": "experiment",     "x": 0.33, "y": 0.46, "kind": "main",  "mag": 1.0},
     {"id": "REJECT",         "x": 0.45, "y": 0.60, "kind": "fail",  "mag": 1.1},
+    {"id": "rerun",          "x": 0.375, "y": 0.415, "kind": "main", "mag": 0.8},  # echo/double-star of experiment — the auto-review-loop re-light. NOT a hard cycle back to `experiment` (the wiki is a DAG); this is the night's trajectory doubling back once.
     {"id": "audit",          "x": 0.57, "y": 0.42, "kind": "audit", "mag": 1.2},
     {"id": "WARN_corrected", "x": 0.67, "y": 0.55, "kind": "audit", "mag": 1.1},
     {"id": "ACCEPT",         "x": 0.78, "y": 0.38, "kind": "ok",    "mag": 1.1},
@@ -168,9 +169,12 @@ STARMAP_NODES = [
 ]
 STARMAP_EDGES = [
     ["idea", "novelty"], ["novelty", "experiment"], ["experiment", "REJECT"],
-    ["REJECT", "audit"], ["audit", "WARN_corrected"], ["WARN_corrected", "ACCEPT"], ["ACCEPT", "paper"],
+    ["rerun", "audit"], ["audit", "WARN_corrected"], ["WARN_corrected", "ACCEPT"], ["ACCEPT", "paper"],
     ["idea", "idea_dup1"], ["idea", "idea_dup2"], ["audit", "sanitizer"], ["sanitizer", "inflated_62"],
 ]
+# the auto-review-loop made visible: REJECT doubles back to a re-light star (drawn as a curved DASHED
+# stardust arc, NOT a straight DAG edge) — the only loop-back in the map.
+STARMAP_LOOP = [["REJECT", "rerun"]]
 STAR_COLOR = {"main": INK, "fail": RED, "audit": AMBER, "ok": GREEN, "paper": "#FFFFFF", "ember": RED}
 
 
