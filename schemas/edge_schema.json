@@ -1,86 +1,54 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/wanshuiyin/ARIS-Movie/schemas/edge_schema.json",
-  "title": "ARIS-Movie Wiki Edge",
-  "description": "Schema for every line in movie-wiki/graph/edges.jsonl (one JSON object per line).",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/schemas/edge_schema.json",
+  "title": "ARIS-Movie-Director Wiki Edge",
+  "description": "Schema for every line in wiki/edges.jsonl (one JSON object per line). The executable convention (engine writeWiki + cli/validate_wiki.py + the generated edges.jsonl) is src/dst/type — this schema documents that reality, not the legacy video-pipeline from/to/edge_type form.",
   "type": "object",
   "required": [
-    "from",
-    "to",
-    "edge_type",
-    "created_at"
+    "src",
+    "dst",
+    "type"
   ],
   "additionalProperties": false,
   "properties": {
-    "from": {
+    "src": {
       "type": "string",
-      "description": "source node_id"
+      "description": "source node_id (e.g. 'review:panel_s10_a01_codex')"
     },
-    "to": {
+    "dst": {
       "type": "string",
-      "description": "target node_id"
+      "description": "target node_id (e.g. 'attempt:s10_a01')"
     },
-    "edge_type": {
+    "type": {
       "enum": [
-        "contains",
-        "continuation_of",
-        "retry_of",
-        "fork_of",
-        "supersedes",
-        "contradicts",
-        "supports_narrative",
-        "violates_narrative",
-        "violates_style",
-        "violates_character",
-        "violates_continuity",
-        "approved_by_reviewer",
-        "rejected_by_reviewer",
-        "uses_character",
-        "uses_location",
-        "uses_style_anchor",
-        "caused_failure_mode",
-        "repairs_failure_mode",
-        "baseline_for",
-        "compared_against",
-        "generated_from",
-        "reviewed_by",
-        "anchor_for",
-        "references_asset",
-        "composes_from",
-        "i2v_anchors_to",
-        "continues_via_last_clear_frame",
-        "produced_by_image2",
-        "produced_by_seedance",
-        "produced_by_pippit_native_audio",
-        "rollback_targets",
-        "rollback_invalidates",
-        "rollback_supersedes",
-        "assembly_includes_clip",
-        "assembly_reviews_storyboard",
-        "consulted_failure_mode",
-        "violates_failure_mode"
-      ]
+        "attempt_of",
+        "reviews",
+        "decides",
+        "failure_of",
+        "rollback_of",
+        "supersedes"
+      ],
+      "description": "comic-wiki edge vocabulary: attempt_of (attempt->panel), reviews (review->attempt), decides (decision->attempt), failure_of (failure_mode->attempt), rollback_of / supersedes (cross-frame repair links)"
+    },
+    "reviewer": {
+      "enum": ["cc", "codex", "gemini", "system", "user"],
+      "description": "OPTIONAL - on a 'reviews' edge, which reviewer produced it"
+    },
+    "verdict": {
+      "type": "string",
+      "description": "OPTIONAL - on a 'decides' edge, the verdict (keep | retry_panel | rollback | accept_by_human)"
     },
     "evidence": {
       "type": "string",
-      "description": "free-text justification for this edge — e.g. quoted reviewer line"
-    },
-    "reviewer": {
-      "enum": [
-        "CC",
-        "Codex",
-        "Gemini",
-        "system",
-        "user"
-      ]
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
+      "description": "OPTIONAL - free-text justification (e.g. a quoted reviewer line)"
     },
     "weight": {
       "type": "number",
-      "description": "OPTIONAL — confidence in [0,1], or rubric score for review edges"
+      "description": "OPTIONAL - confidence in [0,1] or a rubric score"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "OPTIONAL - logical order tag, NOT wall-clock (Date.now() is unavailable in the generation sandbox)"
     }
   }
 }

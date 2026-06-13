@@ -15,6 +15,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "schemas" / "node_schema.json"
 
+# Per-node-type payload invariants (the fields the engine ALWAYS writes for each comic node type).
+# This is what makes "PASS" mean something — the shallow node_type/status enum check alone does not.
+PAYLOAD_REQUIRED = {
+    "panel_attempt": ["source_panel_id", "image_path", "attempt_index"],
+    "review":        ["target_node_id", "reviewer", "gate_kind"],
+    "decision":      ["target_node_id", "verdict", "gate_kind"],
+    "failure_mode":  ["layer", "affected_shot_ids", "active"],
+}
+EDGE_TYPES = {"attempt_of", "reviews", "decides", "failure_of",
+              "rollback_of", "supersedes"}  # comic edge vocabulary (src/dst/type)
+
 
 def main():
     proj = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT
@@ -47,6 +58,15 @@ def main():
         st = d.get("status")
         if st is not None and st not in st_enum:
             errs.append(f"{f.name}: status '{st}' not in schema enum")
+        # deep check: payload invariants per node_type
+        payload = d.get("payload") or {}
+        for pk in PAYLOAD_REQUIRED.get(nt, []):
+            if pk not in payload:
+                errs.append(f"{f.name}: payload missing '{pk}' (required for {nt})")
+        # release-gate: NEVER persist an absolute home path in a node (privacy leak)
+        for k, v in payload.items():
+            if isinstance(v, str) and ("/Users/" in v or "/home/" in v):
+                errs.append(f"{f.name}: payload.{k} contains an absolute path (must be project-relative)")
 
     n_edges = 0
     edges = proj / "wiki" / "edges.jsonl"
@@ -59,6 +79,8 @@ def main():
                 e = json.loads(line)
                 if not all(k in e for k in ("src", "dst", "type")):
                     errs.append(f"edges.jsonl:{i}: missing src/dst/type")
+                elif e["type"] not in EDGE_TYPES:
+                    errs.append(f"edges.jsonl:{i}: edge type '{e['type']}' not in {sorted(EDGE_TYPES)}")
             except Exception as ex:
                 errs.append(f"edges.jsonl:{i}: invalid JSON ({ex})")
 

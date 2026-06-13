@@ -393,6 +393,17 @@
           "$ref": "#/$defs/payload_assembly_attempt"
         }
       }
+    },
+    {
+      "title": "panel_attempt node (comic)",
+      "properties": {
+        "node_type": {
+          "const": "panel_attempt"
+        },
+        "payload": {
+          "$ref": "#/$defs/payload_panel_attempt"
+        }
+      }
     }
   ],
   "$defs": {
@@ -981,17 +992,18 @@
     "payload_review": {
       "type": "object",
       "required": [
-        "reviewer",
-        "review_scores",
-        "failure_modes_flagged"
+        "reviewer"
       ],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "reviewer": {
           "enum": [
             "CC",
             "Codex",
-            "Gemini"
+            "Gemini",
+            "cc",
+            "codex",
+            "gemini"
           ]
         },
         "review_scores": {
@@ -1027,20 +1039,90 @@
           }
         },
         "target_node_id": {
-          "type": "string",
-          "description": "node_id of the segment_attempt or clip_attempt being reviewed."
+          "type": "string"
         },
         "gate_kind": {
-          "type": "string",
           "enum": [
-            "intent",
-            "outline",
-            "asset",
-            "frame_condition",
-            "clip",
-            "assembly",
-            "storyboard"
+            "panel",
+            "assembly"
           ]
+        },
+        "identity_consistency": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "style_consistency": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "composition_readability": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "artifact_severity": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "baked_text_quality": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "safezone_present": {
+          "type": "boolean"
+        },
+        "stray_text_present": {
+          "type": "boolean"
+        },
+        "content_corruption_present": {
+          "type": "boolean"
+        },
+        "timed_out": {
+          "type": "boolean"
+        },
+        "observed_literals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cross_panel_identity": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "cross_panel_style": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "text_fits_safezone": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "baked_text_legibility": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "drift_panels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "narrative_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "notes": {
+          "type": "string"
         }
       }
     },
@@ -1050,7 +1132,7 @@
         "verdict",
         "reasoning"
       ],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "verdict": {
           "enum": [
@@ -1071,7 +1153,9 @@
             "locked",
             "regenerate",
             "fallback_to_python_collage",
-            "revise"
+            "revise",
+            "retry_panel",
+            "accept_by_human"
           ]
         },
         "reasoning": {
@@ -1094,7 +1178,8 @@
             "frame_condition",
             "clip",
             "assembly",
-            "storyboard"
+            "storyboard",
+            "panel"
           ]
         },
         "rollback_target_shot_id": {
@@ -1135,6 +1220,12 @@
         "strike_count_for_target": {
           "type": "integer",
           "minimum": 0
+        },
+        "human": {
+          "type": "string"
+        },
+        "kept": {
+          "type": "object"
         }
       }
     },
@@ -1232,11 +1323,8 @@
     },
     "payload_failure_mode": {
       "type": "object",
-      "required": [
-        "mode_name",
-        "description"
-      ],
-      "additionalProperties": false,
+      "required": [],
+      "additionalProperties": true,
       "properties": {
         "mode_name": {
           "type": "string",
@@ -1264,7 +1352,8 @@
             "shot",
             "prompt_pattern",
             "visual_transition",
-            "global"
+            "global",
+            "panel_visual"
           ]
         },
         "scope": {
@@ -3208,6 +3297,37 @@
             "null"
           ],
           "description": "Gemini-located shot where visual drift first becomes irrecoverable (only set when rollback emitted)"
+        }
+      }
+    },
+    "payload_panel_attempt": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "source_panel_id",
+        "image_path",
+        "attempt_index"
+      ],
+      "properties": {
+        "source_panel_id": {
+          "type": "string"
+        },
+        "image_path": {
+          "type": "string",
+          "description": "project-relative; NEVER absolute (privacy)"
+        },
+        "attempt_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "model": {
+          "type": "string"
+        },
+        "is_baked_duo": {
+          "type": "boolean"
+        },
+        "image_sha256": {
+          "type": "string"
         }
       }
     }
