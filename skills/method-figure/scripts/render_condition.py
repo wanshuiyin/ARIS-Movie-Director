@@ -13,6 +13,7 @@ import argparse, json, math
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("blueprint"); ap.add_argument("--out", default="condition.svg")
+    ap.add_argument("--png", help="also rasterize to this PNG via headless Chrome (the bake needs a PNG condition)")
     a = ap.parse_args()
     bp = json.load(open(a.blueprint, encoding="utf-8"))
     W = bp["canvas"]["width"]; H = bp["canvas"]["height"]; BG = bp["canvas"].get("background", "#FFFFFF")
@@ -106,8 +107,27 @@ def main():
     if rail.get("label_exact") or rail.get("label"):
         o.append(T(W / 2, H - 22, lab(rail, "label"), MUT, 13, "600"))
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">' + "".join(o) + "</svg>"
-    open(a.out, "w", encoding="utf-8").write(svg)
-    print(f"[render_condition] wrote {a.out} ({len(svg)} bytes, {W}x{H})")
+    svg_path = a.out if a.out.endswith(".svg") else a.out + ".svg"
+    open(svg_path, "w", encoding="utf-8").write(svg)
+    print(f"[render_condition] wrote {svg_path} ({len(svg)} bytes, {W}x{H})")
+    if a.png:
+        import shutil, subprocess, os
+        png_path = a.png if a.png.endswith(".png") else a.png + ".png"
+        chrome = next((c for c in [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            shutil.which("google-chrome"), shutil.which("chromium"), shutil.which("chromium-browser")] if c and os.path.exists(c) if c), None) \
+            or shutil.which("google-chrome") or shutil.which("chromium")
+        if not chrome:
+            print(f"[render_condition] no headless Chrome found; rasterize manually:\n"
+                  f"  <chrome> --headless=new --disable-gpu --screenshot='{os.path.abspath(png_path)}' "
+                  f"--window-size={int(W)},{int(H)} --force-device-scale-factor=2 'file://{os.path.abspath(svg_path)}'")
+        else:
+            subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                            f"--screenshot={os.path.abspath(png_path)}", f"--window-size={int(W)},{int(H)}",
+                            "--force-device-scale-factor=2", f"file://{os.path.abspath(svg_path)}"],
+                           timeout=60, capture_output=True)
+            ok = os.path.exists(png_path) and os.path.getsize(png_path) > 1000
+            print(f"[render_condition] {'rasterized → ' + png_path if ok else 'rasterize FAILED (use the manual command)'}")
 
 if __name__ == "__main__":
     main()

@@ -28,7 +28,18 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--min-bytes", type=int, default=200000)
     ap.add_argument("--dir", default=os.path.expanduser("~/.codex/generated_images"))
+    ap.add_argument("--log", help="the codex bake log — fail-closed if it shows a non-native (shell/python/svg) fallback")
+    ap.add_argument("--aspect", type=float, help="expected width/height (e.g. blueprint W/H); rejects a wildly off-aspect image")
     a = ap.parse_args()
+    # fail-closed on a non-native fallback: the figure must come from the image_generation tool, never a
+    # hand-written SVG/PIL renderer masquerading as a bake.
+    if a.log and os.path.exists(a.log):
+        low = open(a.log, errors="ignore").read().lower()
+        bad = [m for m in ("def main(", "import cairosvg", "<svg", "matplotlib", "pillow", "from PIL",
+                            "wrote /", "rsvg-convert", "writefile") if m in low]
+        if bad and "image_generation" not in low and "generated_images" not in low:
+            print(json.dumps({"ok": False, "reason": f"codex log shows non-native fallback markers {bad}"}), file=sys.stderr)
+            sys.exit(1)
     cands = [p for p in glob.glob(os.path.join(os.path.expanduser(a.dir), "*.png"))
              if os.path.getmtime(p) >= a.marker - 1]
     cands.sort(key=os.path.getmtime, reverse=True)
@@ -39,6 +50,10 @@ def main():
         dims = png_dims(p)
         if not dims:
             continue
+        if a.aspect:
+            ar = dims[0] / dims[1]
+            if not (0.6 * a.aspect <= ar <= 1.6 * a.aspect):
+                continue   # wildly off the blueprint aspect → not our figure
         sha = hashlib.sha256(open(p, "rb").read()).hexdigest()
         os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
         shutil.copy(p, a.out)

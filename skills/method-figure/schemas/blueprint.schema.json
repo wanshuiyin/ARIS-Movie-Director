@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/skills/figure-spiral/blueprint.schema.json",
-  "title": "figure-spiral blueprint (content lock)",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/skills/method-figure/blueprint.schema.json",
+  "title": "method-figure blueprint (content lock)",
   "description": "The deterministic source of truth for a generated figure. *_exact fields hold the LOCKED text that every regeneration must re-assert verbatim; expected_tokens are what the reviewer panel must blind-transcribe and the hard-diff checks. style carries defaults only — it is NOT the content authority.",
   "type": "object",
   "required": ["version", "figure_id", "canvas", "render_policy", "nodes"],
   "properties": {
-    "version": {"const": "figure-spiral/blueprint/v1"},
+    "version": {"const": "method-figure/blueprint/v1"},
     "figure_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
     "title": {"type": "object", "properties": {"main": {"type": "string"}, "sub": {"type": "string"}}},
     "canvas": {"type": "object", "required": ["width", "height"], "properties": {

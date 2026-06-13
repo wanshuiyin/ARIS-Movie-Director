@@ -1,4 +1,4 @@
-# figure-spiral — cross-model review-panel protocol
+# method-figure — cross-model review-panel protocol
 
 The panel is the gate. Its job is to make figure quality **objective**, not a vibe. Three rules make it work:
 

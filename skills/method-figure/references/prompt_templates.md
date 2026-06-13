@@ -1,4 +1,4 @@
-# figure-spiral — prompt templates
+# method-figure — prompt templates
 
 ## A. Generation prompt (to `mcp__codex__codex`, sandbox: read-only, effort xhigh)
 
