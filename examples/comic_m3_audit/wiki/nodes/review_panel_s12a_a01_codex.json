@@ -1,0 +1,21 @@
+{
+  "node_id": "review:panel_s12a_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S12a panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s12a_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 4,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
+    "timed_out": false,
+    "observed_literals": ["EVAL PIPELINE - AUDIT GATE", "DDL", "T-05:12", "outputs", "evaluator", "score", "prior evidence", "Tok yo’", "AUDIT", "claim?", "+6.2", "HOLD · not a claim", "EVAL INTEGRITY"],
+    "notes": "Codex VISUAL second-model review completed (GPT-5.5 xhigh) independent read of S12a_panel_a01.png, mode=baked, CLI -i path, RC=0。双人身份锁稳定：executor 为蓝衣棕发无须（欢呼半空被截停、兜帽被抓住、像素彩纸冻结），reviewer 为绿衣黑发有须（另一只手把放大镜压在 evaluator 块上），与 identity_refs 一致，identity_consistency=5。像素chibi风格整体统一，style_consistency=4（轻微扣分：背景仪表盘密度区域的渲染质感与前景略有差异，不构成 beat 级缺陷）。构图可读、outputs→evaluator→score→GATE→claim 的管线-即-房间结构与被扣在门前的 +6.2 卡读取顺序清晰，composition_readability=5。本稿为 baked-duo：baked 技术字面清晰、拼写正确，baked_text_quality=5；观察到的字面文本 observed_literals=[\"EVAL PIPELINE - AUDIT GATE\", \"DDL\", \"T-05:12\", \"outputs\", \"evaluator\", \"score\", \"prior evidence\", \"Tok yo’\", \"AUDIT\", \"claim?\", \"+6.2\", \"HOLD · not a claim\", \"EVAL INTEGRITY\"]，覆盖全部 expected_literals（AUDIT/+6.2/EVAL PIPELINE），语义与 audit-gate 语境一致，content_corruption_present=false。背景粒子与浮动面板边缘轻度伪影，artifact_severity=1（轻微）。与 Gemini 在 identity 上零分歧（disagreeId=0）。整体 KEEP 倾向：身份/语义/构图稳，无内容变形。"
+  }
+}

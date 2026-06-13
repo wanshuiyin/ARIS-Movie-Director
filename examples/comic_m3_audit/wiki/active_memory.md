@@ -1,4 +1,4 @@
-# Active Memory — B08 panel_gate
+# Active Memory — panel_gate + assembly_gate (full film)
 
 The wiki is **prompt active-memory, not a passive log**: these constraints are fed back into generation.
 
@@ -21,6 +21,19 @@ The wiki is **prompt active-memory, not a passive log**: these constraints are f
 - **`fail:s13_a02`** — a required literal was not both-reviewer-confirmed.
   Repair invariant: re-bake with the technical figure rendered crisply and legibly; (meta) author
   `expected_literals` as the **salient** figure numbers reviewers reliably read, not a buried code token.
+- **`fail:s10_a01/a02/a03`** — `content_corruption_present=true` from both visual reviewers (garbled hero
+  `Tok|yo` crack / `ParseError` / `0.66`). Repair invariant: the hardest literal sets need the technical
+  figure baked large and high-contrast; a01–a03 were re-baked until a04 read clean. The corruption veto is
+  a single-vote kill and it earned its keep here.
+
+## Standing lesson — assembly must be design-aware (the B03 false-drift)
+
+The cross-frame assembly gate once scored "duo identity across panels" = 0 on a **parallel 2-up with
+disjoint casts** (S03 researcher-only / S04 duo-only) — twice, with **identical** scores. Identical scores
+across repair rounds are the fingerprint of a broken **rubric**, not a broken artifact: stop regenerating,
+audit the judge. Fix shipped: the assembly reviewer now receives each panel's intended cast + all page
+identity refs, and absence-of-a-character / warm-vs-dark world contrast are NOT drift. The human override
+is recorded as `decision_assembly_p_b03_human_override` — the loop can drive but never acquits.
 
 ## Standing lesson
 

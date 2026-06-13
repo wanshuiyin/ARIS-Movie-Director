@@ -1,0 +1,24 @@
+{
+  "node_id": "review:panel_s05_a01_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S05 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s05_a01",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 5,
+    "baked_text_quality": 5,
+    "observed_literals": ["DDL", "T-18:55", "NOVELTY GATE", "PRIOR ART", "STRUCTURED OUTPUTS", "DUP", "arXiv 2024", "14/20", "SURVIVES"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "safezone_present": true,
+    "failure_mode_positive_invariant": "保持当前 baked-duo 排版：NOVELTY GATE 文献砖墙（仅 PRIOR ART / STRUCTURED OUTPUTS 可读、其余虚化）+ 前景大 DUP 卡（小字 arXiv 2024 注）+ 14/20 记分板与绿色 SURVIVES 章 + 琥珀 DDL T-18:55 chip 的分区不变；红色像素火星与 14 张幸存卡绿光在霓虹网格地面的反射组合、'</>' 马克杯作唯一暖色环境道具维持不变。",
+    "timed_out": false,
+    "notes": "Gemini auto-gemini-3 VISUAL review of S05_panel_a01.png, mode=baked。CANONICAL DUO 双人身份在像素风格下保持稳定：绿衣 reviewer（黑发有须）于闸门控制台沉稳盖下 SURVIVES 章，蓝衣 executor（棕发无须）目送六张卡燃烧——肩部小幅塌缩后回稳为收敛的半弹跳，弹跳高度明显低于其 S02/S04 跳跃，能量阶梯保持，与 duo_canonical_ref 一致，identity_consistency=5。#0A0E27 暗空洞 'gate hall'（密度对齐 cal_S12）配色统一：发光文献砖墙作闸门本体、红色像素火星自灰烬升起、14 张幸存卡绿光反射于霓虹网格地面、控制台 '</>' 马克杯作唯一暖色点缀，贴合 ART_BIBLE 暗世界基调，style_consistency=5。构图可读、视线导向清晰（队列 → 闸门 → 燃烧的 DUP 卡堆 → 前景大 DUP 卡（arXiv 2024）→ 14 张绿色幸存卡 → 14/20 记分板 + SURVIVES 章 + 琥珀 DDL T-18:55 chip），composition_readability=5。无肢体崩坏/融合/边缘粒子伪影，artifact_severity=5（满分=无伪影）。本稿为 baked-duo：baked CJK 气泡与英文技术字面清晰可读、拼写正确，baked_text_quality=5；观察到的字面文本 observed_literals=[\"DDL\", \"T-18:55\", \"NOVELTY GATE\", \"PRIOR ART\", \"STRUCTURED OUTPUTS\", \"DUP\", \"arXiv 2024\", \"14/20\", \"SURVIVES\"]，与 B04 novelty-gate 语境一致，content_corruption_present=false。安全区保留（safezone_present=true）；无游离的 HTML-冲突字形 stray_text_present=false。[transcribed from gemini auto-gemini-3 CLI read, RC=0]"
+  }
+}

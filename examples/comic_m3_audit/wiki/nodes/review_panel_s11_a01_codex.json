@@ -1,0 +1,32 @@
+{
+  "node_id": "review:panel_s11_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S11 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s11_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "observed_literals": [
+      "DDL",
+      "T-16:05",
+      "REVIEW · ROUND 1",
+      "2048 samples scored",
+      "evaluator: exact_parse",
+      "evidence attached:",
+      "{\"city\":\"Tok|yo\"}",
+      "37",
+      "malformed",
+      "REJECT",
+      "0.66"
+    ],
+    "content_corruption_present": false,
+    "timed_out": false
+  }
+}

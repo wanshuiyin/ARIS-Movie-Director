@@ -1,0 +1,20 @@
+{
+  "node_id": "review:panel_s09_a02_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S09 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s09_a02",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 5,
+    "baked_text_quality": 5,
+    "observed_literals": ["RAW SAMPLE STREAM", "0.71", "1024/2048", "DDL", "T-17:02", "OK", "def exact_parse(json_str, schema):", "obj = json.loads(json_str)", "validate(obj, schema)", "return obj"],
+    "content_corruption_present": false,
+    "timed_out": false
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "node_id": "review:panel_s12a_a01_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S12a panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s12a_a01",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
+    "timed_out": false,
+    "observed_literals": ["EVAL PIPELINE", "AUDIT GATE", "T-05:12", "+6.2", "def exact_parse(json_str, schema):", "json.loads", "schema mismatch", "better masks"],
+    "notes": "Gemini auto-gemini-3 VISUAL review of S12a_panel_a01.png, mode=baked. 双人身份在像素chibi风格下保持稳定：蓝衣 executor（棕发无须，欢呼被半空截停）与绿衣 reviewer（黑发有须，抓兜帽+压放大镜）区分清晰，与 duo_canonical_ref 一致，identity_consistency=5。像素霓虹风格统一、深夜审计室冷色调中一盏暖台灯的对比贴合 dark-cyber 基调，style_consistency=5。构图可读、视线导向清晰（被截停的双人 → 放大镜/evaluator → 发光审计门 → 被扣住的 +6.2），composition_readability=5。无肢体崩坏/融合/边缘粒子伪影，artifact_severity=0（0=无伪影）。本稿为 baked-duo：面板内 baked 英文技术字面清晰可读、拼写正确，baked_text_quality=5；观察到的字面文本 observed_literals=[\"EVAL PIPELINE\", \"AUDIT GATE\", \"T-05:12\", \"+6.2\", \"def exact_parse(json_str, schema):\", \"json.loads\", \"schema mismatch\", \"better masks\"]，覆盖全部 expected_literals（AUDIT/+6.2/EVAL PIPELINE），与 B08 audit-gate 语境一致，content_corruption_present=false。[transcribed from gemini auto-gemini-3 CLI read, RC=0]"
+  }
+}

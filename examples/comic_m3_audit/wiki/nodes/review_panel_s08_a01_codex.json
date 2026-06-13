@@ -1,0 +1,24 @@
+{
+  "node_id": "review:panel_s08_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S08 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s08_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "observed_literals": ["wandb · exact_parse", "DDL", "T-17:46", "0.80", "0.70", "0.60", "0.50", "0.60 → 0.71", "schema-first", "0.71", "random-mask", "0.60", "step 4200...", "full batch □", "EVALS FIRST", "MASKING", "0.71！起飞了！", "整批跑完再说。"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "safezone_present": false,
+    "timed_out": false,
+    "failure_mode_positive_invariant": "duo canonical: blue executor (brown hair, NO beard) leapt ONTO the desk, both hands pointing at the 0.71 tick — bounce high/proud but clearly below his hand-off MAX (bounce ladder preserved); green reviewer (dark hair, beard) leaning over the step-log side screen (step 4200...), one eyebrow raised, ignoring the headline curve; dark-cyber machine room tightened onto the metrics wall (density cal_S12, #0A0E27 void); wandb · exact_parse chart card as the room's centerpiece (gray flat random-mask baseline ending 0.60, rising green schema-first line with 0.60 → 0.71 pill and 0.71 endpoint chip, amber DDL T-17:46); 'full batch □' sticky note kept as the provisional-evidence plant; shelf spines MASKING / EVALS FIRST, '</>' mug (environment prop), one warm Edison lamp breaking the cool.",
+    "notes": "Codex VISUAL second-model review completed (GPT-5.5 xhigh) independent read of S08_panel_a01.png, mode=baked, CLI -i path, RC=0。双人身份锁稳定：executor 蓝 hoodie 棕发无须（跳上桌面、双手指向 0.71 刻度，弹跳高度 high/proud 但明显低于 hand-off MAX，弹跳梯度保持），reviewer 绿 hoodie 黑发有须（俯身盯右侧 step 日志屏、挑眉、无视主曲线），与 duo_canonical_ref/identity_refs 一致，identity_consistency=5。像素 chibi 风格整体统一：dark-cyber 暗夜机房贴 #0A0E27 基调，密度对齐 cal_S12，暖 Edison 灯/'</>' 杯破冷符合 ART_BIBLE §0.5 双世界配色语法，style_consistency=5。构图可读、层次清晰：wandb · exact_parse 图卡居中为唯一信息锚，灰色 random-mask 基线（0.60 章）→ 绿色 schema-first 上扬线（0.60 → 0.71 标签 + 0.71 端点章）→ 琥珀 DDL T-17:46 一遍读穿，右侧 step 4200... 日志屏保持次级层次不抢锚，composition_readability=5。本稿为 baked-duo：baked CJK 对白「0.71！起飞了！」「整批跑完再说。」与图卡/便签英文字面清晰锐利、拼写正确，与 content SVG（wandb_exact_parse_060_071_v1.svg）一致，baked_text_quality=5；观察到的字面文本 observed_literals 含图卡全部 token（wandb · exact_parse / DDL / T-17:46 / y 轴 0.80–0.50 / 0.60 → 0.71 / schema-first / random-mask）、日志屏与便签字面（step 4200... / full batch □）及书脊字面（EVALS FIRST / MASKING），expected_literals（0.60 / 0.71）全部命中，语义与 B06 凌晨曲线爬升语境一致，content_corruption_present=false。面板内除 baked 文本外无零星模拟字形残留 stray_text_present=false；安全区被 baked 气泡与图卡占据 safezone_present=false（baked 模式预期内）。无肢体崩坏/融合，仅桌面道具与曲线反走样处有极轻微像素噪点，artifact_severity=1（severity 标尺，1=极轻微，不构成内容变形）。与 Gemini 在 identity 上零分歧（disagreeId=0）。整体 KEEP 倾向：身份/语义/烤字/构图全稳，无内容变形。"
+  }
+}

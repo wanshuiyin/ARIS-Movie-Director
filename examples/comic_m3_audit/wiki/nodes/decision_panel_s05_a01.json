@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s05_a01",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S05 a1 → keep",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s05_a01",
+    "verdict": "keep",
+    "reasoning": "KEEP — [baked] narr=4 identity=5 style=5/5 comp=5/5 art(g/c)=5/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[] disagreeId=0",
+    "repair_instruction": ""
+  }
+}

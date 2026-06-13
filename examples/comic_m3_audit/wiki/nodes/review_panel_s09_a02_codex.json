@@ -1,0 +1,21 @@
+{
+  "node_id": "review:panel_s09_a02_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S09 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s09_a02",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "observed_literals": ["RAW SAMPLE STREAM", "0.71", "1024/2048", "DDL", "T-17:02", "OK", "STRUCTURED OUTPUTS", "RAW LOGS", "def exact_parse(json_str, schema):", "try:", "obj = json.loads(json_str)"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "timed_out": false
+  }
+}

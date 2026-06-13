@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s09_a01",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S09 a1 → retry_panel",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s09_a01",
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — [baked] narr=3 identity=5 style=5/5 comp=5/5 art(g/c)=5/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[] disagreeId=0",
+    "repair_instruction": "executor保持蓝衣棕发无须，reviewer保持绿衣黑发有须；像素chibi与暗赛博技术面板风格稳定"
+  }
+}

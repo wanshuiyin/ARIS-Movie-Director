@@ -1,0 +1,20 @@
+{
+  "node_id": "review:panel_s19_a02_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S19 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s19_a02",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "observed_literals": ["SUBMITTED", "100%", "T-00:42", "paper.pdf", "supplementary.zip", "CLAIM AUDIT", "RESEARCH WIKI", "auth: OK", "rl4dm", "8MB", "better masks", "schema locks", "evals", "</>"],
+    "content_corruption_present": false,
+    "timed_out": false
+  }
+}

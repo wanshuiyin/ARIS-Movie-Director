@@ -1,0 +1,13 @@
+{
+  "node_id": "fail:s03_a03",
+  "node_type": "failure_mode",
+  "status": "active",
+  "title": "S03 a3 panel_visual failure mode",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "active": true,
+    "affected_shot_ids": ["S03"],
+    "layer": "panel_visual",
+    "repair_pattern": "研究者黑框眼镜、黑短发、黑T与双肩包带保持稳定；暖教室与暗色技术屏幕形成ART_BIBLE要求的冷暖对比，气泡中文清晰可读。"
+  }
+}

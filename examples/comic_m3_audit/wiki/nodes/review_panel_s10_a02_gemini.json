@@ -1,0 +1,34 @@
+{
+  "node_id": "review:panel_s10_a02_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S10 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s10_a02",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "observed_literals": [
+      "0.71",
+      "0.66",
+      "0.71->0.66",
+      "T-16:21",
+      "{\"city\":\"Tok|yo\"}",
+      "json.loads",
+      "sample_1207",
+      "ParseError",
+      "2048/2048",
+      "37",
+      "S09",
+      "json_str",
+      "schema"
+    ],
+    "content_corruption_present": true,
+    "timed_out": false
+  }
+}

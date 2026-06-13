@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s17_a01",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S17 a1 → retry_panel",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s17_a01",
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — [baked] narr=4 identity=5 style=5/5 comp=5/5 art(g/c)=0/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[scope-limited] disagreeId=0",
+    "repair_instruction": "身份锁定正确：蓝色执行者为棕发无须，绿色审查者为黑发有须；像素chibi、暖实验室+暗色技术屏、气泡烤字和关键技术数字整体清晰。"
+  }
+}

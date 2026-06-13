@@ -1,0 +1,21 @@
+{
+  "node_id": "review:panel_s20_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S20 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s20_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "observed_literals": ["SUBMITTED ✓", "DDL", "T-00:27", "receipt logged · all done · she can sleep", "def exact_parse(json_str, schema):", "try:", "obj = json.loads(json_str)", "validate(o"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "timed_out": false
+  }
+}

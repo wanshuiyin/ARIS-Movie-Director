@@ -1,0 +1,39 @@
+{
+  "node_id": "review:panel_s16b_a01_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S16b panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s16b_a01",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
+    "safezone_present": true,
+    "stray_text_present": false,
+    "observed_literals": [
+      "RESEARCH WIKI",
+      "DDL",
+      "T-02:41",
+      "REJECT",
+      "WARN_corrected",
+      "ACCEPT",
+      "paper",
+      "idea",
+      "novelty",
+      "experiment",
+      "sanitizer",
+      "LLM DECODING",
+      "STRUCTURED OUTPUTS",
+      "EVALS FIRST"
+    ],
+    "failure_mode_positive_invariant": "保持当前 big-frame 星图排版：'RESEARCH WIKI' 顶部标题 chip + 整夜主路径 idea→novelty→experiment→REJECT→audit→WARN_corrected→ACCEPT→paper 按 wiki_starmap_nodes_v1.json 坐标布星、仅 RESEARCH WIKI / REJECT / WARN_corrected / ACCEPT 四标签大号、其余小号；REJECT 暗红 / WARN_corrected amber / ACCEPT 绿 / paper 最亮白的节点配色；idea 下无标签暗红余烬支线星在场不亮；duo 在桌缘星空下显小、executor 的手悬停暗红 REJECT 星上方不触碰；独盏暖台灯作全图唯一篝火暖像素；双气泡逐字与 DDL T-02:41 chip 保持不变。",
+    "timed_out": false,
+    "notes": "Gemini auto-gemini-3 visual review of panels/S16b_panel_a01.png (baked-duo big-frame 面板)。executor 蓝 hoodie 棕发无须、reviewer 绿 hoodie 黑发有须双人身份与 duo_canonical_ref 完全一致，且按 B09.5 设定在开阔星空下刻意画小、并肩立于全息星图桌缘，executor 抬手悬停在暗红 REJECT 星下方不触碰，identity_consistency=5。像素霓虹风格统一，dark-cyber 暗室远墙溶解为 starfield 夜空、身后仪表盘黯成余烬、独盏暖台灯如星空下篝火，全图唯一暖像素位置正确，'settled' 收束基调与 B09.5 完全贴合，style_consistency=5。构图可读、视线沿 RESEARCH WIKI 标题 → 主路径自左下 idea 逐节点亮起 → ACCEPT → 最亮 paper 星流动，composition_readability=5。本面板 is_baked_duo=true，四个 gated 大号标签（RESEARCH WIKI / REJECT / WARN_corrected / ACCEPT）清晰可盲转录、拼写正确，小号路径标签 idea / novelty / experiment / sanitizer / paper 可见且无错字，双气泡「连被拒的那条也在。」/「失败也是记忆。」逐字正确，baked_text_quality=5，content_corruption_present=false。observed_literals 与 B09.5 research star-map 语义一致：REJECT 暗红、WARN_corrected amber、ACCEPT 绿、paper 最亮白的配色分级正确，idea 下方挂无标签暗淡余烬支线星，DDL T-02:41 延续 deadline 线索。右下角书脊（LLM DECODING / STRUCTURED OUTPUTS / EVALS FIRST）为 S01 暖房间一脉的 set-continuity 道具字、非杂散乱码，stray_text_present=false。夜空上部留有大片干净留白，safezone_present=true。无明显噪点或拼接伪影，artifact_severity=0。正向不变量见 failure_mode_positive_invariant。"
+  }
+}

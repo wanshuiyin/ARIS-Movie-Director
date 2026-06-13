@@ -1,0 +1,41 @@
+{
+  "node_id": "review:panel_s17_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S17 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s17_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
+    "safezone_present": true,
+    "stray_text_present": false,
+    "observed_literals": [
+      "PAPER - RESULTS",
+      "Results",
+      "schema-keyword-first +1.4 (scope-limited)",
+      "+6.2",
+      "Limitations:",
+      "holds under an external validator",
+      "DDL",
+      "T-01:57",
+      "$ validate results.json",
+      "{\"city\":\"Tokyo\"}",
+      "parsed",
+      "2048/2048 clean",
+      "claim_id = C7",
+      "integrity = pass",
+      "CLAIM AUDIT",
+      "STRUCTURED OUTPUTS"
+    ],
+    "timed_out": false,
+    "failure_mode_positive_invariant": "executor=blue hoodie+brown hair+no beard leaning at the desk edge pointing at the side terminal, reviewer=green hoodie+near-black hair+beard seated at the keyboard typing the limitations line; pixel chibi; honest results page as the brightest object in the room: 'PAPER - RESULTS' header bar, amber headline 'schema-keyword-first +1.4 (scope-limited)' on ONE line, small struck-through ghost '+6.2' in the margin (kept visible, never erased, not gated), 'Limitations: holds under an external validator' carrying S15's narrowed claim; side terminal '$ validate results.json' → '{\"city\":\"Tokyo\"} ✓ parsed' / '2048/2048 clean' closing the Tok|yo wound on-screen; claim ledger board 'claim_id = C7 / integrity = pass' glowing faintly behind; DDL T-01:57 chip; empty '</>' mug pushed aside; lone warm desk lamp over the keyboard; both bubbles verbatim ('照实写，边界也写上。' / 'Tokyo 修好了。'); tempered nod, no jump.",
+    "notes": "Codex visual review returned (GPT-5.5 xhigh) independent read of panels/S17_panel_a01.png, CLI -i path, RC=0。本面板 is_baked_duo=true、单格。executor 蓝 hoodie 棕发无须倚桌缘指向终端、reviewer 绿 hoodie 黑发有须坐键盘前敲 limitations 行，双人身份在像素风格下稳定、与 identity_refs 一致，姿态与 B10 设定（释然微笑 / 平静权威 / tempered nod 不跳）完全贴合，identity_consistency=5。像素霓虹风格统一，dark-cyber 暗写作间以发光论文页为最亮物体、暖台灯破冷、S15 claim 台账板微光承接，style_consistency=5。构图可读、视线沿 'PAPER - RESULTS' → amber 头条行 → 页边划线幽灵 +6.2 → Limitations 行 → 侧边终端 Tokyo 闭环 → 双人气泡流动，composition_readability=5。大号烤字与双气泡逐字正确、无字形损坏，baked_text_quality=5，content_corruption_present=false；observed_literals 与 B10 语义一致（+1.4 头条 / +6.2 划线幽灵 / Tokyo 修复闭环 / T-01:57 延续 deadline 线索）。关键阈值边缘项：头条括注 '(scope-limited)' 本人可转录并计入 observed_literals，但其字号约为主数字 '+1.4' 的一半、amber 对比度偏低，处于盲转录置信阈值边缘——与 Gemini 的唯一实质分歧即此项（本人计入、Gemini 未计入，按 ¬both 规则该 gated literal 视为未确认）；retry 时建议将 '(scope-limited)' 与 '+1.4' 同级放大或提亮。artifact_severity=1（轻微：页边划线幽灵 +6.2 的笔画边缘与桌面散落草稿打印件的 micro-text 有轻度字形噪点——均为非 gated 小号文字，不损合同字面）。书脊（CLAIM AUDIT / STRUCTURED OUTPUTS）属 set-continuity 道具字、非杂散乱码，stray_text_present=false。画幅上部留有干净留白，safezone_present=true。与 Gemini 在 identity/style/comp/btq 上完全一致，artifact 仅相差 1 级（0/1，minor），disagreeId=0。正向不变量见 failure_mode_positive_invariant。"
+  }
+}

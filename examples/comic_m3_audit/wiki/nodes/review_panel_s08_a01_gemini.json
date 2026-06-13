@@ -1,0 +1,24 @@
+{
+  "node_id": "review:panel_s08_a01_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S08 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s08_a01",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "observed_literals": ["0.71", "wandb", "exact_parse", "DDL", "T-17:46", "0.80", "0.71", "0.60", "0.50", "0.60 -> 0.71", "schema-first", "random-mask", "step 4200"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "safezone_present": true,
+    "failure_mode_positive_invariant": "保持当前 baked duo 排版：dark-cyber 暗夜机房收紧到 metrics 墙（密度 cal_S12）+ #0A0E27 深空；wandb · exact_parse 图卡悬浮居中作房间中心件（灰色 random-mask 基线收在 0.60、绿色 schema-first 曲线带 0.60 -> 0.71 标签与 0.71 端点章、y 轴 0.80/0.60/0.50 刻度、琥珀 DDL T-17:46）；蓝 hoodie executor 跳上桌面双手指向 0.71 刻度（high/proud，仍低于 hand-off MAX，弹跳梯度保持）+ 绿 hoodie reviewer 俯身盯右侧 step 4200 日志屏挑眉（不看主曲线）；'full batch □' 便签、书脊 MASKING / EVALS FIRST、'</>' 马克杯与单盏暖 Edison 灯破冷维持不变。",
+    "timed_out": false,
+    "notes": "Gemini auto-gemini-3 VISUAL review of S08_panel_a01.png, mode=baked。双人身份在像素 chibi 风格下保持稳定：蓝 hoodie executor（棕发无须，跳上桌面双手指向 0.71 刻度，欢呼姿态）与绿 hoodie reviewer（黑发有须，俯身盯 step 日志屏、挑眉、无视主曲线）区分清晰，与 duo_canonical_ref / identity_refs 一致，identity_consistency=5。dark-cyber 世界配色统一：#0A0E27 深空背景，密度对齐 cal_S12，wandb 图卡悬浮居中，暖色 Edison 灯与 '</>' 马克杯按 ART_BIBLE §0.5 破冷规则点缀，书脊 MASKING / EVALS FIRST 维持环境道具层，style_consistency=5。构图可读、视线导向清晰（executor 欢呼 → 0.71 端点章 → 0.60 -> 0.71 标签 → reviewer → step 4200 日志屏），技术图 wandb · exact_parse 作中心件层次分明、日志屏居次级，composition_readability=5。无肢体崩坏/融合/边缘粒子伪影，artifact_severity=0（severity 标尺，0=无伪影）。本稿为 baked-duo：baked CJK 气泡「0.71！起飞了！」「整批跑完再说。」与图卡英文字面清晰可读、拼写正确，baked_text_quality=5；观察到的字面文本 observed_literals=[\"0.71\", \"wandb\", \"exact_parse\", \"DDL\", \"T-17:46\", \"0.80\", \"0.71\", \"0.60\", \"0.50\", \"0.60 -> 0.71\", \"schema-first\", \"random-mask\", \"step 4200\"]，expected_literals（0.60 / 0.71）全部命中，与 B06 曲线爬升语境一致，content_corruption_present=false。安全区保留（safezone_present=true）；无游离的 HTML-冲突字形 stray_text_present=false。[transcribed from gemini auto-gemini-3 CLI read, RC=0]"
+  }
+}

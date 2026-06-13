@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s09_a01_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S09 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s09_a01",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 3,
+    "composition_story": 4,
+    "timed_out": false,
+    "notes": "S09 (mode=baked, page P_B06 'Experiment - The Curve Lifts'). DELIVERED: executor euphoria beat lands — leaping front-left with warm confetti vs cold wall, bubble baked verbatim ('全绿！她醒来会有惊喜！', correct speaker/shout style); expected literals"
+  }
+}

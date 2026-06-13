@@ -1,0 +1,21 @@
+{
+  "node_id": "review:panel_s19_a02_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S19 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s19_a02",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "observed_literals": ["SUBMIT", "paper.pdf ✓", "supplementary.zip ✓", "100%", "SUBMITTED", "> upload complete · receipt logged to research-wiki", "DDL", "T-00:42", "UPLOAD LOG", "> connecti"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "timed_out": false
+  }
+}

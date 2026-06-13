@@ -37,6 +37,7 @@ if (!ID_RE.test(PAGE) || !Array.isArray(PANEL_IDS) || !PANEL_IDS.every(p => type
 const MAX_TOTAL = 4, MAX_ROLLBACKS = 6   // per-panel bakes in the main loop / extra repair rounds at assembly (unified budget = MAX_TOTAL + MAX_ROLLBACKS)
 const FINALIZE = ARGS.finalize === true
 const absImg = (p) => !p ? '' : (p.startsWith('/') ? p : PROJ + '/' + p)  // resolve panel image path (abs or project-rel) — one helper
+const relImg = (p) => !p ? '' : (p.startsWith(PROJ + '/') ? p.slice(PROJ.length + 1) : p)  // project-relative for wiki nodes — NEVER persist an absolute path (leaks $HOME/username on a public release)
 // throttle = the DETERMINISTIC class set by the bash wrapper (failure_kind), with the old prose regex only as a fallback
 const isThrottle = (gen, reason) => gen?.failure_kind === 'throttle' || (!gen?.failure_kind && /rate|limit|throttl|server|unavailable|429|quota/i.test(reason || ''))
 
@@ -290,7 +291,7 @@ function writeWiki(pid, gen, gate, ai) {
   const v = gate.verdict.v
   return agent([
     `Write ARIS comic wiki active-memory nodes for panel ${pid} attempt ${ai} into ${NODES}/ (one JSON file each; mirror the video clip nodes). created_at "2026-06-08T00:00:00+00:00".`,
-    `1) panel_attempt → ${NODES}/panel_attempt_${sl}_${aTag}.json: {node_id:"attempt:${sl}_${aTag}",node_type:"panel_attempt",status:"under_review",title:"${pid} panel attempt ${ai}",payload:{source_panel_id:"panel:${sl}_aris_comic_v1",image_path:${JSON.stringify(gen.image_path)},attempt_index:${ai},model:"codex_image_gen",is_baked_duo:true}}`,
+    `1) panel_attempt → ${NODES}/panel_attempt_${sl}_${aTag}.json: {node_id:"attempt:${sl}_${aTag}",node_type:"panel_attempt",status:"under_review",title:"${pid} panel attempt ${ai}",payload:{source_panel_id:"panel:${sl}_aris_comic_v1",image_path:${JSON.stringify(relImg(gen.image_path))},attempt_index:${ai},model:"codex_image_gen",is_baked_duo:true}}`,
     `2) review → review_panel_${sl}_${aTag}_{cc,gemini,codex}.json: one per reviewer, node_type:"review", payload holds that reviewer's scores from: CC=${JSON.stringify(gate.cc).slice(0, 300)} GEM=${JSON.stringify(gate.gem).slice(0, 300)} CDX=${JSON.stringify(gate.cdx).slice(0, 300)}`,
     `3) decision → decision_panel_${sl}_${aTag}.json: {node_id:"decision:panel_${sl}_${aTag}",node_type:"decision",status:"final",title:"panel_gate ${pid} a${ai} → ${v}",payload:{gate_kind:"panel",target_node_id:"attempt:${sl}_${aTag}",verdict:"${v}",reasoning:${JSON.stringify(gate.verdict.reason.slice(0, 300))},repair_instruction:${JSON.stringify(gate.verdict.invariant || '')}}}`,
     v !== 'keep' ? `4) failure_mode → fail_${sl}_${aTag}.json: {node_id:"fail:${sl}_${aTag}",node_type:"failure_mode",payload:{active:true,affected_shot_ids:["${pid}"],layer:"panel_visual",repair_pattern:${JSON.stringify(gate.verdict.invariant || '')}}}` : '(no failure_mode on keep)',

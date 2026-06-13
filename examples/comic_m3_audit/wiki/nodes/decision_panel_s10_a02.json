@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s10_a02",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S10 a2 → retry_panel",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s10_a02",
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — [baked] narr=4.5 identity=5 style=5/5 comp=5/5 art(g/c)=0/1 btq=5 corruption=true reviewersOk=true missing(¬both)=[] disagreeId=0",
+    "repair_instruction": "双人身份锁稳定：蓝衣棕发无须 executor、绿衣黑发有须 reviewer；暗霓虹像素审计室、0.71→0.66、0.66、ParseError、T-16:21 与 reviewer 指向 Tok|yo 的读序保持。"
+  }
+}

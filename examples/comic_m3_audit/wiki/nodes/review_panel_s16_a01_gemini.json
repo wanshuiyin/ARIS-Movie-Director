@@ -1,0 +1,42 @@
+{
+  "node_id": "review:panel_s16_a01_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S16 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s16_a01",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "content_corruption_present": false,
+    "safezone_present": false,
+    "stray_text_present": false,
+    "observed_literals": [
+      "HONEST RE-RUN",
+      "RAW SCORING",
+      "DDL",
+      "T-02:58",
+      "wandb",
+      "exact_parse",
+      "0.78",
+      "0.89",
+      "2048",
+      "samples",
+      "raw",
+      "sanitizer: BYPASSED",
+      "json.loads",
+      "clean",
+      "ACCEPT",
+      "REVIEW",
+      "RE-RUN"
+    ],
+    "failure_mode_positive_invariant": "保持当前 baked-duo 排版：'HONEST RE-RUN — RAW SCORING' 标题 + 上升 exact_parse 条带（0.78→0.89 双端点标注）+ REVIEW·RE-RUN verdict 卡与斜向绿 ACCEPT 章三段清晰分区；reviewer 盖章姿势与早前红 REJECT 重摔的刻意镜像、executor 克制 micro-bounce 的双人演出，以及 war-room 由红 diff 转绿 parse 日志的'松一口气'氛围光保持不变。",
+    "timed_out": false,
+    "notes": "Gemini auto-gemini-3 visual review of panels/S16_panel_a01.png (baked-duo 面板)。executor 蓝 hoodie 棕发无须、reviewer 绿 hoodie 黑发有须双人身份与 duo_canonical_ref 完全一致，且 reviewer 盖绿 ACCEPT 章的手臂姿势与早前红 REJECT 重摔构成刻意镜像，identity_consistency=5。像素霓虹风格统一、同一 dark-cyber re-eval war-room 复用且监视器由红色 diff 转为稳定绿色 parse 日志，'松一口气'的配色变化贴合 B09 基调，style_consistency=5。构图可读、视线导向中心 REVIEW·RE-RUN verdict 卡与斜向绿 ACCEPT 戳记，composition_readability=5。本面板为 is_baked_duo=true，刻意烘焙的英文文案清晰可读、拼写正确、版式整齐，baked_text_quality=5；observed_literals 与 B09 honest re-run · ACCEPT 语义一致：上升 exact_parse 条带两端点 0.78/0.89、'2048 samples · raw'、'sanitizer: BYPASSED'、'json.loads ✓ clean' 信任链完整，DDL T-02:58 延续 deadline 线索，无错别字/无语义损坏，content_corruption_present=false。无非预期杂散字形（stray_text_present=false），无明显噪点或拼接伪影，artifact_severity=0。文字密度较高、未额外预留独立 HTML 文字净空区（safezone_present=false），属 baked-duo 设计内可接受。正向不变量见 failure_mode_positive_invariant。"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "node_id": "review:panel_s17_a02_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S17 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s17_a02",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 5,
+    "baked_text_quality": 5,
+    "observed_literals": ["+1.4", "scope-limited", "+6.2", "results.json", "{\"city\":\"Tokyo\"}", "2048/2048", "claim_id = C7", "integrity = WARN_corrected", "T-01:57", "C7", "C5", "REJECT"],
+    "content_corruption_present": false,
+    "timed_out": false
+  }
+}

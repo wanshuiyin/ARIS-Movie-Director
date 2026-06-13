@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s19_a02_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S19 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s19_a02",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 5,
+    "composition_story": 4.5,
+    "timed_out": false,
+    "notes": "S19 fully lands beat B11 (autonomous submission at T-00:42): SUBMITTED stamp + paper.pdf + red DDL T-00:42 all baked and readable; researcher correctly absent (she's in S18 walking home) so 'ARIS presses submit on her be"
+  }
+}

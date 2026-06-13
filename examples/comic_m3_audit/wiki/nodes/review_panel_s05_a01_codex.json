@@ -1,0 +1,24 @@
+{
+  "node_id": "review:panel_s05_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S05 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s05_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "observed_literals": ["DDL", "T-18:55", "NOVELTY GATE", "PRIOR ART", "STRUCTURED OUTPUTS", "DUP", "arXiv 2024", "14/20", "SURVIVES", "</>"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "safezone_present": false,
+    "timed_out": false,
+    "failure_mode_positive_invariant": "executor=blue hoodie+brown hair+no beard (deflate -> tempered half-bounce, below S02/S04 jump heights), reviewer=green hoodie+dark hair+beard stamping SURVIVES at the console; pixel chibi dark-cyber gate hall (density cal_S12); baked literals legible+correct (14/20, SURVIVES, DUP, arXiv 2024, DDL T-18:55, NOVELTY GATE, PRIOR ART, STRUCTURED OUTPUTS); keep queue -> gate -> burn -> 14 survivors -> scoreboard layout with '</>' mug as the single warm prop.",
+    "notes": "Codex VISUAL second-model review completed (GPT-5.5 xhigh) independent read of S05_panel_a01.png, mode=baked, CLI -i path, RC=0。CANONICAL DUO 双人身份锁稳定：reviewer 绿衣黑发有须于闸门控制台沉稳盖 SURVIVES 章，executor 蓝衣棕发无须目送六张卡燃烧——肩部小幅塌缩后回稳为收敛半弹跳（高度明显低于其 S02 hand-off MAX 与 S04 撒卡跳，能量阶梯保持），与 duo_canonical_ref/identity_refs 一致，identity_consistency=5。像素风格整体统一：#0A0E27 暗空洞密度对齐 cal_S12 基准，发光文献砖墙闸门（仅 PRIOR ART / STRUCTURED OUTPUTS 可读、其余虚化）、霓虹网格地面与幸存卡绿光反射协调，style_consistency=5。构图可读、视线从队列经闸门导向燃烧的 DUP 卡堆与前景大 DUP 卡（arXiv 2024 小注）再到 14 张绿色幸存卡与 14/20 记分板 + SURVIVES 章 + 琥珀 DDL T-18:55 chip，composition_readability=5。本稿为 baked-duo：baked CJK 气泡（terse '够新，留下。' / say '我那六张牌啊……'）与英文技术字面清晰锐利、拼写正确，baked_text_quality=5；观察到的字面文本 observed_literals=[\"DDL\", \"T-18:55\", \"NOVELTY GATE\", \"PRIOR ART\", \"STRUCTURED OUTPUTS\", \"DUP\", \"arXiv 2024\", \"14/20\", \"SURVIVES\", \"</>\"]（'</>' 为控制台马克杯环境道具，非 motif cup），语义与 B04 novelty-gate 语境一致，content_corruption_present=false。面板内除 baked 文本外无零星模拟字形残留 stray_text_present=false；安全区被 baked 气泡与记分板占据 safezone_present=false（baked 模式预期内）。红色像素火星/灰烬边缘轻度噪点，artifact_severity=1（轻微，集中在燃烧粒子区，不构成 beat 级缺陷）。与 Gemini 在 identity 上零分歧（disagreeId=0）。整体 KEEP 倾向：双人身份/语义/烤字/构图全稳，无内容变形。"
+  }
+}

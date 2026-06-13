@@ -1,0 +1,35 @@
+{
+  "node_id": "review:panel_s10_a04_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S10 panel a4",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s10_a04",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 1,
+    "baked_text_quality": 5,
+    "observed_literals": [
+      "DDL",
+      "T-16:21",
+      "ghost: 0.71",
+      "wandb · exact_parse",
+      "0.71→0.66",
+      "0.8",
+      "0.6",
+      "0.66",
+      "S09 · corner",
+      "{\"city\":\"Tok|yo\"}",
+      "OK | yo",
+      "json.loads(sample_1207) →",
+      "ParseError",
+      "batch 2048/2048"
+    ],
+    "content_corruption_present": false,
+    "timed_out": false
+  }
+}

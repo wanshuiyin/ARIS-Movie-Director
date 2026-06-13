@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s10_a01_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S10 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s10_a01",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 5,
+    "composition_story": 4,
+    "timed_out": false,
+    "notes": "S10 nails its half of beat B07: reviewer pins the broken {\"city\":\"Tok|yo\"} chip dead-center, curve sags 0.71→0.66 (red 0.66 tick, ghost 0.71, batch 2048/2048 · 37 malformed, json.loads→ParseError all baked and legible), and both intende"
+  }
+}

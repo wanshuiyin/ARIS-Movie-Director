@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s17_a01_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S17 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s17_a01",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 5,
+    "composition_story": 4,
+    "timed_out": false,
+    "notes": "Beat fidelity 5/5: panel fully delivers B10 \"诚实成稿\" — baked figure IS the honest results page (headline \"schema-keyword-first +1.4 (scope-limited)\", struck ghost +6.2 in margin that B11's \"拳头握得很小\" later depends on, Limitations line \"holds under an external validator\" carrying S15's narrowed claim forward), and the side terminal heals the night's oldest wound on-screen: {\"city\": \"Tokyo\"} ✓ parsed — the Tok|yo fracture from S09/S10 closes its loop inside the results page's room, not in a flashback. NARRATIVE-ONLY judgment of panels/S17_panel_a01.png.\n\nBEAT FIDELITY 5/5 — This is the honesty beat, and the panel states its thesis in light: the paper page is the brightest object in the room, brighter than any dashboard the night produced. Both bubbles land verbatim (reviewer 「照实写，边界也写上。」 at the keyboard typing the limitations line with calm authority; executor 「Tokyo 修好了。」 leaning at the desk edge pointing at the healed terminal with a small relieved smile). The bounce is correctly TEMPERED — a nod, not a jump — exactly the post-REJECT, post-audit emotional register the storyboard demands, and the one B11's small fist pump must inherit. The struck +6.2 ghost in the margin is the inflation kept honest by being kept visible: archived, crossed out, not erased. Env props all carry: the empty </> mug pushed aside (the all-nighter spent), DDL T-01:57 still running (honesty under deadline, not after it), the claim ledger board glowing faintly behind from S15.\n\nCOMPOSITION (STORY) 4/5 — Reading order works: PAPER - RESULTS header → amber headline row → struck ghost +6.2 in the margin → limitations line → side terminal with the repaired Tokyo → duo and bubbles grounding the foreground. Docked one point: the \"(scope-limited)\" qualifier — the single most load-bearing phrase of the beat — renders visibly smaller and dimmer than the +1.4 it qualifies, so the eye gets the number a full beat before it gets the boundary; the honest-paper idea still lands, but the typography slightly re-creates the headline-over-caveat hierarchy the beat exists to bury. Visual identity-lock / artifact severity / baked-text legibility / content-corruption are NOT my call — left to the visual reviewers (Gemini/Codex)."
+  }
+}

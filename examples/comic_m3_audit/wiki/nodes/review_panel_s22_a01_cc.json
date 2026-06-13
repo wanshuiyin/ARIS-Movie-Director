@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s22_a01_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S22 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s22_a01",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "narrative_beat_fidelity": 5,
+    "composition_story": 4,
+    "timed_out": false,
+    "notes": "B13「品牌·纯星座」beat 完整兑现。叙事保真 5/5：(1) 纯星点、零文字、零角色——用户决策（无标签诗化孪生）严格执行，bubbles=[]、caption=null、text_mode=html 与 storyboard S22 条目逐项一致；(2) 星座布局确实暗合 wiki 真值源 assets/wiki_starmap_nodes_v1.json——主路径 8 节点的 zigzag（idea 左下 → REJECT/WAR"
+  }
+}

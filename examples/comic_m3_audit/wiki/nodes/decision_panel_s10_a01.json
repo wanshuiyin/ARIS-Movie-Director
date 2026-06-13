@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s10_a01",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S10 a1 → retry_panel",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s10_a01",
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — [baked] narr=4 identity=5 style=5/5 comp=5/5 art(g/c)=5/1 btq=5 corruption=true reviewersOk=true missing(¬both)=[] disagreeId=0",
+    "repair_instruction": "双人身份锁正确：蓝衣棕发无须 executor、绿衣黑发有须 reviewer；像素chibi画风和暗霓虹审计构图稳定，主要故障集中在JSON样本Tok|yo与ParseError叙事文本。"
+  }
+}

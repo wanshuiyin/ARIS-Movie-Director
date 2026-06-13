@@ -1,0 +1,24 @@
+{
+  "node_id": "review:panel_s07_a01_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S07 panel a1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s07_a01",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "observed_literals": ["GPU LAUNCH CONSOLE", "$ aris exp launch dllm-schema-keyword-first --gpus 8", "DDL", "T-18:30", "gpu0", "gpu1", "gpu2", "gpu3", "gpu4", "gpu5", "gpu6", "gpu7", "8/8", "RUNNING", "ALLOC LOG STREAM", "ALLOCATED", "ALL GPUS READY.", "LAUNCH", "DIFFUSION LM", "SCHEDULERS", "上 GPU！八张全开！", "日志我盯着。"],
+    "content_corruption_present": false,
+    "stray_text_present": false,
+    "safezone_present": false,
+    "timed_out": false,
+    "failure_mode_positive_invariant": "duo canonical: blue executor (brown hair, NO beard) mid-leap slamming the LAUNCH key — HIGH jump but clearly below his hand-off MAX (bounce ladder preserved); green reviewer (dark hair, beard) behind, arms crossed, eyes already on the log screen; dark-cyber machine room (density cal_S12, #0A0E27 void, neon grid floor); GPU LAUNCH CONSOLE technical figure as the room's centerpiece ($ aris exp launch dllm-schema-keyword-first --gpus 8 terminal line, 2x4 GPU grid gpu0–gpu7 all green, big 8/8 counter + green RUNNING chip, amber DDL T-18:30); side ALLOC LOG STREAM (eight ALLOCATED lines + ALL GPUS READY.) kept secondary; shelf spines DIFFUSION LM / SCHEDULERS, '</>' mug (environment prop), one warm Edison lamp breaking the cool.",
+    "notes": "Codex VISUAL second-model review completed (GPT-5.5 xhigh) independent read of S07_panel_a01.png, mode=baked, CLI -i path, RC=0。双人身份锁稳定：executor 蓝 hoodie 棕发无须（高跳扑向 LAUNCH 键、指尖火花，弹跳高度明显低于 hand-off MAX，弹跳梯度保持），reviewer 绿 hoodie 黑发有须（站位靠后、抱臂、视线已落在日志屏），与 duo_canonical_ref/identity_refs 一致，identity_consistency=5。像素 chibi 风格整体统一：dark-cyber 暗夜机房贴 #0A0E27 基调，密度对齐 cal_S12，霓虹网格地面 + 暖 Edison 灯/'</>' 杯破冷符合 ART_BIBLE §0.5 双世界配色语法，style_consistency=5。构图可读、层次清晰：GPU LAUNCH CONSOLE 技术图居中为唯一信息锚，2x4 GPU 绿灯阵列（gpu0–gpu7）→ 大号 8/8 计数 → 绿色 RUNNING 章 → 琥珀 DDL T-18:30 一遍读穿，右侧 ALLOC LOG STREAM 保持次级层次不抢锚，composition_readability=5。本稿为 baked-duo：baked CJK 对白「上 GPU！八张全开！」「日志我盯着。」与控制台英文字面清晰锐利、拼写正确，命令行 $ aris exp launch dllm-schema-keyword-first --gpus 8 全串与 content SVG 一致，baked_text_quality=5；观察到的字面文本 observed_literals 含控制台全部 token（GPU LAUNCH CONSOLE / DDL / T-18:30 / gpu0–gpu7 / 8/8 / RUNNING）与日志屏字面（ALLOC LOG STREAM / ALLOCATED / ALL GPUS READY.）及书脊/按键字面（DIFFUSION LM / SCHEDULERS / LAUNCH），expected_literals（8/8 / RUNNING / T-18:30）全部命中，语义与 B06 launch 语境一致，content_corruption_present=false。面板内除 baked 文本外无零星模拟字形残留 stray_text_present=false；安全区被 baked 标题与气泡占据 safezone_present=false（baked 模式预期内）。无肢体崩坏/融合伪影，背景密度干净，artifact_severity=0（severity 标尺，0=无伪影）。与 Gemini 在 identity 上零分歧（disagreeId=0）。整体 KEEP 倾向：身份/语义/烤字/构图全稳，无内容变形。"
+  }
+}
