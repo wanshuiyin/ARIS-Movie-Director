@@ -243,11 +243,18 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     promptBody,
     `${BAKE_DELIM}`,
     `( printf 'Paste these style rules first:\\n%s\\n\\nThen render this panel:\\n' "$(cat "${BIBLE}")"; cat /tmp/bake_${pid}_${aTag}.txt ) > /tmp/bakefull_${pid}_${aTag}.txt`,
+    // CONCURRENT-BAKE LOCK (audit A4): codex image_gen writes to the GLOBAL ~/.codex/generated_images dir and
+    // we pick the mtime-newest PNG — two bakes running at once would grab each other's images. An atomic mkdir
+    // lock serializes the generate+pickup critical section across any concurrent bakes on this machine; a stale
+    // lock (>15 min, i.e. a crashed bake) is stolen so it can never deadlock. A single workflow bakes serially,
+    // so its own bakes never contend — this only fences SEPARATE concurrent runs (the documented footgun).
+    `LOCK=/tmp/aris_imagegen.lock; for i in $(seq 1 600); do mkdir "$LOCK" 2>/dev/null && break; find "$LOCK" -maxdepth 0 -mmin +15 2>/dev/null | grep -q . && rmdir "$LOCK" 2>/dev/null; sleep 2; done; trap 'rmdir "$LOCK" 2>/dev/null' EXIT`,
     `M=/tmp/cm_${pid}_${aTag}; touch "$M"`,
     `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${idRefAbs}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
     `( sleep 480; pkill -9 -P $P 2>/dev/null; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // watchdog kills codex's children then codex → no orphan image_gen polluting the next panel
     `NEW=$(find ~/.codex/generated_images -name '*.png' -newer "$M" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1); SZ=$(stat -f%z "$NEW" 2>/dev/null || echo 0)`,   // NEWEST BY MTIME (not lexicographic sort — that picked the wrong file in multi-image runs)
     `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; H=$(shasum -a 256 "${out}" 2>/dev/null | cut -d' ' -f1); echo "GEN_OK ${out} $SZ sha=$H"; else if grep -qiE 'rate.?limit|429|quota|server_?error|too many requests|overloaded|unavailable|50[23]' /tmp/cm_${pid}_${aTag}.log 2>/dev/null; then K=throttle; else K=other; fi; echo "GEN_FAIL size=$SZ FAILKIND=$K"; fi`,
+    `rmdir "$LOCK" 2>/dev/null; trap - EXIT`,   // release the bake lock immediately after pickup (trap is the crash safety-net)
     '```',
     `STEP 3 — return GEN_SCHEMA: status MUST be "panel_ready" ONLY if you saw "GEN_OK" and "${out}" is >500KB, else "generation_failed". image_path="${out}", bytes (the real size), image_sha256 (the value printed after "sha=" on the GEN_OK line — REQUIRED on success, it binds the gate verdict to this exact image), failure_kind (on failure, copy the token after "FAILKIND=" — "throttle" or "other" — this is the DETERMINISTIC class, do NOT infer it from prose), text_mode="${cfg.text_mode}", content_figure_png="${cpng}", gen_failed_reason (quote the codex/image_gen error if failed), notes. Do NOT self-attest the numbers — faithfulness is judged by the gate.`,
   ].join('\n'), { label: `gen:${pid}#${ai}`, phase: 'Panels', schema: GEN_SCHEMA })
@@ -345,8 +352,12 @@ for (let i = 0; i < PANEL_IDS.length && !throttled && !escalated; i++) {
     if (!gen || gen.status !== 'panel_ready' || !gen.image_path || (gen.bytes || 0) <= 500000) {
       const reason = gen?.gen_failed_reason || `not panel_ready (status=${gen?.status} bytes=${gen?.bytes})`
       log(`  ✗ gen failed [${gen?.failure_kind || '?'}]: ${reason}`)
-      if (isThrottle(gen, reason)) {  // image_gen throttled → stop cleanly, resume after cooldown
-        throttled = true; escalated = { pid, why: 'image_gen throttled mid-run — stop + resume after cooldown' }; break
+      if (isThrottle(gen, reason)) {  // image_gen throttled → stop cleanly; a FRESH run (NOT resumeFromRunId) is required after cooldown
+        throttled = true
+        escalated = { pid, why: 'image_gen throttled mid-run — stop and wait for cooldown',
+          resume_allowed: false, fresh_run_required: true, resume_from_panel: pid,
+          how_to_resume: `wait for image_gen cooldown, then launch a FRESH workflow run for the remaining panelIds starting at ${pid}. Do NOT use resumeFromRunId — the cached throttle result would replay and immediately re-throttle.` }
+        break
       }
       continue  // non-throttle gen failure → retry this panel (until cap)
     }
