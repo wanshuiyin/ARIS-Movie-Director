@@ -34,6 +34,13 @@ const ID_RE = /^[A-Za-z0-9_-]+$/
 if (!ID_RE.test(PAGE) || !Array.isArray(PANEL_IDS) || !PANEL_IDS.every(p => typeof p === 'string' && ID_RE.test(p))) {
   throw new Error(`unsafe page/panelIds (must match ${ID_RE}): page=${JSON.stringify(PAGE)} panelIds=${JSON.stringify(PANEL_IDS)}`)
 }
+// PROJ/REPO flow UNQUOTED-ish into shell strings (bake heredoc, gate CLIs, /tmp paths). For an external
+// user whose checkout path contains a quote / $ / backtick / ; etc. that is a command-injection surface.
+// Require a plain ABSOLUTE path with no shell metacharacters; abort loudly otherwise.
+const PATH_RE = /^\/[A-Za-z0-9 ._/-]+$/
+for (const [k, v] of [['projectRoot', PROJ], ['repoRoot', REPO]]) {
+  if (!v || !PATH_RE.test(v)) throw new Error(`unsafe ${k} (must be an absolute path with no shell metacharacters, matching ${PATH_RE}): ${JSON.stringify(v)}`)
+}
 const MAX_TOTAL = 4, MAX_ROLLBACKS = 6   // per-panel bakes in the main loop / extra repair rounds at assembly (unified budget = MAX_TOTAL + MAX_ROLLBACKS)
 const FINALIZE = ARGS.finalize === true
 const absImg = (p) => !p ? '' : (p.startsWith('/') ? p : PROJ + '/' + p)  // resolve panel image path (abs or project-rel) — one helper
@@ -52,6 +59,13 @@ function panelVerdict(cc, gem, cdx, cfg = {}) {
   const mode = cfg.text_mode || 'html'
   const timeout = cc?.timed_out || gem?.timed_out || cdx?.timed_out
   if (timeout) return { v: 'retry_panel', reason: 'a reviewer timed out — fail-safe retry', invariant: '' }
+  // FAIL-CLOSED: both visual reviewers must return ALL core scores. Otherwise the filter(x!=null) below would
+  // silently degrade to ONE reviewer's score carrying the panel (identity is partly guarded by disagree<2, but
+  // style/comp were not) — a missing/partial visual reviewer that didn't set timed_out must NOT slip a KEEP.
+  const visCore = r => [r?.identity_consistency, r?.style_consistency, r?.composition_readability, r?.artifact_severity]
+  if (![gem, cdx].every(r => visCore(r).every(x => x != null))) {
+    return { v: 'retry_panel', reason: 'a visual reviewer returned incomplete core scores (fail-closed)', invariant: '' }
+  }
   const baked = mode === 'baked'
   const narr = Math.min(cc?.narrative_beat_fidelity ?? 0, cc?.composition_story ?? 5)
   const idents = [gem?.identity_consistency, cdx?.identity_consistency].filter(x => x != null)
