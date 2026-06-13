@@ -29,7 +29,7 @@
   .page{display:none;}
   .page.active{display:flex;gap:18px;animation:flipin var(--flip);}
   @keyframes flipin{from{opacity:0;transform:translateY(8px) scale(.992);}to{opacity:1;transform:none;}}
-  .stage{flex:1;min-width:0;}
+  .stage{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}  /* center content vertically so a short 2-up row sits mid-stage, not top-aligned with empty space below */
   .sidebar{width:280px;flex:none;border-left:2px solid #20203a;padding-left:16px;display:flex;flex-direction:column;gap:13px;}
   .sidebar .beatno{font-family:var(--mono);font-size:11px;color:#7d78a6;letter-spacing:.14em;}
   .sidebar h2{margin:0;font-size:19px;font-family:var(--disp);font-weight:800;line-height:1.2;}
@@ -37,7 +37,7 @@
   .sidebar .narr{font-size:14px;line-height:1.65;color:#cfcbe6;}
   .sidebar .foot{margin-top:auto;font-family:var(--mono);font-size:10.5px;color:#5b577d;}
   .single{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:2px solid #2a2a46;overflow:hidden;}
-  .grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;background:var(--gutter);padding:8px;border:2px solid #2a2a46;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:auto;gap:8px;background:var(--gutter);padding:8px;border:2px solid #2a2a46;}  /* auto rows: a 2-panel page is ONE row (no empty bottom half); a 4-panel recap flows into 2 rows = 2x2 */
   .featgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--gutter);padding:8px;border:2px solid #2a2a46;}
   .featgrid .cell.span2{grid-column:1/3;}  /* feature page: top row of panels + a dominant full-width last panel */
   .cell{position:relative;aspect-ratio:16/9;overflow:hidden;background:#000;}  /* 16:9 cells: panels are generated 16:9, so a square cell cropped off the wide diagrams' left/right. A 2x2 of 16:9 cells is ~16:9 overall (fits screen) and shows each panel in full. */
