@@ -9,6 +9,17 @@ The framework knows nothing about any particular story — a project plugs in vi
 pixel-art comic about an autonomous research run, and ships the **real generation trace** (174 wiki
 nodes) as proof the multi-agent loop actually ran.
 
+![ARIS-Movie-Director — method overview](docs/workflow_figure.png)
+
+> **Figure 1.** How a panel is made: an authored source of truth (asset library · outline · storyboard →
+> `comic.json`) feeds an **audited spiral** — bake → a 3-reviewer cross-model gate → a *deterministic
+> token-diff* verdict. Two nested perimeters keep it honest: an inner **literal-correctness** retry
+> (≤4/panel, re-baked with the failed attempt's `repair_pattern`) and an outer **page-coherence** rollback
+> at the assembly gate (≤6/run); hitting either bound ejects to a human. Every decision is written to the
+> research wiki — *failures kept as memory*. The punchline: **a beautiful panel with a wrong number does
+> not pass.** (This figure is itself a deterministic vector SVG, designed to cross-model consensus then
+> rendered — `docs/gen_workflow_figure.py`.)
+
 ## How it works
 
 Per panel, the **spiral engine** (`packages/core/spiral_engine.js`, run via a workflow runtime):
