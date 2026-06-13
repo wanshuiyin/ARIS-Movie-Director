@@ -75,6 +75,10 @@
   .endcard .logo{font-family:var(--disp);font-weight:900;font-size:clamp(34px,6vw,64px);letter-spacing:.04em;text-shadow:3px 3px 0 #000;}
   .endcard .sub{font-family:var(--mono);font-size:13px;letter-spacing:.34em;color:var(--success);margin-top:6px;}
   .endcard .tag{margin-top:18px;font-size:clamp(18px,2.6vw,26px);color:#fff;text-shadow:2px 2px 0 #000;}
+  .links{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;}
+  .endcard .links{justify-content:center;}
+  .links a{font-family:var(--mono);font-size:12.5px;color:var(--amber);text-decoration:none;border:1px solid #3a3358;padding:7px 13px;background:rgba(7,6,15,.72);text-shadow:none;transition:background .15s,color .15s;}
+  .links a:hover{background:var(--amber);color:#0a0e27;border-color:var(--amber);}
   nav.flip{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px;border-top:1px solid #1d1b33;}
   nav.flip button{font-family:var(--mono);font-size:13px;color:#e8e6f0;background:#13122a;border:1px solid #34335a;padding:8px 16px;cursor:pointer;border-radius:0;}
   nav.flip button:hover{background:#1d1c3e;}nav.flip button:disabled{opacity:.3;cursor:default;}
@@ -124,6 +128,14 @@ function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").rep
 // no onerror/onclick/javascript:). title/narration is the only rich field; <img onerror=…> becomes inert text.
 function richSafe(s){ return esc(s).replace(/&lt;br\s*\/?&gt;/gi,"<br>").replace(/&lt;(\/?)(b|i|em|strong)&gt;/gi,"<$1$2>"); }
 function el(tag, cls, txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
+// clickable project links (cover + endcard). https-only, new tab, noopener; label via textContent (XSS-safe).
+function linksRow(pg){
+  if(!Array.isArray(pg.links)||!pg.links.length) return null;
+  const row=el("div","links");
+  pg.links.forEach(l=>{ const url=String((l&&l.url)||""); if(!/^https:\/\//i.test(url)) return;
+    const a=el("a",null,T(l.label)||url); a.setAttribute("href",url); a.setAttribute("target","_blank"); a.setAttribute("rel","noopener noreferrer"); row.appendChild(a); });
+  return row.children.length?row:null;
+}
 // panel image: NO runtime image_path fallback (single-file contract); honor crop {position,zoom}; missing -> visible box
 function panelImg(p){
   if(!p.image_data){ const d=el("div","panel-img","⚠ missing panel"); d.style.cssText+=";display:flex;align-items:center;justify-content:center;background:#2a1020;color:#ffb3c4;font-family:var(--mono);font-size:12px;"; return d; }
@@ -177,6 +189,7 @@ function renderPage(pg){
       ht.appendChild(el("div","sub",pg.logo_sub||""));
       ht.appendChild(el("div","tag",T(pg.tag)));
     }
+    const lr=linksRow(pg); if(lr) ht.appendChild(lr);
     h.appendChild(ht); stage.appendChild(h); page.appendChild(stage); return page;
   }
   if(pg.type==="grid2x2"||pg.type==="grid"){

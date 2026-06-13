@@ -66,7 +66,23 @@
       "tag": {
         "zh": "一个自主科研智能体替她通宵跑完研究。离投稿，还有二十四小时。",
         "en": "An autonomous agent runs the research overnight. 24 hours to the deadline."
-      }
+      },
+      "links": [
+        {
+          "label": {
+            "zh": "ARIS · 自主科研智能体 ↗",
+            "en": "ARIS · the research agent ↗"
+          },
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep"
+        },
+        {
+          "label": {
+            "zh": "ARIS-Movie-Director · 本片引擎 ↗",
+            "en": "ARIS-Movie-Director · the engine ↗"
+          },
+          "url": "https://github.com/wanshuiyin/ARIS-Movie-Director"
+        }
+      ]
     },
     {
       "id": "P01_b02",
@@ -378,7 +394,23 @@
       "tag": {
         "zh": "你不在的时候，研究在。",
         "en": "While you're away, the research carries on."
-      }
+      },
+      "links": [
+        {
+          "label": {
+            "zh": "ARIS · 自主科研智能体 ↗",
+            "en": "ARIS · the research agent ↗"
+          },
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep"
+        },
+        {
+          "label": {
+            "zh": "ARIS-Movie-Director · 本片引擎 ↗",
+            "en": "ARIS-Movie-Director · the engine ↗"
+          },
+          "url": "https://github.com/wanshuiyin/ARIS-Movie-Director"
+        }
+      ]
     }
   ],
   "panels": {
