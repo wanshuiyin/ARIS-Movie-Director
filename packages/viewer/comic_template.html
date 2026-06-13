@@ -79,6 +79,16 @@
   .endcard .links{justify-content:center;}
   .links a{font-family:var(--mono);font-size:12.5px;color:var(--amber);text-decoration:none;border:1px solid #3a3358;padding:7px 13px;background:rgba(7,6,15,.72);text-shadow:none;transition:background .15s,color .15s;}
   .links a:hover{background:var(--amber);color:#0a0e27;border-color:var(--amber);}
+  /* FINALE: homecoming panels on top, a full-width constellation closing band below (endcard merged in) */
+  .page.finale{flex-wrap:wrap;}
+  .finband{width:100%;position:relative;margin-top:14px;border:2px solid #2a2a46;overflow:hidden;min-height:200px;display:flex;align-items:center;justify-content:center;}
+  .finbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;}
+  .finscrim{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(5,4,12,.5) 0%,rgba(5,4,12,.8) 100%);}
+  .finov{position:relative;text-align:center;padding:24px 18px;}
+  .finband .logo{font-family:var(--disp);font-weight:900;font-size:clamp(30px,5vw,54px);letter-spacing:.05em;color:#fff;text-shadow:3px 3px 0 #000;}
+  .finband .sub{font-family:var(--mono);font-size:clamp(11px,1.1vw,13px);letter-spacing:.32em;color:var(--success);margin-top:5px;}
+  .finband .tag{margin-top:13px;font-size:clamp(15px,2vw,21px);color:#fff;text-shadow:2px 2px 0 #000;}
+  .finband .links{justify-content:center;margin-top:17px;}
   nav.flip{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px;border-top:1px solid #1d1b33;}
   nav.flip button{font-family:var(--mono);font-size:13px;color:#e8e6f0;background:#13122a;border:1px solid #34335a;padding:8px 16px;cursor:pointer;border-radius:0;}
   nav.flip button:hover{background:#1d1c3e;}nav.flip button:disabled{opacity:.3;cursor:default;}
@@ -192,7 +202,7 @@ function renderPage(pg){
     const lr=linksRow(pg); if(lr) ht.appendChild(lr);
     h.appendChild(ht); stage.appendChild(h); page.appendChild(stage); return page;
   }
-  if(pg.type==="grid2x2"||pg.type==="grid"){
+  if(pg.type==="grid2x2"||pg.type==="grid"||pg.type==="finale"){
     const g=el("div","grid");
     (pg.panel_ids||[]).forEach(pid=>{
       const panel=PANELS[pid]||{}; const c=el("div","cell");
@@ -223,7 +233,23 @@ function renderPage(pg){
   if(pg.skill) sb.appendChild(el("div","skill",pg.skill));
   const narr=el("div","narr"); narr.innerHTML=richSafe(T(pg.narration)); sb.appendChild(narr);  // narration light markup — sanitized (only <br>/<b/i/em/strong>)
   sb.appendChild(el("div","foot","research-journal"));
-  page.appendChild(sb); return page;
+  page.appendChild(sb);
+  // FINALE: the homecoming page is the last page — append a full-width closing band below
+  // (constellation banner + ARIS lockup + tagline + the two project links). The endcard merged in here.
+  if(pg.type==="finale" && pg.closing){
+    page.classList.add("finale");
+    const cl=pg.closing, band=el("div","finband");
+    const ci=PANELS[cl.image];
+    if(ci && ci.image_data){ const im=el("img","finbg"); im.src=ci.image_data; im.alt=""; band.appendChild(im); }
+    band.appendChild(el("div","finscrim"));
+    const ov=el("div","finov");
+    ov.appendChild(el("div","logo",cl.logo||"ARIS"));
+    ov.appendChild(el("div","sub",cl.logo_sub||""));
+    ov.appendChild(el("div","tag",T(cl.tag)));
+    const lr=linksRow(cl); if(lr) ov.appendChild(lr);
+    band.appendChild(ov); page.appendChild(band);
+  }
+  return page;
 }
 
 let idx=0, pages=[];

@@ -366,7 +366,7 @@
     },
     {
       "id": "P_B12",
-      "type": "grid",
+      "type": "finale",
       "beat": "B12",
       "beat_title": {
         "zh": "B12 归家 · 凉掉的咖啡",
@@ -380,37 +380,32 @@
       "panel_ids": [
         "S20",
         "S21"
-      ]
-    },
-    {
-      "id": "P03_end",
-      "type": "endcard",
-      "beat": "B13",
-      "panel_ids": [
-        "S22"
       ],
-      "logo": "ARIS",
-      "logo_sub": "AUTO · RESEARCH · IN · SLEEP",
-      "tag": {
-        "zh": "你不在的时候，研究在。",
-        "en": "While you're away, the research carries on."
-      },
-      "links": [
-        {
-          "label": {
-            "zh": "ARIS · 自主科研智能体 ↗",
-            "en": "ARIS · the research agent ↗"
-          },
-          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep"
+      "closing": {
+        "image": "S22",
+        "logo": "ARIS",
+        "logo_sub": "AUTO · RESEARCH · IN · SLEEP",
+        "tag": {
+          "zh": "你不在的时候，研究在。",
+          "en": "While you're away, the research carries on."
         },
-        {
-          "label": {
-            "zh": "ARIS-Movie-Director · 本片引擎 ↗",
-            "en": "ARIS-Movie-Director · the engine ↗"
+        "links": [
+          {
+            "label": {
+              "zh": "ARIS · 自主科研智能体 ↗",
+              "en": "ARIS · the research agent ↗"
+            },
+            "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep"
           },
-          "url": "https://github.com/wanshuiyin/ARIS-Movie-Director"
-        }
-      ]
+          {
+            "label": {
+              "zh": "ARIS-Movie-Director · 本片引擎 ↗",
+              "en": "ARIS-Movie-Director · the engine ↗"
+            },
+            "url": "https://github.com/wanshuiyin/ARIS-Movie-Director"
+          }
+        ]
+      }
     }
   ],
   "panels": {
