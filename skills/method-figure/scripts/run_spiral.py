@@ -24,14 +24,24 @@ LOCK = "/tmp/aris_imagegen.lock"
 def log(msg):
     print(f"[run_spiral {time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
+class _Fail:
+    def __init__(self, msg): self.returncode = 1; self.stdout = ""; self.stderr = msg
+
 def sh(cmd, timeout, **kw):
-    return subprocess.run(cmd, timeout=timeout, capture_output=True, text=True, **kw)
+    try:
+        return subprocess.run(cmd, timeout=timeout, capture_output=True, text=True, **kw)
+    except subprocess.TimeoutExpired as e:
+        return _Fail(f"timeout after {timeout}s: {e}")
+    except Exception as e:
+        return _Fail(f"subprocess error: {e}")
 
 def sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16] if os.path.exists(path) else ""
 
-def extract_json(text):
-    """pull the first balanced {...} object out of a CLI model's (often prose-wrapped) output."""
+def extract_json(text, required_key=None):
+    """pull the first balanced {...} object out of a CLI model's (prose/fence-wrapped) output. If
+    required_key is given, skip fragments (e.g. a {"thought":...} preamble) that lack it — only return the
+    real payload."""
     s = text.find("{")
     while s != -1:
         depth = 0
@@ -40,8 +50,11 @@ def extract_json(text):
             elif text[i] == "}":
                 depth -= 1
                 if depth == 0:
-                    try: return json.loads(text[s:i + 1])
-                    except Exception: break
+                    try:
+                        j = json.loads(text[s:i + 1])
+                        if required_key is None or (isinstance(j, dict) and required_key in j): return j
+                    except Exception: pass
+                    break
         s = text.find("{", s + 1)
     return None
 
@@ -103,17 +116,18 @@ def run_codex(prompt, images, effort, timeout, logf, image_gen=False):
 def review_gemini(png, timeout):
     p = REVIEW_PROMPT.format(png="the attached image")
     r = sh(["gemini", "--model", "auto-gemini-3", "-p", f"@{png} {p}"], timeout)
-    return extract_json((r.stdout or "") + (r.stderr or ""))
+    return extract_json((r.stdout or "") + (r.stderr or ""), required_key="verdict")
 
 def review_codex(png, timeout):
-    out = run_codex(f"View the image file {png}. " + REVIEW_PROMPT.format(png=png), [], "xhigh", timeout, None)
-    return extract_json(out)
+    # MUST attach the image with -i (a path in the prompt does NOT let Codex see the pixels).
+    out = run_codex(REVIEW_PROMPT.format(png="the attached image"), [png], "xhigh", timeout, None)
+    return extract_json(out, required_key="verdict")
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("blueprint"); ap.add_argument("--identity"); ap.add_argument("--out-dir", required=True)
     ap.add_argument("--max-rounds", type=int, default=0, help="0 = use blueprint render_policy.max_rounds")
-    ap.add_argument("--effort", default="high"); ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--effort", default="xhigh"); ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
     a = ap.parse_args()
     bp = json.load(open(a.blueprint, encoding="utf-8"))
@@ -129,7 +143,10 @@ def main():
     print(r.stdout, r.stderr)
     if r.returncode != 0: sys.exit("blueprint invalid — fix it first")
     log("render condition")
-    sh(["python3", os.path.join(HERE, "render_condition.py"), a.blueprint, "--out", cond_svg, "--png", cond_png], 90)
+    rc0 = sh(["python3", os.path.join(HERE, "render_condition.py"), a.blueprint, "--out", cond_svg, "--png", cond_png], 90)
+    print(rc0.stdout, rc0.stderr)
+    if rc0.returncode != 0 or (not a.dry_run and not os.path.exists(cond_png)):
+        sys.exit("render_condition failed to produce condition.png (need headless Chrome to rasterize)")
     if a.dry_run:
         log("dry-run: printing the round-1 bake prompt then exiting")
         print("\n===== BAKE PROMPT (round 1) =====\n" + bake_prompt(bp, cond_png, a.identity, [], []))
@@ -139,23 +156,30 @@ def main():
     images = [cond_png] + ([a.identity] if a.identity else [])
     for rd in range(1, rounds + 1):
         log(f"=== round {rd}/{rounds} : BAKE ===")
-        # serialized bake under the global image-gen lock
+        png = os.path.join(a.out_dir, f"round{rd}.png"); blog = os.path.join(a.out_dir, f"round{rd}.bakelog.txt")
+        # the lock MUST cover marker → bake → pickup (the global generated-images dir is shared); never bake
+        # unlocked, and only ever release a lock we actually acquired.
+        acquired = False
         for _ in range(300):
-            try: os.mkdir(LOCK); break
+            try: os.mkdir(LOCK); acquired = True; break
             except FileExistsError:
                 if os.path.isdir(LOCK) and time.time() - os.path.getmtime(LOCK) > 900:
                     try: os.rmdir(LOCK)
                     except OSError: pass
                 time.sleep(2)
-        marker = time.time(); blog = os.path.join(a.out_dir, f"round{rd}.bakelog.txt")
+        if not acquired:
+            log("could not acquire image-gen lock (another bake running >20 min?) — escalate")
+            open(trace, "a").write(json.dumps({"round": rd, "decision": "escalate", "reason": "image-gen lock timeout"}) + "\n")
+            sys.exit(2)
         try:
+            marker = time.time()
             run_codex(bake_prompt(bp, cond_png, a.identity, last_fixes, invariants), images, a.effort, a.bake_timeout, blog, image_gen=True)
+            pk = sh(["python3", os.path.join(HERE, "pickup_image.py"), "--marker", str(marker), "--out", png,
+                     "--log", blog, "--aspect", str(cw / ch)], 60)
         finally:
-            try: os.rmdir(LOCK)
-            except OSError: pass
-        png = os.path.join(a.out_dir, f"round{rd}.png")
-        pk = sh(["python3", os.path.join(HERE, "pickup_image.py"), "--marker", str(marker), "--out", png,
-                 "--log", blog, "--aspect", str(cw / ch)], 60)
+            if acquired:
+                try: os.rmdir(LOCK)
+                except OSError: pass
         if pk.returncode != 0:
             log(f"BAKE produced no valid native image (round {rd}) — escalate");
             open(trace, "a").write(json.dumps({"round": rd, "decision": "escalate", "reason": "no native image", "detail": pk.stderr.strip()}) + "\n")
@@ -169,12 +193,17 @@ def main():
             reviews[name] = j
         df = sh(["python3", os.path.join(HERE, "content_diff.py"), a.blueprint, reviews["gemini"], reviews["codex"]], 60)
         diff = extract_json(df.stdout) or {"content_accurate": False, "missing_tokens": ["<diff failed>"], "anomalies": [], "unaccounted_tokens": []}
-        # decide
+        # decide — fail-closed: BOTH reviewers must have returned parseable JSON with observed_tokens, both
+        # must approve, the deterministic diff must be clean, core scores (incl. identity if a sheet was given)
+        # >= threshold, and neither anomalies nor codex blockers present.
         gv = (rg or {}).get("verdict", "retry"); cv = (rc or {}).get("verdict", "retry")
-        gscores = (rg or {}).get("scores", {}); core_ok = all(gscores.get(k, 0) >= minscore for k in
-                   ("text_fidelity", "arrow_topology", "layout_readability", "style_fit")) if gscores else False
-        codex_block = (rc or {}).get("blockers", [])
-        panel_clean = diff.get("content_accurate") and gv == "approve" and core_ok and not codex_block
+        both_parsed = isinstance((rg or {}).get("observed_tokens"), list) and isinstance((rc or {}).get("observed_tokens"), list)
+        gscores = (rg or {}).get("scores", {})
+        core_keys = ["text_fidelity", "arrow_topology", "layout_readability", "style_fit"] + (["character_identity"] if a.identity else [])
+        core_ok = bool(gscores) and all(gscores.get(k, 0) >= minscore for k in core_keys)
+        codex_block = (rc or {}).get("blockers", []); g_anom = (rg or {}).get("anomalies", [])
+        panel_clean = (both_parsed and diff.get("content_accurate") and gv == "approve" and cv == "approve"
+                       and core_ok and not codex_block and not g_anom)
         # consolidate BLOCKERS only; carry positive_invariants
         last_fixes = sorted(set((rg or {}).get("blockers", []) + codex_block +
                                 [f"render the missing token exactly: {t}" for t in diff.get("missing_tokens", [])[:12]] +

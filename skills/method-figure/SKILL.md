@@ -61,9 +61,11 @@ python3 scripts/run_spiral.py blueprint.json --identity identity_sheet.png --out
 #  --dry-run prints the round-1 bake prompt (no image gen);  --max-rounds N;  --effort high|xhigh.
 ```
 Long-running (each bake ~3-8 min) — run it in the background; watch `trace.jsonl`. It converges to
-**PANEL-CLEAN** (Gemini approve + Codex no-veto + deterministic diff empty), then STOPS and hands to the
-calling agent (Claude) for the final **structural** sign-off — it never lets the generator family
-self-acquit. The manual steps below are exactly what `run_spiral.py` automates (run them to debug one stage).
+**PANEL-CLEAN** — BOTH reviewers returned parseable JSON, **Gemini approve AND Codex approve**, the
+deterministic `content_diff` empty, core scores (incl. `character_identity` when an identity sheet is given)
+≥ threshold, and no anomalies/blockers — then STOPS and hands to the calling agent (Claude) for the final
+**structural** sign-off (the generator family never self-acquits). The manual steps below are exactly what
+`run_spiral.py` automates (run them to debug one stage).
 
 ## Workflow (what run_spiral.py automates — or run by hand)
 
