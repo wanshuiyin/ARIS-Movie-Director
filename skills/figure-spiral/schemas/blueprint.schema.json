@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/skills/figure-spiral/blueprint.schema.json",
+  "title": "figure-spiral blueprint (content lock)",
+  "description": "The deterministic source of truth for a generated figure. *_exact fields hold the LOCKED text that every regeneration must re-assert verbatim; expected_tokens are what the reviewer panel must blind-transcribe and the hard-diff checks. style carries defaults only — it is NOT the content authority.",
+  "type": "object",
+  "required": ["version", "figure_id", "canvas", "render_policy", "nodes"],
+  "properties": {
+    "version": {"const": "figure-spiral/blueprint/v1"},
+    "figure_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "title": {"type": "object", "properties": {"main": {"type": "string"}, "sub": {"type": "string"}}},
+    "canvas": {"type": "object", "required": ["width", "height"], "properties": {
+      "width": {"type": "number"}, "height": {"type": "number"}, "background": {"type": "string", "default": "#FFFFFF"}}},
+    "render_policy": {"type": "object", "properties": {
+      "label_policy": {"enum": ["baked", "hybrid", "overlay"], "default": "baked",
+        "description": "baked = image model renders all text; hybrid = vector-overlay the structured labels only; overlay = near-textless base + all labels vector."},
+      "target_profile": {"enum": ["readme", "paper", "slide"], "default": "readme"},
+      "max_rounds": {"type": "integer", "default": 4}}},
+    "assets": {"type": "array", "items": {"type": "object", "required": ["id", "path", "role"], "properties": {
+      "id": {"type": "string"}, "path": {"type": "string"},
+      "role": {"enum": ["identity_sheet", "character_ref", "style_ref"]},
+      "lock_traits": {"type": "array", "items": {"type": "string"},
+        "description": "the must-preserve visual traits, e.g. 'blue hoodie, no beard'"},
+      "license": {"type": "string"}}}},
+    "groups": {"type": "array", "items": {"type": "object", "required": ["id", "label_exact", "bounds"], "properties": {
+      "id": {"type": "string"}, "label_exact": {"type": "string"},
+      "bounds": {"type": "object", "required": ["x", "y", "w", "h"]},
+      "tone": {"type": "string"}, "order": {"type": "integer"}}}},
+    "nodes": {"type": "array", "minItems": 1, "items": {"type": "object",
+      "required": ["id", "label_exact", "pos"], "properties": {
+      "id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+      "label_exact": {"type": "string", "description": "LOCKED title text — re-asserted verbatim every round"},
+      "desc_exact": {"type": "string", "description": "LOCKED one-line description inside the box"},
+      "group": {"type": "string"},
+      "pos": {"type": "object", "required": ["x", "y"]},
+      "size": {"type": "object"},
+      "shape": {"enum": ["process", "document", "datastore", "diamond", "gate", "output", "character"], "default": "process"},
+      "accent": {"type": "string"},
+      "semantic_role": {"type": "string"},
+      "visual_hint": {"type": "string", "description": "art direction for image_gen, NOT rendered as text"},
+      "asset_ref": {"type": "string", "description": "id of an asset in assets[] — anchors a character to its identity"},
+      "must_render": {"type": "boolean", "default": true},
+      "expected_tokens": {"type": "array", "items": {"type": "string"},
+        "description": "tokens the panel must blind-transcribe from this node; the hard-diff fails if missing"},
+      "forbidden_tokens": {"type": "array", "items": {"type": "string"}}}}},
+    "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to", "kind"], "properties": {
+      "from": {"type": "string"}, "to": {"type": "string"},
+      "kind": {"enum": ["flow", "keep", "retry", "repair", "write", "human", "audit"]},
+      "label_exact": {"type": "string"},
+      "direction": {"enum": ["forward", "back"], "default": "forward"},
+      "route": {"type": "object"},
+      "must_render": {"type": "boolean", "default": true},
+      "expected_tokens": {"type": "array", "items": {"type": "string"}}}}},
+    "callouts": {"type": "array", "items": {"type": "object", "required": ["id", "title_exact"], "properties": {
+      "id": {"type": "string"}, "title_exact": {"type": "string"},
+      "lines_exact": {"type": "array", "items": {"type": "string"}},
+      "anchor": {"type": "string"}, "pos": {"type": "object"}, "size": {"type": "object"},
+      "accent": {"type": "string"}, "visual_hint": {"type": "string"},
+      "expected_tokens": {"type": "array", "items": {"type": "string"}}}}},
+    "style": {"type": "object", "description": "palette / font / arrow DEFAULTS only — not content authority"},
+    "rail": {"type": "object", "properties": {"label_exact": {"type": "string"}}},
+    "acceptance": {"type": "object", "properties": {
+      "min_core_score": {"type": "integer", "default": 4},
+      "required_approvers": {"type": "array", "items": {"type": "string"}, "default": ["gemini", "claude"]},
+      "veto_fields": {"type": "array", "items": {"type": "string"}, "default": ["anomalies", "missing_tokens", "wrong_edges"]},
+      "max_repeated_failure": {"type": "integer", "default": 2}}}
+  }
+}
