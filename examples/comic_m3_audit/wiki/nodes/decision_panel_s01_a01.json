@@ -8,7 +8,7 @@
     "gate_kind": "panel",
     "target_node_id": "attempt:s01_a01",
     "verdict": "retry_panel",
-    "reasoning": "RETRY — [baked] narr=4 identity=4 style=5/5 comp=4/5 art(g/c)=0/2 btq=3 corruption=true reviewersOk=true missing(¬both)=[] disagreeId=1",
-    "repair_instruction": "研究者身份三件套稳定；暖室内与暗技术屏对比成立；RUN FAILED、schema boundary、0.000指标和DDL倒计时仍清楚可读。"
+    "reasoning": "RETRY — [baked] narr=4 identity=5 style=5/5 comp=4/5 art(g/c)=0/1 btq=4 corruption=true reviewersOk=true missing(¬both)=[DDL] disagreeId=0",
+    "repair_instruction": "保留三人身份、暖书房/冷窗对比、清晰DDL T-24:00:00与失败日志；主要修正dilm-schema-keyword-first为dllm-schema-keyword-first，并减少左下覆盖区干扰。"
   }
 }

@@ -1,0 +1,13 @@
+{
+  "node_id": "fail:s01_a02",
+  "node_type": "failure_mode",
+  "status": "active",
+  "title": "S01 a2 panel_visual failure mode",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "active": true,
+    "affected_shot_ids": ["S01"],
+    "layer": "panel_visual",
+    "repair_pattern": "身份锁保持正确：研究者黑短发黑框眼镜黑T，executor蓝 hoodie 棕发无须，reviewer绿 hoodie 黑发有须；关键终端失败信息和倒计时可读。注意：codex 标 content_corruption_present=true 主因书脊 \"EVALS FFRST\"（应为 \"EVALS FIRST\"，ART_BIBLE §6.5 装饰道具）烤字拼写错误 —— 这是环境道具次要层瑕疵，非技术图 expected_literals 数字失真。"
+  }
+}

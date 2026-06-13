@@ -1,0 +1,31 @@
+{
+  "node_id": "review:panel_s01_a04_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S01 panel a4",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s01_a04",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "baked_text_quality": 5,
+    "observed_literals": [
+      "RUN FAILED",
+      "exit code: 1",
+      "dllm-schema-keyword-first",
+      "0 / 512",
+      "DDL T-24:00:00",
+      "LLM DECODING",
+      "evals/metrics.py",
+      "ML RESEARCH"
+    ],
+    "content_corruption_present": false,
+    "timed_out": false,
+    "failure_mode_positive_invariant": "保持当前封面排版：研究者黑短发、黑框眼镜下滑、黑 T 与背包带身份三件套稳定；暗终端屏幕呈结构化解码失败 run（RUN FAILED / exit code: 1 / dllm-schema-keyword-first / 0 / 512 / evals/metrics.py），暖室内 + 冷蓝夜景 + 暗终端屏幕三层像素叙事对比成立；DDL T-24:00:00 倒计时 chip 与失败日志大号清晰可盲转录；ARIS duo 蓝棕发无须执行者与绿黑发有须审查者身份锁正确。",
+    "notes": "Gemini auto-gemini-3 visual review of panels/S01_panel_a04.png（baked 封面面板）。研究者身份三件套（疲惫姿态 / 黑短发黑框眼镜下滑 / 黑 T 与背包带）稳定一致，identity_consistency=5。像素风格统一，暖室内、冷蓝夜景与暗终端屏幕三层对比成立、唯一暖光源定位正确，style_consistency=5。构图可读、视线沿研究者 → 暗终端失败 run → DDL chip → 主题种子流动，composition_readability=5。gated 大号烤字（RUN FAILED / exit code: 1 / dllm-schema-keyword-first / 0 / 512 / DDL T-24:00:00 / LLM DECODING / evals/metrics.py / ML RESEARCH）拼写正确、可盲转录，baked_text_quality=5，无字形损坏，content_corruption_present=false。无明显噪点或拼接伪影，artifact_severity=0（0=最干净档）。正向不变量见 failure_mode_positive_invariant。"
+  }
+}

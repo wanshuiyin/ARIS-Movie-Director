@@ -13,7 +13,23 @@
     "composition_readability": 5,
     "artifact_severity": 0,
     "baked_text_quality": 5,
+    "observed_literals": [
+      "RUN FAILED",
+      "data_loader: ok",
+      "model: ok",
+      "step 1287",
+      "invalid json structure",
+      "schema mismatch",
+      "status: FAILED",
+      "dllm-schema-keyword-first",
+      "T-24:00:00",
+      "LLM DECODING",
+      "STRUCTURED OUTPUTS",
+      "EVALS FIRST",
+      "DDL"
+    ],
     "timed_out": false,
-    "observed_literals": ["LLM DECODING", "STRUCTURED OUTPUTS", "EVALS FIRST", "dllm-schema-keyword-first", "better masks", "schema locks", "evals", "RUN FAILED", "schema_mask_span", "parse_error"]
+    "failure_mode_positive_invariant": "保持当前封面排版：暖色书房里疲惫研究者三件套身份稳定，冷色技术窗呈失败 run（RUN FAILED / status: FAILED / invalid json structure / schema mismatch / step 1287）、暖冷对比成立、DDL T-24:00:00 倒计时 chip 与 dllm-schema-keyword-first 主题种子大号清晰可盲转录；右侧书脊 LLM DECODING / STRUCTURED OUTPUTS / EVALS FIRST 为 set-continuity 道具字。",
+    "notes": "Gemini auto-gemini-3 visual review of panels/S01_panel_a01.png (baked 封面面板)。研究者身份三件套（疲惫姿态 / 暖书房 / ML RESEARCH 蒸汽杯）稳定一致，identity_consistency=5。像素霓虹风格统一，暖书房与冷技术窗对比成立、唯一暖光源定位正确，style_consistency=5。构图可读、视线沿研究者 → 失败 run 窗 → DDL chip → 主题种子流动，composition_readability=5。gated 大号烤字（RUN FAILED / status: FAILED / T-24:00:00 / dllm-schema-keyword-first）拼写正确、可盲转录，baked_text_quality=5，无字形损坏。observed_literals 含 DDL / T-24:00:00 deadline 线索与 dllm-schema-keyword-first 主题种子。无明显噪点或拼接伪影，artifact_severity=0。正向不变量见 failure_mode_positive_invariant。"
   }
 }

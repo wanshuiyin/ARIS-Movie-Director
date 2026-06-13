@@ -1,0 +1,13 @@
+{
+  "node_id": "fail:s01_a03",
+  "node_type": "failure_mode",
+  "status": "active",
+  "title": "S01 a3 panel_visual failure mode",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "active": true,
+    "affected_shot_ids": ["S01"],
+    "layer": "panel_visual",
+    "repair_pattern": "研究者黑短发、黑框眼镜下滑、黑T与背包带稳定；ARIS duo 蓝棕发无须执行者与绿黑发有须审查者身份锁正确，暖室内+冷蓝夜景+暗终端屏幕的像素叙事一致。"
+  }
+}

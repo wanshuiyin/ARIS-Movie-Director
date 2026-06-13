@@ -2,13 +2,13 @@
   "node_id": "decision:panel_s01_a02",
   "node_type": "decision",
   "status": "final",
-  "title": "panel_gate S01 a2 → keep",
+  "title": "panel_gate S01 a2 → retry_panel",
   "created_at": "2026-06-08T00:00:00+00:00",
   "payload": {
     "gate_kind": "panel",
     "target_node_id": "attempt:s01_a02",
-    "verdict": "keep",
-    "reasoning": "KEEP — [baked] narr=4 identity=4 style=5/5 comp=5/5 art(g/c)=0/1 btq=4 corruption=false reviewersOk=true missing(¬both)=[] disagreeId=1",
-    "repair_instruction": ""
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — [baked] narr=4 identity=5 style=4/5 comp=4/5 art(g/c)=5/2 btq=4 corruption=true reviewersOk=true missing(¬both)=[DDL] disagreeId=0",
+    "repair_instruction": "身份锁保持正确：研究者黑短发黑框眼镜黑T，executor蓝 hoodie 棕发无须，reviewer绿 hoodie 黑发有须；关键终端失败信息和倒计时可读。注意：codex 标 content_corruption_present=true 主因书脊 \"EVALS FFRST\"（应为 \"EVALS FIRST\"，ART_BIBLE §6.5 装饰道具）烤字拼写错误 —— 这是环境道具次要层瑕疵，非技术图 expected_literals 数字失真。"
   }
 }

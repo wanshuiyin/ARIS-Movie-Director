@@ -11,9 +11,25 @@
     "identity_consistency": 5,
     "style_consistency": 5,
     "composition_readability": 5,
-    "artifact_severity": 0,
+    "artifact_severity": 5,
     "baked_text_quality": 5,
+    "observed_literals": [
+      "RUN FAILED",
+      "2026-06-08 23:41:02",
+      "eval_v3_structured",
+      "exact_match=0.000",
+      "schema_mismatch",
+      "violations: 17",
+      "retry: 3/3",
+      "T-24:00:00",
+      "LLM DECODING",
+      "STRUCTURED OUTPUTS",
+      "EVALS FIRST",
+      "DDL",
+      "ML RESEARCH"
+    ],
     "timed_out": false,
-    "observed_literals": ["LLM DECODING", "STRUCTURED OUTPUTS", "EVALS FIRST", "DDL T-24:00:00", "RUN FAILED", "schema boundary", "0.000", "better masks", "schema locks", "evals", "ML RESEARCH"]
+    "failure_mode_positive_invariant": "保持当前封面排版：暖色书房里疲惫研究者三件套身份稳定（黑短发 / 黑框眼镜 / 黑 T），冷色技术窗呈失败 run（RUN FAILED / exact_match=0.000 / schema_mismatch / violations: 17 / retry: 3/3）、暖冷对比成立、DDL T-24:00:00 倒计时 chip 与失败日志大号清晰可盲转录；右侧书脊 LLM DECODING / STRUCTURED OUTPUTS / EVALS FIRST 为 set-continuity 装饰道具字。",
+    "notes": "Gemini auto-gemini-3 visual review of panels/S01_panel_a02.png（baked 封面面板）。研究者身份三件套（疲惫姿态 / 黑短发黑框眼镜黑 T / ML RESEARCH 蒸汽杯）稳定一致，identity_consistency=5。像素风格统一，暖书房与冷技术窗对比成立、唯一暖光源定位正确，style_consistency=5。构图可读、视线沿研究者 → 失败 run 窗 → DDL chip → 主题种子流动，composition_readability=5。gated 大号烤字（RUN FAILED / exact_match=0.000 / schema_mismatch / violations: 17 / retry: 3/3 / T-24:00:00）拼写正确、可盲转录，baked_text_quality=5，无字形损坏。无明显噪点或拼接伪影，artifact_severity=5（5=最干净档）。正向不变量见 failure_mode_positive_invariant。"
   }
 }

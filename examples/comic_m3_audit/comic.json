@@ -411,8 +411,8 @@
   "panels": {
     "S01": {
       "wiki_node_id": "panel:s01_aris_comic_v1",
-      "active_attempt_id": "S01_a02",
-      "image_path": "panels/S01_panel_a02.png",
+      "active_attempt_id": "S01_a04",
+      "image_path": "panels/S01_panel_a04.png",
       "crop": {
         "shape": "hero",
         "position": [
@@ -444,9 +444,9 @@
           "T-24:00:00"
         ],
         "world": "warm",
-        "identity_ref": "assets/identity/researcher_chibi_canonical_ref_v001.png",
-        "identity_desc": "the researcher (she): black rectangular glasses slipping down her nose, dark short hair, plain black tee — exactly as in the reference",
-        "characters": "the researcher slumped at her desk, chin propped on one hand, EXHAUSTED, staring at a dark failed-run log on the laptop; her backpack slumped on the chair back; NO other characters (the duo does not exist yet in this panel)",
+        "identity_ref": "assets/identity/trio_identity_sheet_v001.png",
+        "identity_desc": "LEFT of the reference sheet = the researcher (she): black rectangular glasses slipping down her nose, dark short hair, plain black tee. RIGHT of the sheet = the ARIS DUO: the blue executor (brown hair, NO beard, blue hoodie) and the green reviewer (dark hair, beard, green hoodie) — match them EXACTLY",
+        "characters": "the researcher slumped at her desk in the UPPER-RIGHT, chin propped on one hand, EXHAUSTED, staring at the dark failed-run log on the laptop — she stays the main figure. AND, baked into the scene at the BOTTOM (small, in front of the laptop on the desk surface, like two palm-sized holographic agents projected from the failed screen): the ARIS DUO in an ADVERSARIAL MULTI-AGENT DEBATE — the blue executor leans IN, both hands thrown forward, eagerly PROPOSING a fix; the green reviewer stands FACING him, arms crossed / one hand raised to object, skeptically PUSHING BACK. They are turned toward each other in visible disagreement (the adversarial review made literal) — small but clearly two distinct chibi agents arguing, glowing faint cyan like a hologram so they read as the digital agents, not real people in her room",
         "scene": "late-night warm bedroom-study (density target cal_S12): Edison desk lamp over a desk buried in printed papers with red-pen margins; bookshelf spines legible 'LLM DECODING' / 'STRUCTURED OUTPUTS' / 'EVALS FIRST'; a hand-written TODO note 'better masks / schema locks / evals'; the laptop screen shows a DARK failed-experiment log (do NOT draw any aris command — that is the next panel); on the desk corner HER 'ML RESEARCH' mug HOT with two steady steam plumes (the film's temperature origin); a bright sticky note 'dllm-schema-keyword-first' on the monitor bezel (decorative, small); outside the window a COOL blue night-city skyline contrasts the warm room. The technical figure from image #1 (the amber DDL countdown chip 'DDL T-24:00:00') sits ON the desk beside the laptop as a small physical widget. COMPOSITION CONSTRAINT: this panel doubles as the COVER base — keep the LEFT 55% of the frame LOW-DETAIL (soft warm gradients, no text, no busy props) for the HTML title overlay; place ALL baked anchors (DDL chip, sticky notes, laptop, her) in the RIGHT half."
       }
     },

@@ -8,12 +8,29 @@
     "target_node_id": "attempt:s01_a01",
     "reviewer": "codex",
     "gate_kind": "panel",
-    "identity_consistency": 4,
+    "identity_consistency": 5,
     "style_consistency": 5,
     "composition_readability": 4,
-    "artifact_severity": 2,
-    "baked_text_quality": 3,
+    "artifact_severity": 1,
+    "baked_text_quality": 4,
+    "content_corruption_present": true,
+    "safezone_present": true,
+    "stray_text_present": false,
+    "observed_literals": [
+      "LLM DECODING",
+      "STRUCTURED OUTPUTS",
+      "EVALS FIRST",
+      "DDL",
+      "T-24:00:00",
+      "RUN FAILED",
+      "status: FAILED",
+      "invalid json structure",
+      "schema mismatch",
+      "step 1287",
+      "dilm-schema-keyword-first"
+    ],
     "timed_out": false,
-    "observed_literals": ["x RUN FAILED x", "experiment: schema_mask_span", "status: FAILED", "reason: parse_error", "error: span crosses schema boundary", "invalid_output:", "{\"name\": \"a"]
+    "failure_mode_positive_invariant": "封面排版正向不变量：疲惫研究者三件套身份稳定，暖书房 vs 冷失败-run 技术窗对比成立，DDL T-24:00:00 倒计时清晰，失败日志（RUN FAILED / status: FAILED / invalid json structure / schema mismatch / step 1287）可盲转录；主题种子大号居中。retry 时务必将 'dilm-schema-keyword-first' 修正为 'dllm-schema-keyword-first'，并清理左下角覆盖区的重叠字噪点。",
+    "notes": "Codex visual review (GPT-5.5 xhigh) independent read of panels/S01_panel_a01.png, CLI -i path, RC=0。本面板 is_baked_duo=true、封面单格。研究者身份三件套（疲惫姿态 / 暖书房 / 蒸汽杯）在像素风格下稳定，identity_consistency=5。暖书房与冷技术窗对比成立、唯一暖光源定位正确，style_consistency=5。构图可读但左下覆盖区日志/说明文字重叠、与人物争首读，composition_readability=4。content_corruption_present=true：主题种子条出现字形损坏，烤字为 'dilm-schema-keyword-first'（少一个 l），应为 'dllm-schema-keyword-first' —— 这是与 Gemini 唯一实质分歧（Gemini 转录为正确拼写、本人转录到损坏拼写），baked_text_quality 因此降到 4。其余 gated 大号字（RUN FAILED / status: FAILED / T-24:00:00 / step 1287 / invalid json structure / schema mismatch）拼写正确、可盲转录。书脊（LLM DECODING / STRUCTURED OUTPUTS / EVALS FIRST）为 set-continuity 道具字、非杂散乱码，stray_text_present=false。画幅上部留有干净留白，safezone_present=true。artifact_severity=1（轻微：左下覆盖区小号文字边缘有字形噪点，均为非 gated 小字）。identity/style 与 Gemini 完全一致，disagreeId=0；唯一缺口为损坏拼写 token，按 ¬both 规则该 corrupted literal 视为未确认。正向不变量见 failure_mode_positive_invariant。"
   }
 }

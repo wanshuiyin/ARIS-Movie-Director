@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s01_a03",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S01 a3 → retry_panel",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s01_a03",
+    "verdict": "retry_panel",
+    "reasoning": "RETRY — [baked] narr=4 identity=5 style=5/5 comp=4/5 art(g/c)=0/1 btq=4 corruption=false reviewersOk=true missing(¬both)=[DDL] disagreeId=0",
+    "repair_instruction": "研究者黑短发、黑框眼镜下滑、黑T与背包带稳定；ARIS duo 蓝棕发无须执行者与绿黑发有须审查者身份锁正确，暖室内+冷蓝夜景+暗终端屏幕的像素叙事一致。"
+  }
+}
