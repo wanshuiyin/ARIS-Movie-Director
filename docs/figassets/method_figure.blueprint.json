@@ -1,0 +1,389 @@
+{
+  "version": "aris-method-figure/v1",
+  "canvas": {
+    "width": 1960,
+    "height": 1000,
+    "background": "#FFFFFF"
+  },
+  "assets": {
+    "identity_sheet": "docs/figassets/aris_identity_sheet.png"
+  },
+  "style": {
+    "theme": "academic_flat",
+    "font_family": "Inter, Arial, sans-serif",
+    "palette": {
+      "text": "#1F2937",
+      "muted": "#6B7280",
+      "blue_fill": "#E5EEFB",
+      "blue_stroke": "#9DBDEB",
+      "blue_accent": "#2563EB",
+      "peach_fill": "#FDEBD8",
+      "peach_stroke": "#F4C18A",
+      "peach_accent": "#EA580C",
+      "green_fill": "#DEF5E6",
+      "green_stroke": "#9BD9B0",
+      "green_accent": "#0E9F6E",
+      "red": "#DC2626",
+      "node_fill": "#FFFFFF",
+      "node_stroke": "#CBD2DC"
+    },
+    "arrow": {
+      "stroke": "#4B5563",
+      "width": 2.6
+    }
+  },
+  "title": {
+    "main": "ARIS-Movie-Director",
+    "sub": "Audited narrative-comic generation"
+  },
+  "groups": [
+    {
+      "id": "p1",
+      "label": "1 · Authored Source of Truth",
+      "bounds": {
+        "x": 250,
+        "y": 150,
+        "w": 320,
+        "h": 560
+      },
+      "tone": "blue"
+    },
+    {
+      "id": "p2",
+      "label": "2 · The Audited Spiral  (per panel)",
+      "bounds": {
+        "x": 620,
+        "y": 150,
+        "w": 740,
+        "h": 700
+      },
+      "tone": "peach"
+    },
+    {
+      "id": "p3",
+      "label": "3 · Assembly + Release",
+      "bounds": {
+        "x": 1470,
+        "y": 150,
+        "w": 430,
+        "h": 560
+      },
+      "tone": "green"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "researcher",
+      "label": "researcher",
+      "pos": {
+        "x": 130,
+        "y": 420
+      },
+      "size": {
+        "w": 150,
+        "h": 200
+      },
+      "shape": "character",
+      "char": "researcher",
+      "visual_hint": "the ARIS researcher chibi handing over a 'story brief' document, exhausted, T-24h",
+      "desc": "hands over the night"
+    },
+    {
+      "id": "brief",
+      "label": "story brief",
+      "pos": {
+        "x": 130,
+        "y": 600
+      },
+      "size": {
+        "w": 130,
+        "h": 60
+      },
+      "shape": "document",
+      "accent": "muted",
+      "desc": "24h deadline"
+    },
+    {
+      "id": "outline",
+      "label": "outline",
+      "group": "p1",
+      "pos": {
+        "x": 410,
+        "y": 250
+      },
+      "size": {
+        "w": 200,
+        "h": 70
+      },
+      "shape": "document",
+      "accent": "blue_accent",
+      "desc": "story beats"
+    },
+    {
+      "id": "storyboard",
+      "label": "storyboard",
+      "group": "p1",
+      "pos": {
+        "x": 410,
+        "y": 370
+      },
+      "size": {
+        "w": 200,
+        "h": 70
+      },
+      "shape": "document",
+      "accent": "blue_accent",
+      "desc": "scene + dialogue + literals"
+    },
+    {
+      "id": "comicjson",
+      "label": "comic.json",
+      "group": "p1",
+      "pos": {
+        "x": 410,
+        "y": 560
+      },
+      "size": {
+        "w": 240,
+        "h": 86
+      },
+      "shape": "datastore",
+      "accent": "blue_accent",
+      "emphasis": true,
+      "desc": "single source of truth"
+    },
+    {
+      "id": "blueprint",
+      "label": "content-SVG",
+      "group": "p2",
+      "pos": {
+        "x": 760,
+        "y": 300
+      },
+      "size": {
+        "w": 200,
+        "h": 74
+      },
+      "shape": "document",
+      "accent": "peach_accent",
+      "visual_hint": "a precise wireframe blueprint sheet",
+      "desc": "exact SVG blueprint"
+    },
+    {
+      "id": "bake",
+      "label": "image_gen BAKE",
+      "group": "p2",
+      "pos": {
+        "x": 1020,
+        "y": 300
+      },
+      "size": {
+        "w": 230,
+        "h": 86
+      },
+      "shape": "process",
+      "accent": "peach_accent",
+      "visual_hint": "a pixel-art comic panel being baked",
+      "desc": "blueprint + identity"
+    },
+    {
+      "id": "gate",
+      "label": "panel_gate",
+      "group": "p2",
+      "pos": {
+        "x": 1020,
+        "y": 520
+      },
+      "size": {
+        "w": 340,
+        "h": 175
+      },
+      "shape": "gate",
+      "accent": "red",
+      "char": "duo",
+      "visual_hint": "an audit desk: the blue EXECUTOR holds the baked PNG, the green REVIEWER inspects a token-diff with a magnifier; three reviewer chips CC / Gemini / Codex",
+      "desc": "CC | Gemini | Codex"
+    },
+    {
+      "id": "verdict",
+      "label": "verdict",
+      "group": "p2",
+      "pos": {
+        "x": 1020,
+        "y": 680
+      },
+      "size": {
+        "w": 220,
+        "h": 64
+      },
+      "shape": "diamond",
+      "accent": "peach_accent",
+      "desc": "literal diff"
+    },
+    {
+      "id": "keep",
+      "label": "KEEP",
+      "group": "p2",
+      "pos": {
+        "x": 1280,
+        "y": 680
+      },
+      "size": {
+        "w": 110,
+        "h": 56
+      },
+      "shape": "process",
+      "accent": "green_accent",
+      "desc": "panel accepted"
+    },
+    {
+      "id": "wiki",
+      "label": "research-wiki",
+      "group": "p2",
+      "pos": {
+        "x": 760,
+        "y": 600
+      },
+      "size": {
+        "w": 200,
+        "h": 110
+      },
+      "shape": "datastore",
+      "accent": "peach_accent",
+      "visual_hint": "a memory cylinder logging every attempt",
+      "desc": "failures logged"
+    },
+    {
+      "id": "assembly",
+      "label": "page assembly_gate",
+      "group": "p3",
+      "pos": {
+        "x": 1705,
+        "y": 300
+      },
+      "size": {
+        "w": 240,
+        "h": 86
+      },
+      "shape": "gate",
+      "accent": "green_accent",
+      "desc": "coherence + drift check"
+    },
+    {
+      "id": "viewer",
+      "label": "release",
+      "group": "p3",
+      "pos": {
+        "x": 1705,
+        "y": 540
+      },
+      "size": {
+        "w": 240,
+        "h": 120
+      },
+      "shape": "output",
+      "accent": "green_accent",
+      "visual_hint": "a finished pixel-art comic page thumbnail in a browser frame",
+      "desc": "PNG panels + HTML"
+    }
+  ],
+  "edges": [
+    {
+      "from": "brief",
+      "to": "outline",
+      "kind": "flow"
+    },
+    {
+      "from": "outline",
+      "to": "comicjson",
+      "kind": "flow"
+    },
+    {
+      "from": "storyboard",
+      "to": "comicjson",
+      "kind": "flow"
+    },
+    {
+      "from": "comicjson",
+      "to": "blueprint",
+      "kind": "flow",
+      "label": "source"
+    },
+    {
+      "from": "blueprint",
+      "to": "bake",
+      "kind": "flow",
+      "label": "render"
+    },
+    {
+      "from": "bake",
+      "to": "gate",
+      "kind": "flow"
+    },
+    {
+      "from": "gate",
+      "to": "verdict",
+      "kind": "flow"
+    },
+    {
+      "from": "verdict",
+      "to": "keep",
+      "kind": "keep",
+      "label": "keep"
+    },
+    {
+      "from": "verdict",
+      "to": "bake",
+      "kind": "retry",
+      "label": "RETRY (max 4)"
+    },
+    {
+      "from": "gate",
+      "to": "wiki",
+      "kind": "write_wiki",
+      "label": "write"
+    },
+    {
+      "from": "keep",
+      "to": "assembly",
+      "kind": "flow"
+    },
+    {
+      "from": "assembly",
+      "to": "bake",
+      "kind": "repair",
+      "label": "repair drift"
+    },
+    {
+      "from": "assembly",
+      "to": "viewer",
+      "kind": "flow",
+      "label": "accept"
+    }
+  ],
+  "callouts": [
+    {
+      "id": "punchline",
+      "anchor": "verdict",
+      "pos": {
+        "x": 1020,
+        "y": 860
+      },
+      "size": {
+        "w": 420,
+        "h": 150
+      },
+      "title": "Looks right != pass",
+      "lines": [
+        "a beautiful baked panel",
+        "expected +6.2 / observed +6.25"
+      ],
+      "stamp": "RETRY",
+      "accent": "red",
+      "visual_hint": "a gorgeous pixel-art panel with a stark monospace token-diff box over it and a red diagonal stamp"
+    }
+  ],
+  "rail": {
+    "label": "max 4 retries/panel | max 6 repairs/run | human backstop"
+  }
+}

@@ -9,16 +9,21 @@ The framework knows nothing about any particular story — a project plugs in vi
 pixel-art comic about an autonomous research run, and ships the **real generation trace** (174 wiki
 nodes) as proof the multi-agent loop actually ran.
 
-![ARIS-Movie-Director — method overview](docs/workflow_figure.png)
+![ARIS-Movie-Director — method overview](docs/method_figure.png)
 
-> **Figure 1.** How a panel is made: an authored source of truth (asset library · outline · storyboard →
-> `comic.json`) feeds an **audited spiral** — bake → a 3-reviewer cross-model gate → a *deterministic
-> token-diff* verdict. Two nested perimeters keep it honest: an inner **literal-correctness** retry
-> (≤4/panel, re-baked with the failed attempt's `repair_pattern`) and an outer **page-coherence** rollback
-> at the assembly gate (≤6/run); hitting either bound ejects to a human. Every decision is written to the
-> research wiki — *failures kept as memory*. The punchline: **a beautiful panel with a wrong number does
-> not pass.** (This figure is itself a deterministic vector SVG, designed to cross-model consensus then
-> rendered — `docs/gen_workflow_figure.py`.)
+> **Figure 1.** From story intent to a verified comic, end-to-end. **(1) Authored source of truth** —
+> asset library · outline · storyboard compile into `comic.json` (`content_svg · expected_literals ·
+> identity_ref`). **(2) The audited spiral (per panel)** — a content-SVG blueprint is baked by image_gen,
+> then a 3-reviewer cross-model `panel_gate` (CC ‖ Gemini ‖ Codex · *blind token-diff* · single-vote veto)
+> returns a deterministic `verdict`: **KEEP**, or **RETRY** (≤4/panel) re-baked with the failed attempt's
+> repair note; every attempt/review/decision/failure is logged to the `research-wiki`. **(3) Assembly +
+> release** — a cast-aware `page_assembly_gate` (repair drift → re-bake, ≤6/run) ships PNG panels + a
+> single-file HTML viewer. The punchline (bottom-left): **a beautiful panel with a wrong number does not
+> pass** — `+6.2` expected vs `+6.25` observed fails the token-diff.
+>
+> *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned
+> `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by a 3-model panel
+> (Claude ‖ Gemini-3 ‖ GPT-5.5) until all three APPROVED.*
 
 ## How it works
 
