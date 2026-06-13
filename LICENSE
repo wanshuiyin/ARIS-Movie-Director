@@ -1,7 +1,29 @@
-Proprietary License
+MIT License
 
-Copyright (c) 2026. All Rights Reserved.
+Copyright (c) 2026 Ruofeng Yang
 
-This software and associated documentation files (the "Software") are proprietary to the author. 
-Unauthorized copying, modification, distribution, or use of this Software, via any medium, is strictly prohibited. 
-The Software is provided "as is", without warranty of any kind, express or implied.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+SCOPE: The MIT license above covers the SOURCE CODE of this repository (the
+framework runtime, schemas, CLI, scripts, and documentation). The generated
+example artwork (the comic panels under examples/*/panels/ and the images
+inlined into built viewers) is licensed separately under CC-BY-4.0 — see
+LICENSE-IMAGES and NOTICE.

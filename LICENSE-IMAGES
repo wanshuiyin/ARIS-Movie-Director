@@ -1,0 +1,33 @@
+Creative Commons Attribution 4.0 International (CC-BY-4.0)
+
+Copyright (c) 2026 Ruofeng Yang
+
+The generated example artwork in this repository — the comic panels under
+examples/*/panels/, the content-blueprint SVGs under examples/*/assets/, and
+the images inlined into any built viewer (examples/*/outputs/) — is licensed
+under the Creative Commons Attribution 4.0 International License.
+
+You are free to share and adapt this material for any purpose, even
+commercially, provided you give appropriate credit:
+
+    "ARIS-Movie-Director" comic panels by Ruofeng Yang,
+    generated with the ARIS-Movie-Director framework, CC-BY-4.0.
+
+Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+--------------------------------------------------------------------------------
+AI-GENERATION DISCLOSURE
+--------------------------------------------------------------------------------
+These images are AI-generated. Each panel was baked by OpenAI's image
+generation tool (invoked via the `codex` CLI) from a deterministic SVG content
+blueprint plus a fixed character identity reference, then accepted by a
+cross-model review gate. No panel is a photograph or a hand-drawn work, and no
+copyrighted third-party artwork was used as a reference or training condition by
+this project.
+
+Outputs of generative image models may carry usage terms from the model
+provider, and the copyright status of purely AI-generated images varies by
+jurisdiction. The CC-BY-4.0 grant above is offered to the extent the author
+holds rights in these specific generated artifacts; it does not override the
+image-model provider's own terms of use. If you intend to reuse these images,
+review your image-model provider's terms in addition to this notice.
