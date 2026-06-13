@@ -1,0 +1,22 @@
+{
+  "node_id": "review:panel_s22_a03_gemini",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Gemini visual review S22 panel a3",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s22_a03",
+    "reviewer": "gemini",
+    "gate_kind": "panel",
+    "identity_consistency": 5,
+    "style_consistency": 5,
+    "composition_readability": 5,
+    "artifact_severity": 0,
+    "safezone_present": false,
+    "stray_text_present": false,
+    "failure_mode_positive_invariant": "intentional_absence_narrative_constellation",
+    "baked_text_quality": 0,
+    "content_corruption_present": false,
+    "timed_out": false
+  }
+}

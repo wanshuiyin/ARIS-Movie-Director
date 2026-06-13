@@ -700,8 +700,8 @@
     },
     "S22": {
       "wiki_node_id": "panel:s22_aris_comic_v1",
-      "active_attempt_id": "S22_a01",
-      "image_path": "panels/S22_panel_a01.png",
+      "active_attempt_id": "S22_a03",
+      "image_path": "panels/S22_panel_a03.png",
       "crop": {
         "shape": "hero",
         "position": [

@@ -1,0 +1,22 @@
+{
+  "node_id": "review:panel_s22_a02_codex",
+  "node_type": "review",
+  "status": "complete",
+  "title": "Codex visual review S22 panel a2",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s22_a02",
+    "reviewer": "codex",
+    "gate_kind": "panel",
+    "identity_consistency": 3,
+    "style_consistency": 5,
+    "composition_readability": 4,
+    "artifact_severity": 1,
+    "safezone_present": true,
+    "stray_text_present": false,
+    "baked_text_quality": 0,
+    "content_corruption_present": false,
+    "timed_out": false,
+    "failure_mode_positive_invariant": "无实体角色但星座化叙事成立；像素夜景、暗蓝数字感、无杂字与大面积天空留白保持稳定"
+  }
+}

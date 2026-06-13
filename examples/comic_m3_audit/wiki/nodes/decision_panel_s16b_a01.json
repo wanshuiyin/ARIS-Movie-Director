@@ -8,7 +8,7 @@
     "gate_kind": "panel",
     "target_node_id": "attempt:s16b_a01",
     "verdict": "keep",
-    "reasoning": "KEEP — [baked] narr=4 identity=5 style=5/5 comp=5/5 art(g/c)=0/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[] disagreeId=0",
+    "reasoning": "KEEP — [baked] narr=5 identity=5 style=5/5 comp=5/5 art(g/c)=5/1 btq=5 corruption=false reviewersOk=true missing(¬both)=[] disagreeId=0",
     "repair_instruction": ""
   }
 }

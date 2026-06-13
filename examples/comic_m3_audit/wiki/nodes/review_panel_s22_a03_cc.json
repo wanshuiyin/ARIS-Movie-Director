@@ -1,0 +1,16 @@
+{
+  "node_id": "review:panel_s22_a03_cc",
+  "node_type": "review",
+  "status": "complete",
+  "title": "CC narrative review S22 panel a3",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "target_node_id": "attempt:s22_a03",
+    "reviewer": "cc",
+    "gate_kind": "panel",
+    "composition_story": 5,
+    "narrative_beat_fidelity": 5,
+    "timed_out": false,
+    "notes": "S22 = B13 endcard (page P03_end, the final page; panels=['S22'], logo ARIS / tagline \"你不在的时候,研究在。 / While you're away, the research carries on.\"). It carries no narration prose of its own — its beat IS the closing image."
+  }
+}

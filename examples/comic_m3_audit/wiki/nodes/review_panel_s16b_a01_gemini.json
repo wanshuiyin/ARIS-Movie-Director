@@ -11,10 +11,10 @@
     "identity_consistency": 5,
     "style_consistency": 5,
     "composition_readability": 5,
-    "artifact_severity": 0,
+    "artifact_severity": 5,
     "baked_text_quality": 5,
     "content_corruption_present": false,
-    "safezone_present": true,
+    "safezone_present": false,
     "stray_text_present": false,
     "observed_literals": [
       "RESEARCH WIKI",

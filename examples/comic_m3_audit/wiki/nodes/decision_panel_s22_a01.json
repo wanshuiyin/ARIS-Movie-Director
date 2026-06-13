@@ -2,13 +2,13 @@
   "node_id": "decision:panel_s22_a01",
   "node_type": "decision",
   "status": "final",
-  "title": "panel_gate S22 a1 → keep",
+  "title": "panel_gate S22 a1 → retry_panel",
   "created_at": "2026-06-08T00:00:00+00:00",
   "payload": {
     "gate_kind": "panel",
     "target_node_id": "attempt:s22_a01",
-    "verdict": "keep",
-    "reasoning": "KEEP — [html] narr=4 identity=5 style=4/5 comp=5/5 art(g/c)=0/0 safezone=true stray=false disagreeId=0",
+    "verdict": "retry_panel",
+    "reasoning": "a visual reviewer returned incomplete core scores (fail-closed)",
     "repair_instruction": ""
   }
 }

@@ -12,12 +12,11 @@
     "style_consistency": 4,
     "composition_readability": 5,
     "artifact_severity": 0,
+    "baked_text_quality": 5,
     "safezone_present": true,
     "stray_text_present": false,
-    "baked_text_quality": 5,
     "content_corruption_present": false,
-    "observed_literals": [],
-    "failure_mode_positive_invariant": "双人未被实体画出而转译为星座;夜城像素风清晰,无杂字,构图留有可放对白",
-    "timed_out": false
+    "timed_out": false,
+    "failure_mode_positive_invariant": "双人不以角色实体出现而转译为星座；保持无标签无杂字、底部稀疏安全区、夜城像素星轨"
   }
 }

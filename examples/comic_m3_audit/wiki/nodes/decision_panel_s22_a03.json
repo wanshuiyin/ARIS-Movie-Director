@@ -1,0 +1,14 @@
+{
+  "node_id": "decision:panel_s22_a03",
+  "node_type": "decision",
+  "status": "final",
+  "title": "panel_gate S22 a3 → keep",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "payload": {
+    "gate_kind": "panel",
+    "target_node_id": "attempt:s22_a03",
+    "verdict": "keep",
+    "reasoning": "KEEP — [html] narr=5 identity=4 style=5/5 comp=5/5 art(g/c)=0/1 safezone=true stray=false disagreeId=1",
+    "repair_instruction": ""
+  }
+}
