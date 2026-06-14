@@ -19,6 +19,13 @@ deterministic token-diff** before a panel is kept. *Looks right ≠ passes* — 
 wrong (`+6.2` expected vs `+6.25` observed) is rejected. Every attempt, retry, and decision lands in an
 inspectable **research-wiki** trace.
 
+**This is a long-horizon visual generation task** — a whole movie (19 scenes), not a single image — and across
+that horizon two failure modes appear that a lone *streaming* model can't fix by itself. Each maps to one idea
+ARIS-Movie-Director brings over from [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep):
+
+- 🧠 **Long-range forgetting** — over many frames, identity, established facts, and earlier decisions drift. → a **research-wiki**: persistent, inspectable memory (locked refs · `expected_literals` · every decision & failure as a node) keeps late frames anchored to early truth.
+- 🗣️ **Linear, self-approved streaming** — each frame is committed by the same model that drew it, so mistakes compound unchecked. → **multi-agent debate**: independent cross-model reviewers blind-read every frame and a deterministic diff decides **KEEP / RETRY** — no frame signs off on itself.
+
 **🔬 Method at a glance.** Read the figure left-to-right — the loop the paragraph above describes
 (*author a source of truth → bake → cross-model gate*) is exactly its three stages: **(1)** authored
 `comic.json` + locked refs, **(2)** the per-panel audited spiral, **(3)** assembly + release. The bottom-left
