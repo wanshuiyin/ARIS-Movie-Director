@@ -57,6 +57,21 @@ assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickabl
    order bug). Enforces "one visual dialect, never two" at the file level. Cross-model adjudicated (codex
    gpt-5.5 xhigh).
 
+## Post-run polish (manual, recorded here — NOT faked into the engine trace)
+- **Cover (S01) re-baked for two defects the original run shipped.** The 24-panel spiral run is the
+  honest engine trace (the 174 wiki nodes); this fix happened AFTER it, by hand via the codex-MCP
+  image_gen loop (same discipline as the README figure), so it is logged HERE rather than as a synthetic
+  spiral node — authoring a fake "attempt/decision" node into the engine trace would undermine the very
+  honesty the trace exists to prove. The fixes: (1) the green reviewer chibi had THREE hands (the brief
+  "arms crossed + one hand raised" is self-contradictory — crossed arms already use both hands) → re-posed
+  to exactly two (one pointing, one at side, no crossing); (2) the laptop showed the RUN FAILED traceback
+  on the lid face turned toward the viewer while the researcher sat behind it — a physical impossibility →
+  the laptop screen is now dark and the traceback lives in a separate floating CYAN HOLOGRAPHIC panel
+  (which also fits the story: the two chibi are agents projected from the failed run). a04 → a06; cross-model
+  gated (codex gpt-5.5 xhigh ‖ gemini-3) with explicit per-hand enumeration after a first gate (a05) lazily
+  mis-counted the hands. NOTE for the framework: the original panel_gate's literal-diff did NOT catch the
+  anatomy error (extra hand) — a hand/finger-count check is a candidate gate dimension.
+
 ## Known weaknesses still standing (candidates for release)
 - **Wiki timestamps are placeholders.** `Date.now()`/`new Date()` are unavailable in the workflow
   sandbox (they'd break resume determinism), so all 174 nodes share one of two hardcoded dates. The

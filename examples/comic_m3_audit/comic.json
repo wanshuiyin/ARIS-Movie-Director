@@ -411,8 +411,8 @@
   "panels": {
     "S01": {
       "wiki_node_id": "panel:s01_aris_comic_v1",
-      "active_attempt_id": "S01_a04",
-      "image_path": "panels/S01_panel_a04.png",
+      "active_attempt_id": "S01_a06",
+      "image_path": "panels/S01_panel_a06.png",
       "crop": {
         "shape": "hero",
         "position": [
