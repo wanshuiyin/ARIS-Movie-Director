@@ -9,6 +9,10 @@ The framework knows nothing about any particular story — a project plugs in vi
 pixel-art comic about an autonomous research run, and ships the **real generation trace** (174 wiki
 nodes) as proof the multi-agent loop actually ran.
 
+> **▶ [Read the interactive comic in your browser](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)** — flip through all 19 pages of the cross-model-audited reference run.
+
+[![Read the interactive comic — cover](docs/comic_cover.webp)](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)
+
 ![ARIS-Movie-Director — method overview](docs/method_figure.png)
 
 > **Figure 1.** From story intent to a verified comic, end-to-end. **(1) Authored source of truth** —
