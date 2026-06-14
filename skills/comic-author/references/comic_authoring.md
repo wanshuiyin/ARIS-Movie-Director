@@ -44,8 +44,9 @@ runtime** though — this repo is self-contained; ARIS main is only an *optional
 > checks* that your authored numbers actually appear — a beautiful panel whose number is wrong (`+6.2`
 > authored vs `+6.25` baked) is rejected by the deterministic token-diff. The blueprint is the **ground
 > truth**; the image model is never trusted to originate a number. The examples here use ARIS's own audit
-> story, but the path is generic: swap in your SVG and your literals. A panel with no technical figure sets
-> `content_svg: null` and relies on `scene` + `bubbles` alone.
+> story, but the path is generic: swap in your SVG and your literals. **Every panel needs a `content_svg`**
+> (the engine requires one as the layout/content authority) — a scene-only panel gets a simple *layout*
+> blueprint and uses `text_mode: "html"` (no baked-literal contract); do **not** use `content_svg: null`.
 
 > **② Identity is bring-your-own; the ARIS chibi duo is just the example.** The reference movie's
 > `executor`/`reviewer` chibi pair and `assets/duo_canonical_ref_v001.png` are **one** identity set, shipped
