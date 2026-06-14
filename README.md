@@ -13,6 +13,10 @@ nodes) as proof the multi-agent loop actually ran.
 
 [![Read the interactive comic — cover](docs/comic_cover_v4.webp)](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)
 
+<table><tr><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_audit.webp" alt="audit page"></a></td><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_panels.webp" alt="multi-panel page"></a></td><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_fix.webp" alt="the fix beat"></a></td></tr></table>
+
+<sub>A few pages from the reference comic — *looks right ≠ passes*: a beautiful panel whose number is wrong (`+6.2` reported vs `+1.4` real) is caught by the gate. **[Read all 19 pages →](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)**</sub>
+
 ![ARIS-Movie-Director — method overview](docs/method_figure.png)
 
 > **Figure 1.** From story intent to a verified comic, end-to-end. **(1) Authored source of truth** —
