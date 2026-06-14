@@ -1,8 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/schemas/node_schema_v2.json",
-  "title": "ARIS-Movie-Director Node Schema v2.1 (spiral patch)",
-  "description": "Schema for every node stored under movie-wiki/nodes/<node_id>.json. v2.0 supports ARIS-Movie v4's 3-layer architecture (intent/outline/storyboard+shot) plus v3.5 legacy types for backward compatibility. v3.5 -> v4 migration map: movie_brief->intent, character/location->asset, segment_attempt/accepted->clip_attempt/accepted, segment_intent->shot. The node_type string 'storyboard' is shared between v1.1 (lineage+beat_list) and v4 (shot_ids) shapes via an inner oneOf in payload_storyboard. See ARCHITECTURE.md section 4 for full migration rules.\n\nv2.1 (2026-05-26) adds the spiral patch: new node type `assembly_attempt`, extended decision verdict enum (continue_forward / rollback_to_shot / rewrite_storyboard_from / final_accept / escalate_to_human), extended failure_mode payload (encoding_style positive_invariant, semantic_signature, occurrence_count, layer/scope), extended clip_accepted (acceptance_stage). New $defs: cc_narrative_assembly_scores, gemini_visual_assembly_scores, payload_assembly_attempt. See ARCHITECTURE.md §16.",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/schemas/node_schema.json",
+  "schema_version": "node/comic/3.0",
+  "title": "ARIS-Movie-Director wiki node schema (comic, slim)",
+  "description": "Every node under wiki/nodes/<node_id>.json. SLIM comic schema (v3.0): 14 node_types across the authoring (Phase 1) + audited-spiral (Phase 2/3) layers. Replaces the v2.x 28-type video dump (15 video branches with empty payloads were cut). The 4 RUNTIME types (panel_attempt/review/decision/failure_mode) keep their exact original payload.required so the existing 198-node trace still validates; the 10 author types are new (no nodes yet). cli/validate_wiki.py is the executable enforcer and MIRRORS this contract — keep them in sync. Edge vocabulary in wiki/edges.jsonl.",
   "type": "object",
   "required": [
     "node_id",
@@ -12,70 +13,48 @@
     "created_at",
     "payload"
   ],
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "node_id": {
       "type": "string",
-      "pattern": "^(intent|outline|asset|review|storyboard|shot|frame|cont|attempt|accepted|audio|job|brief|sb|seg|char|loc|style|fail|baseline|cmp|decision|assembly):[a-z0-9_-]+$",
-      "description": "Stable ID using prefix:slug form. v4 prefixes: intent, outline, asset, review, storyboard, shot, frame, cont, attempt, accepted, audio, job. v3.5 legacy prefixes kept for back-compat: brief, sb, seg, char, loc, style, fail, baseline, cmp, decision. Examples: 'intent:promo_xhs_v1', 'outline:promo_xhs_v1', 'asset:char_alice_v3', 'shot:s01', 'frame:fc_s01_v2', 'attempt:s01_v1', 'accepted:s01', 'cont:s01_lcf', 'job:nightly_2026_05_24'."
+      "pattern": "^(intent|style|outline|asset|storyboard|panel|blueprint|prompt|motif|cont|attempt|review|decision|fail):[a-z0-9_-]+$",
+      "description": "prefix:slug. live prefixes: attempt/review/decision/fail; author prefixes: intent/style/outline/asset/storyboard/panel/blueprint/prompt/motif/cont."
     },
     "node_type": {
       "enum": [
-        "movie_brief",
-        "storyboard",
-        "segment_intent",
+        "intent_spec",
+        "style_anchor",
+        "outline_spec",
+        "asset",
+        "storyboard_spec",
+        "panel_spec",
+        "blueprint",
         "prompt_bundle",
-        "segment_attempt",
-        "segment_accepted",
+        "motif_ledger",
+        "continuity_constraint",
+        "panel_attempt",
         "review",
         "decision",
-        "character",
-        "location",
-        "style_anchor",
-        "continuity_constraint",
-        "failure_mode",
-        "baseline_run",
-        "comparison",
-        "intent",
-        "outline",
-        "asset",
-        "asset_review",
-        "shot",
-        "frame_condition",
-        "continuity_anchor",
-        "clip_attempt",
-        "clip_accepted",
-        "audio_profile",
-        "service_job",
-        "assembly_attempt",
-        "panel_attempt"
-      ],
-      "description": "Node type tag. v1.1 (15 types, kept for backward compatibility): movie_brief, storyboard, segment_intent, prompt_bundle, segment_attempt, segment_accepted, review, decision, character, location, style_anchor, continuity_constraint, failure_mode, baseline_run, comparison. v4 new (11 types): intent, outline, asset, asset_review, shot, frame_condition, continuity_anchor, clip_attempt, clip_accepted, audio_profile, service_job. 'storyboard' is shared between v1.1 and v4 — payload_storyboard uses an inner oneOf to accept either shape."
+        "failure_mode"
+      ]
     },
     "title": {
       "type": "string",
-      "maxLength": 140
+      "maxLength": 160
     },
     "status": {
       "enum": [
-        "candidate",
-        "active",
-        "accepted",
-        "rejected",
-        "superseded",
-        "failed",
-        "pending_download",
-        "archived",
+        "draft",
+        "pending",
         "under_review",
         "locked",
-        "cancelled",
-        "superseded_by_rollback",
-        "assembly_checked",
-        "final_accepted",
+        "rejected",
+        "superseded",
+        "active",
         "complete",
         "final"
       ],
-      "description": "Lifecycle status. v1.1 statuses kept: candidate, active, accepted, rejected, superseded, failed, pending_download, archived. v4 additions: under_review (waiting for adv-review gate), locked (passed all gates, immutable; used by asset and outline), cancelled (service_job killed before completion). comic spiral: complete (a finished review node), final (a finalized decision node)."
+      "description": "runtime canon: panel_attempt->under_review, review->complete, decision->final, failure_mode->active. author canon: draft/pending->under_review->locked (or rejected/superseded)."
     },
     "created_at": {
       "type": "string",
@@ -92,3252 +71,340 @@
       }
     },
     "payload": {
-      "type": "object",
-      "description": "Type-specific fields. The valid shape of `payload` is selected by `node_type` via the oneOf branches below."
+      "type": "object"
     }
   },
   "oneOf": [
     {
-      "title": "movie_brief node (v1.1 legacy)",
+      "title": "intent_spec",
       "properties": {
         "node_type": {
-          "const": "movie_brief"
+          "const": "intent_spec"
         },
         "payload": {
-          "$ref": "#/$defs/payload_movie_brief"
+          "type": "object",
+          "required": [
+            "raw_input_refs",
+            "user_goal",
+            "audience",
+            "format",
+            "constraints",
+            "subjects",
+            "source_skeleton",
+            "dual_identity",
+            "uncertainties",
+            "confidence"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "storyboard node (shared v1.1+v4)",
-      "properties": {
-        "node_type": {
-          "const": "storyboard"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_storyboard"
-        }
-      }
-    },
-    {
-      "title": "segment_intent node (v1.1 legacy)",
-      "properties": {
-        "node_type": {
-          "const": "segment_intent"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_segment_intent"
-        }
-      }
-    },
-    {
-      "title": "prompt_bundle node (v1.1 legacy)",
-      "properties": {
-        "node_type": {
-          "const": "prompt_bundle"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_prompt_bundle"
-        }
-      }
-    },
-    {
-      "title": "segment_attempt node (v1.1 legacy)",
-      "properties": {
-        "node_type": {
-          "const": "segment_attempt"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_segment_attempt"
-        }
-      }
-    },
-    {
-      "title": "segment_accepted node (v1.1 legacy)",
-      "properties": {
-        "node_type": {
-          "const": "segment_accepted"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_segment_accepted"
-        }
-      }
-    },
-    {
-      "title": "review node",
-      "properties": {
-        "node_type": {
-          "const": "review"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_review"
-        }
-      }
-    },
-    {
-      "title": "decision node",
-      "properties": {
-        "node_type": {
-          "const": "decision"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_decision"
-        }
-      }
-    },
-    {
-      "title": "character node (v1.1 legacy; migrates to asset asset_kind=character)",
-      "properties": {
-        "node_type": {
-          "const": "character"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_character"
-        }
-      }
-    },
-    {
-      "title": "location node (v1.1 legacy; migrates to asset asset_kind=scene)",
-      "properties": {
-        "node_type": {
-          "const": "location"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_location"
-        }
-      }
-    },
-    {
-      "title": "style_anchor node",
+      "title": "style_anchor",
       "properties": {
         "node_type": {
           "const": "style_anchor"
         },
         "payload": {
-          "$ref": "#/$defs/payload_style_anchor"
+          "type": "object",
+          "required": [
+            "dimension",
+            "value",
+            "source",
+            "locked"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "continuity_constraint node",
+      "title": "outline_spec",
       "properties": {
         "node_type": {
-          "const": "continuity_constraint"
+          "const": "outline_spec"
         },
         "payload": {
-          "$ref": "#/$defs/payload_continuity_constraint"
+          "type": "object",
+          "required": [
+            "source_intent_id",
+            "title",
+            "logline",
+            "tagline",
+            "design_constraint",
+            "target_page_count",
+            "narrative_beats",
+            "beat_table",
+            "motif_arcs",
+            "character_asset_ids",
+            "scene_asset_ids",
+            "prop_asset_ids",
+            "global_style_bible",
+            "budget"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "failure_mode node",
-      "properties": {
-        "node_type": {
-          "const": "failure_mode"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_failure_mode"
-        }
-      }
-    },
-    {
-      "title": "baseline_run node",
-      "properties": {
-        "node_type": {
-          "const": "baseline_run"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_baseline_run"
-        }
-      }
-    },
-    {
-      "title": "comparison node",
-      "properties": {
-        "node_type": {
-          "const": "comparison"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_comparison"
-        }
-      }
-    },
-    {
-      "title": "intent node (v4 Layer 1 output)",
-      "properties": {
-        "node_type": {
-          "const": "intent"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_intent"
-        }
-      }
-    },
-    {
-      "title": "outline node (v4 Layer 2 output)",
-      "properties": {
-        "node_type": {
-          "const": "outline"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_outline"
-        }
-      }
-    },
-    {
-      "title": "asset node (v4 first-class asset)",
+      "title": "asset",
       "properties": {
         "node_type": {
           "const": "asset"
         },
         "payload": {
-          "$ref": "#/$defs/payload_asset"
+          "type": "object",
+          "required": [
+            "asset_kind",
+            "name",
+            "visual_description",
+            "identity_lock",
+            "ref_requirements",
+            "review_status",
+            "version"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "asset_review node (v4 asset-specific review)",
+      "title": "storyboard_spec",
       "properties": {
         "node_type": {
-          "const": "asset_review"
+          "const": "storyboard_spec"
         },
         "payload": {
-          "$ref": "#/$defs/payload_asset_review"
+          "type": "object",
+          "required": [
+            "source_outline_id",
+            "page_order",
+            "page_ids",
+            "panel_ids",
+            "global_policies",
+            "motif_ledger_id",
+            "consolidated_asset_requests"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "shot node (v4 Layer 3 single shot spec)",
+      "title": "panel_spec",
       "properties": {
         "node_type": {
-          "const": "shot"
+          "const": "panel_spec"
         },
         "payload": {
-          "$ref": "#/$defs/payload_shot"
+          "type": "object",
+          "required": [
+            "source_storyboard_id",
+            "page_id",
+            "panel_id",
+            "sequence_index",
+            "page_type",
+            "world",
+            "asset_ids",
+            "text_mode",
+            "expected_literals",
+            "content_blueprint",
+            "bubbles",
+            "side_narration",
+            "motifs"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "frame_condition node (v4 multi-ref composite first frame)",
+      "title": "blueprint",
       "properties": {
         "node_type": {
-          "const": "frame_condition"
+          "const": "blueprint"
         },
         "payload": {
-          "$ref": "#/$defs/payload_frame_condition"
+          "type": "object",
+          "required": [
+            "source_panel_id",
+            "content_svg",
+            "expected_literals",
+            "safe_zones",
+            "html_bubbles",
+            "crop",
+            "negative_space_policy",
+            "generator_script",
+            "file_sha256"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "continuity_anchor node (v4 last-clear-frame from a clip)",
+      "title": "prompt_bundle",
       "properties": {
         "node_type": {
-          "const": "continuity_anchor"
+          "const": "prompt_bundle"
         },
         "payload": {
-          "$ref": "#/$defs/payload_continuity_anchor"
+          "type": "object",
+          "required": [
+            "source_panel_id",
+            "source_blueprint_id",
+            "style_prefix",
+            "composed_prompt",
+            "banned_vocab_scan",
+            "identity_ref_paths"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "clip_attempt node (v4 replaces segment_attempt)",
+      "title": "motif_ledger",
       "properties": {
         "node_type": {
-          "const": "clip_attempt"
+          "const": "motif_ledger"
         },
         "payload": {
-          "$ref": "#/$defs/payload_clip_attempt"
+          "type": "object",
+          "required": [
+            "source_storyboard_id",
+            "columns",
+            "rows",
+            "invariants",
+            "mirror_locks"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "clip_accepted node (v4 replaces segment_accepted)",
+      "title": "continuity_constraint",
       "properties": {
         "node_type": {
-          "const": "clip_accepted"
+          "const": "continuity_constraint"
         },
         "payload": {
-          "$ref": "#/$defs/payload_clip_accepted"
+          "type": "object",
+          "required": [
+            "family",
+            "constraint_text",
+            "applies_to_panel_ids",
+            "source_node_id",
+            "active"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     },
     {
-      "title": "audio_profile node (v4 reusable voice spec)",
-      "properties": {
-        "node_type": {
-          "const": "audio_profile"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_audio_profile"
-        }
-      }
-    },
-    {
-      "title": "service_job node (v4 aris-movie daemon queue item)",
-      "properties": {
-        "node_type": {
-          "const": "service_job"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_service_job"
-        }
-      }
-    },
-    {
-      "title": "assembly_attempt node",
-      "properties": {
-        "node_type": {
-          "const": "assembly_attempt"
-        },
-        "payload": {
-          "$ref": "#/$defs/payload_assembly_attempt"
-        }
-      }
-    },
-    {
-      "title": "panel_attempt node (comic)",
+      "title": "panel_attempt",
       "properties": {
         "node_type": {
           "const": "panel_attempt"
         },
         "payload": {
-          "$ref": "#/$defs/payload_panel_attempt"
-        }
-      }
-    }
-  ],
-  "$defs": {
-    "review_scores": {
-      "type": "object",
-      "description": "11-dim cross-model rubric (0-5 each). See ARCHITECTURE.md section 5. Missing dims are allowed when the active reviewer tier did not score them (e.g. lite mode skips visual dims).",
-      "additionalProperties": false,
-      "properties": {
-        "narrative_intent": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "does this 15s convey the intended story beat?"
-        },
-        "plot_continuity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "does it follow from the prior accepted segment?"
-        },
-        "character_arc": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "is the character's emotional/situational state coherent?"
-        },
-        "character_visual": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "face/clothes/age/identity stable?"
-        },
-        "location_consistency": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "same spatial/lighting/era/weather?"
-        },
-        "style_consistency": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "palette/lens/pacing/typography matches bible?"
-        },
-        "pacing": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "info density right for 15s (not rushed, not padded)?"
-        },
-        "audio_narration_sync": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "voiceover/subtitles/SFX align with picture?"
-        },
-        "artifact_severity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "anatomy/text/motion/flicker problems. HIGHER IS WORSE: 0=clean, 5=catastrophic anatomy break."
-        },
-        "stitchability": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "clean entry/exit for ffmpeg concat?"
-        },
-        "safety_ip": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "no celebrity likeness, no copyrighted character?"
-        }
-      }
-    },
-    "asset_review_scores": {
-      "type": "object",
-      "description": "5-dim asset gate rubric (0-5 each). See ARCHITECTURE.md section 5 (asset gate). Used by asset_review node to score an asset reference image's reuse-readiness.",
-      "additionalProperties": false,
-      "required": [
-        "identity_lock_satisfied",
-        "ref_quality",
-        "bg_isolation",
-        "reuse_readiness",
-        "safety_ip"
-      ],
-      "properties": {
-        "identity_lock_satisfied": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "does the ref preserve the asset.identity_lock.must_preserve attributes and avoid must_avoid traits?"
-        },
-        "ref_quality": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "is the rendered reference high-resolution, sharp, evenly lit, free of artifacts?"
-        },
-        "bg_isolation": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "is the subject cleanly isolated on the required background (e.g. white) with no contamination?"
-        },
-        "reuse_readiness": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "can this ref be reused across shots without forcing a regen? composable with other refs?"
-        },
-        "safety_ip": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "no celebrity likeness, no copyrighted character or trademark; brand-safe."
-        }
-      }
-    },
-    "beat": {
-      "type": "object",
-      "description": "One beat in a v1.1 storyboard lineage's beat_list. v4 storyboards use shot_ids instead.",
-      "required": [
-        "beat_id",
-        "target_duration_sec",
-        "intent_seed_text"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "beat_id": {
-          "type": "string"
-        },
-        "target_duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "intent_seed_text": {
-          "type": "string",
-          "maxLength": 600,
-          "description": "Rough intent for this beat; segment-intent-builder will compress into <=600 char intent_text for Pippit. Must be narrative language — no camera/lens/lighting."
-        },
-        "key_visual_anchor": {
-          "type": "string",
-          "description": "One short phrase naming the visual anchor (e.g. 'cursor blink', 'wiki graph expand')."
-        },
-        "continuity_anchor_strategy": {
-          "type": "string",
-          "description": "How this beat carries forward continuity (e.g. 'reuse last_frame of prior beat as i2v asset')."
-        }
-      }
-    },
-    "character_ref": {
-      "type": "object",
-      "required": [
-        "anchor_name"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "anchor_name": {
-          "type": "string"
-        },
-        "role": {
-          "type": "string"
-        },
-        "visual_description": {
-          "type": "string"
-        }
-      }
-    },
-    "location_ref": {
-      "type": "object",
-      "required": [
-        "name"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "visual_description": {
-          "type": "string"
-        }
-      }
-    },
-    "blind_review_verdict": {
-      "type": "object",
-      "required": [
-        "reviewer",
-        "preferred_label",
-        "reasoning"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "reviewer": {
-          "enum": [
-            "CC",
-            "Codex",
-            "Gemini",
-            "human"
-          ]
-        },
-        "preferred_label": {
-          "enum": [
-            "A",
-            "B",
-            "tie"
-          ],
-          "description": "A and B are randomized assignments of progressive vs baseline."
-        },
-        "reasoning": {
-          "type": "string"
-        },
-        "dim_scores": {
-          "$ref": "#/$defs/review_scores"
-        }
-      }
-    },
-    "payload_movie_brief": {
-      "type": "object",
-      "description": "v1.1 legacy. v4 migration: movie_brief -> intent.",
-      "required": [
-        "logline",
-        "narrative_arc",
-        "characters",
-        "locations",
-        "anti_goals"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "logline": {
-          "type": "string"
-        },
-        "narrative_arc": {
-          "type": "array",
-          "description": "Ordered beats from the brief (not yet expanded into a storyboard).",
-          "items": {
-            "type": "object",
-            "required": [
-              "beat_index",
-              "title"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "beat_index": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "title": {
-                "type": "string"
-              },
-              "duration_sec_target": {
-                "type": "number",
-                "minimum": 0
-              },
-              "visual_core": {
-                "type": "string"
-              },
-              "emotional_beat": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "characters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/character_ref"
-          }
-        },
-        "locations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/location_ref"
-          }
-        },
-        "anti_goals": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "target_tier": {
-          "enum": [
-            "mvp",
-            "demo",
-            "longform"
-          ],
-          "description": "Which length tier this brief is being executed at."
-        }
-      }
-    },
-    "payload_storyboard_v11": {
-      "type": "object",
-      "description": "v1.1 storyboard payload. Identified by presence of beat_list (and absence of shot_ids).",
-      "required": [
-        "lineage_id",
-        "beat_list",
-        "style_summary",
-        "feasibility_score"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "lineage_id": {
-          "type": "string",
-          "description": "Stable ID for this storyboard candidate (e.g. 'lineage_a', 'lineage_b1')."
-        },
-        "parent_lineage_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "If this is a fork of an earlier storyboard, the parent lineage_id."
-        },
-        "beat_list": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/beat"
-          }
-        },
-        "style_summary": {
-          "type": "string",
-          "description": "<=30 word recap of the style for this lineage."
-        },
-        "feasibility_score": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5,
-          "description": "Storyboard-creator's self-rated feasibility (Pippit can plausibly render this)."
-        }
-      }
-    },
-    "payload_storyboard_v4": {
-      "type": "object",
-      "description": "v4 storyboard payload. Identified by presence of shot_ids and source_outline_id. global_policies.tail_frame_condition MUST be 'forbidden' and continuation_anchor MUST be 'last_clear_frame' per ARCHITECTURE.md section 14.",
-      "required": [
-        "source_outline_id",
-        "status",
-        "global_policies",
-        "shot_ids"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "source_outline_id": {
-          "type": "string",
-          "description": "node_id of the outline this storyboard was derived from."
-        },
-        "status": {
-          "enum": [
-            "draft",
-            "under_review",
-            "locked",
-            "superseded"
-          ]
-        },
-        "global_policies": {
           "type": "object",
           "required": [
-            "scene_cut_frequency",
-            "tail_frame_condition",
-            "continuation_anchor",
-            "allow_intermediate_guides"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "scene_cut_frequency": {
-              "enum": [
-                "low",
-                "medium"
-              ],
-              "description": "How often the storyboard cuts between shots. 'high' deliberately omitted to discourage cut-heavy edits."
-            },
-            "tail_frame_condition": {
-              "const": "forbidden",
-              "description": "Pippit/Seedance must NEVER receive both start AND end keyframes. Always 'forbidden' in v4 (ARCHITECTURE.md section 14)."
-            },
-            "continuation_anchor": {
-              "const": "last_clear_frame",
-              "description": "Continuation between shots uses last_clear_frame (Laplacian-variance extraction), never the mechanical last frame."
-            },
-            "allow_intermediate_guides": {
-              "type": "boolean",
-              "description": "Whether shots may carry intermediate_guide_ids (reference-only, never sent as --asset-ids alongside start_frame)."
-            }
-          }
-        },
-        "shot_ids": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string"
-          },
-          "description": "Ordered node_ids of shot nodes that make up this storyboard. Order is execution order."
+            "source_panel_id",
+            "image_path",
+            "attempt_index"
+          ]
         }
-      }
-    },
-    "payload_storyboard": {
-      "description": "Storyboard payload. Accepts EITHER v1.1 shape (lineage_id+beat_list+style_summary+feasibility_score) OR v4 shape (source_outline_id+status+global_policies+shot_ids). v3.5 wikis still validate; new v4 storyboards use the second shape.",
-      "oneOf": [
-        {
-          "$ref": "#/$defs/payload_storyboard_v11"
-        },
-        {
-          "$ref": "#/$defs/payload_storyboard_v4"
-        }
+      },
+      "required": [
+        "node_type",
+        "payload"
       ]
     },
-    "payload_segment_intent": {
-      "type": "object",
-      "description": "v1.1 legacy. v4 migration: segment_intent -> shot (richer JSON spec).",
-      "required": [
-        "beat_id",
-        "target_duration_sec",
-        "intent_text"
-      ],
-      "additionalProperties": false,
+    {
+      "title": "review",
       "properties": {
-        "beat_id": {
-          "type": "string"
+        "node_type": {
+          "const": "review"
         },
-        "target_duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "intent_text": {
-          "type": "string",
-          "maxLength": 600,
-          "description": "Pippit-ready narrative intent, <=2 sentences, narrative language only. NO camera/lens/lighting/8K/cinematic vocabulary (Pippit 搬运工原则)."
-        },
-        "continuity_anchor_ref": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Optional path to the prior segment's last-frame PNG used as i2v anchor; null on the first beat of a lineage."
-        }
-      }
-    },
-    "payload_prompt_bundle": {
-      "type": "object",
-      "required": [
-        "message",
-        "asset_ids",
-        "style_prefix"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "message": {
-          "type": "string",
-          "maxLength": 2000,
-          "description": "The exact string passed to Pippit submit_run --message. MUST NOT contain internal wiki bookkeeping (e.g. shot_list, camera, lens). Pippit 搬运工原则: narrative only."
-        },
-        "asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Pippit asset IDs returned by upload_file.py (reference frames / i2v anchors)."
-        },
-        "style_prefix": {
-          "type": "string",
-          "maxLength": 200,
-          "description": "Short style prefix prepended to message: tone + palette + anti-goals only. NO camera/lens/lighting (those are internal style bible bookkeeping)."
-        }
-      }
-    },
-    "payload_segment_attempt": {
-      "type": "object",
-      "description": "v1.1 legacy. v4 migration: segment_attempt -> clip_attempt.",
-      "required": [
-        "thread_id",
-        "run_id",
-        "web_thread_link",
-        "local_file_path",
-        "frame_paths",
-        "duration_sec",
-        "model"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "thread_id": {
-          "type": "string"
-        },
-        "run_id": {
-          "type": "string"
-        },
-        "web_thread_link": {
-          "type": "string",
-          "description": "Pippit web URL for human traceability."
-        },
-        "local_file_path": {
-          "type": "string",
-          "description": "Path to the downloaded mp4."
-        },
-        "frame_paths": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Paths of extracted key frames."
-        },
-        "duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "model": {
-          "type": "string",
-          "description": "Generation model identifier (e.g. 'seedance-2.0')."
-        },
-        "seed": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "attempt_index": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "1-based attempt index within the same beat."
-        }
-      }
-    },
-    "payload_segment_accepted": {
-      "type": "object",
-      "description": "v1.1 legacy. v4 migration: segment_accepted -> clip_accepted.",
-      "required": [
-        "thread_id",
-        "run_id",
-        "web_thread_link",
-        "local_file_path",
-        "frame_paths",
-        "duration_sec",
-        "model",
-        "accepted_at",
-        "accepted_continuity_anchor_path"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "thread_id": {
-          "type": "string"
-        },
-        "run_id": {
-          "type": "string"
-        },
-        "web_thread_link": {
-          "type": "string"
-        },
-        "local_file_path": {
-          "type": "string",
-          "description": "Path to the accepted mp4 (under artifacts/accepted/)."
-        },
-        "frame_paths": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "model": {
-          "type": "string"
-        },
-        "seed": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "attempt_index": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "accepted_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "accepted_continuity_anchor_path": {
-          "type": "string",
-          "description": "Path to the last-frame PNG extracted from this accepted clip; used as the i2v anchor for the next beat."
-        }
-      }
-    },
-    "payload_review": {
-      "type": "object",
-      "required": [
-        "reviewer",
-        "target_node_id",
-        "gate_kind"
-      ],
-      "additionalProperties": true,
-      "properties": {
-        "reviewer": {
-          "enum": [
-            "CC",
-            "Codex",
-            "Gemini",
-            "cc",
-            "codex",
-            "gemini"
-          ]
-        },
-        "review_scores": {
-          "description": "Review scores object — exact shape depends on what was reviewed (clip / asset / assembly). Use the appropriate sub-rubric via oneOf.",
-          "oneOf": [
-            {
-              "$ref": "#/$defs/review_scores"
-            },
-            {
-              "$ref": "#/$defs/asset_review_scores"
-            },
-            {
-              "$ref": "#/$defs/cc_narrative_assembly_scores"
-            },
-            {
-              "$ref": "#/$defs/gemini_visual_assembly_scores"
-            },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "description": "empty for gate-only synthesizer reviews (e.g. Codex synth that just reads other reviewers' scores)"
-            }
-          ]
-        },
-        "narrative_notes": {
-          "type": "string",
-          "description": "OPTIONAL free-text rationale from CC (Claude). MUST NEVER be passed to Codex when Codex acts as the decision gate (reviewer-independence invariant — ARCHITECTURE.md section 9)."
-        },
-        "failure_modes_flagged": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "target_node_id": {
-          "type": "string"
-        },
-        "gate_kind": {
-          "enum": [
-            "panel",
-            "assembly"
-          ]
-        },
-        "identity_consistency": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "style_consistency": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "composition_readability": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "artifact_severity": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "baked_text_quality": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "safezone_present": {
-          "type": "boolean"
-        },
-        "stray_text_present": {
-          "type": "boolean"
-        },
-        "content_corruption_present": {
-          "type": "boolean"
-        },
-        "timed_out": {
-          "type": "boolean"
-        },
-        "observed_literals": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "cross_panel_identity": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "cross_panel_style": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "text_fits_safezone": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "baked_text_legibility": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "drift_panels": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "narrative_score": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "notes": {
-          "type": "string"
-        }
-      }
-    },
-    "payload_decision": {
-      "type": "object",
-      "required": [
-        "gate_kind",
-        "reasoning",
-        "target_node_id",
-        "verdict"
-      ],
-      "additionalProperties": true,
-      "properties": {
-        "verdict": {
-          "enum": [
-            "keep",
-            "retry_segment",
-            "rewrite_storyboard",
-            "abandon_lineage",
-            "stop",
-            "retry_shot",
-            "rewrite_shot",
-            "abandon_shot",
-            "continue_forward",
-            "rollback_to_shot",
-            "rewrite_storyboard_from",
-            "final_accept",
-            "escalate_to_human",
-            "approve",
-            "locked",
-            "regenerate",
-            "fallback_to_python_collage",
-            "revise",
-            "retry_panel",
-            "accept_by_human"
-          ]
-        },
-        "reasoning": {
-          "type": "string"
-        },
-        "repair_instruction": {
-          "type": "string",
-          "description": "OPTIONAL — if verdict ∈ {retry_segment, retry_shot, rewrite_storyboard, rewrite_shot}, the concrete next-attempt directive."
-        },
-        "target_node_id": {
-          "type": "string",
-          "description": "node_id of the segment_attempt or clip_attempt this decision is about."
-        },
-        "gate_kind": {
-          "type": "string",
-          "enum": [
-            "intent",
-            "outline",
-            "asset",
-            "frame_condition",
-            "clip",
-            "assembly",
-            "storyboard",
-            "panel"
-          ]
-        },
-        "rollback_target_shot_id": {
-          "type": "string"
-        },
-        "rollback_target_sequence_index": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "rewrite_from_shot_id": {
-          "type": "string"
-        },
-        "rewrite_from_sequence_index": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "invalidated_clip_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "frozen_prefix_clip_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "root_failure_mode_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "assembly_attempt_id": {
-          "type": "string"
-        },
-        "strike_count_for_target": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "human": {
-          "type": "string"
-        },
-        "kept": {
-          "type": "object"
-        }
-      }
-    },
-    "payload_character": {
-      "type": "object",
-      "description": "v1.1 legacy. v4 migration: character -> asset (asset_kind='character').",
-      "required": [
-        "anchor_name",
-        "visual_description",
-        "anchor_frames"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "anchor_name": {
-          "type": "string"
-        },
-        "visual_description": {
-          "type": "string"
-        },
-        "anchor_frames": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Paths to canonical reference frames for this character."
-        }
-      }
-    },
-    "payload_location": {
-      "type": "object",
-      "description": "v1.1 legacy. v4 migration: location -> asset (asset_kind='scene').",
-      "required": [
-        "name",
-        "visual_description",
-        "anchor_frames"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "visual_description": {
-          "type": "string"
-        },
-        "anchor_frames": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "payload_style_anchor": {
-      "type": "object",
-      "required": [
-        "dimension",
-        "value"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "dimension": {
-          "type": "string",
-          "description": "e.g. 'palette', 'lens', 'lighting', 'pacing' — INTERNAL bookkeeping; NOT passed to Pippit."
-        },
-        "value": {
-          "type": "string"
-        },
-        "source_segment_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "node_id of the accepted segment this anchor was derived from; null if seeded from the style bible."
-        }
-      }
-    },
-    "payload_continuity_constraint": {
-      "type": "object",
-      "required": [
-        "constraint_text",
-        "applies_to_beats"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "constraint_text": {
-          "type": "string"
-        },
-        "applies_to_beats": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "payload_failure_mode": {
-      "type": "object",
-      "required": [
-        "layer",
-        "affected_shot_ids",
-        "active"
-      ],
-      "additionalProperties": true,
-      "properties": {
-        "mode_name": {
-          "type": "string",
-          "description": "e.g. 'entity_merge', 'background_drift', 'text_glyph_break'."
-        },
-        "description": {
-          "type": "string"
-        },
-        "repair_pattern": {
-          "type": "string",
-          "description": "OPTIONAL — the prompt-side mitigation recipe."
-        },
-        "encoding_style": {
-          "type": "string",
-          "enum": [
-            "positive_invariant",
-            "negative_pattern"
-          ],
-          "description": "Gemini's recommendation 2026-05-26: prefer positive_invariant to avoid diffusion models focusing on the negative."
-        },
-        "layer": {
-          "type": "string",
-          "enum": [
-            "asset",
-            "shot",
-            "prompt_pattern",
-            "visual_transition",
-            "global",
-            "panel_visual"
-          ]
-        },
-        "scope": {
-          "type": "string",
-          "enum": [
-            "movie_local",
-            "engine_global"
-          ],
-          "description": "engine_global modes propagate across movies via MEMORY-level promotion."
-        },
-        "severity": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "confidence": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "active": {
-          "type": "boolean",
-          "default": true
-        },
-        "source_node_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "assembly_attempt / decision / clip_attempt nodes that surfaced this failure"
-        },
-        "source_decision_id": {
-          "type": "string"
-        },
-        "affected_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "affected_shot_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "trigger_patterns": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "negative_prompt_fragments": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "semantic_signature": {
-          "type": "object",
-          "properties": {
-            "asset_ids": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "keywords": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "composition_terms": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "prompt_fragments": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "occurrence_count": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "first_seen_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "last_seen_at": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "payload_baseline_run": {
-      "type": "object",
-      "required": [
-        "brief_used",
-        "thread_id",
-        "run_id",
-        "web_thread_link",
-        "output_path",
-        "brief_hash"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "brief_used": {
-          "type": "string",
-          "description": "Path to the brief file fed verbatim to Pippit."
-        },
-        "thread_id": {
-          "type": "string"
-        },
-        "run_id": {
-          "type": "string"
-        },
-        "web_thread_link": {
-          "type": "string"
-        },
-        "output_path": {
-          "type": "string",
-          "description": "Local mp4 path (canonical: outputs/baseline_sd2_naive.mp4); empty if status=pending_download/failed."
-        },
-        "brief_hash": {
-          "type": "string",
-          "description": "Hash of the brief contents at run time, for provenance even when timed-out."
-        },
-        "model": {
-          "type": "string",
-          "description": "e.g. 'seedance-2.0'."
-        }
-      }
-    },
-    "payload_comparison": {
-      "type": "object",
-      "required": [
-        "progressive_path",
-        "baseline_path",
-        "comparison_md_path",
-        "blind_review_verdicts"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "progressive_path": {
-          "type": "string"
-        },
-        "baseline_path": {
-          "type": "string"
-        },
-        "comparison_md_path": {
-          "type": "string"
-        },
-        "blind_review_verdicts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/blind_review_verdict"
-          }
-        }
-      }
-    },
-    "payload_intent": {
-      "type": "object",
-      "description": "v4 Layer 1 output. The highest abstraction: 'what does the user want, what constraints, what unknowns?' Does NOT generate assets or shots — pass through intent gate, then to outline.",
-      "required": [
-        "source_inputs",
-        "user_goal",
-        "audience",
-        "platform",
-        "format",
-        "creative_brief",
-        "subjects",
-        "constraints",
-        "audio_intent",
-        "uncertainties",
-        "confidence"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "source_inputs": {
-          "type": "array",
-          "description": "Raw inputs the user provided. Each input is tagged with type and either inline text or a path/URI.",
-          "items": {
-            "type": "object",
-            "required": [
-              "input_id",
-              "type",
-              "notes"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "input_id": {
-                "type": "string"
-              },
-              "type": {
-                "enum": [
-                  "text",
-                  "video",
-                  "script",
-                  "image",
-                  "mixed"
-                ]
-              },
-              "uri": {
-                "type": "string"
-              },
-              "raw_text": {
-                "type": "string"
-              },
-              "transcript_path": {
-                "type": "string"
-              },
-              "frame_manifest_path": {
-                "type": "string"
-              },
-              "notes": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "user_goal": {
-          "type": "string",
-          "description": "Plain restatement of what the user is trying to achieve with this movie."
-        },
-        "audience": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "platform": {
-          "enum": [
-            "xhs",
-            "bilibili",
-            "talk_opener",
-            "internal_demo",
-            "other"
-          ]
-        },
-        "format": {
+        "payload": {
           "type": "object",
           "required": [
-            "target_tier",
-            "target_duration_sec",
-            "aspect_ratio",
-            "language",
-            "subtitle_policy"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "target_tier": {
-              "enum": [
-                "mvp",
-                "demo",
-                "longform",
-                "custom"
-              ]
-            },
-            "target_duration_sec": {
-              "type": "number",
-              "minimum": 0
-            },
-            "aspect_ratio": {
-              "enum": [
-                "16:9",
-                "9:16",
-                "1:1",
-                "custom"
-              ]
-            },
-            "language": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "subtitle_policy": {
-              "enum": [
-                "none",
-                "zh",
-                "en",
-                "bilingual"
-              ]
-            }
-          }
-        },
-        "creative_brief": {
-          "type": "object",
-          "required": [
-            "logline",
-            "genre",
-            "tone",
-            "narrative_style",
-            "desired_emotion",
-            "must_land",
-            "anti_goals"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "logline": {
-              "type": "string"
-            },
-            "genre": {
-              "type": "string"
-            },
-            "tone": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "narrative_style": {
-              "enum": [
-                "documentary",
-                "vlog",
-                "product",
-                "explainer",
-                "fiction",
-                "other"
-              ]
-            },
-            "desired_emotion": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "must_land": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "anti_goals": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "subjects": {
-          "type": "array",
-          "description": "Entities the movie is about (people, agents, objects, places, concepts). Each will likely become an asset node downstream.",
-          "items": {
-            "type": "object",
-            "required": [
-              "name",
-              "kind",
-              "role"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "kind": {
-                "enum": [
-                  "person",
-                  "agent",
-                  "object",
-                  "place",
-                  "concept"
-                ]
-              },
-              "role": {
-                "type": "string"
-              },
-              "visual_hint": {
-                "type": "string"
-              },
-              "identity_sensitivity": {
-                "enum": [
-                  "low",
-                  "medium",
-                  "high"
-                ]
-              }
-            }
-          }
-        },
-        "constraints": {
-          "type": "object",
-          "required": [
-            "must_preserve_text",
-            "brand_safety",
-            "no_tail_frame_condition",
-            "max_scene_cuts_per_min"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "must_preserve_text": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "brand_safety": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "no_tail_frame_condition": {
-              "const": true,
-              "description": "Always true per ARCHITECTURE.md section 14: Pippit/Seedance must never receive both start AND end keyframes."
-            },
-            "max_scene_cuts_per_min": {
-              "type": "number",
-              "minimum": 0
-            },
-            "budget_credits_max": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "deadline": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "date-time"
-            }
-          }
-        },
-        "audio_intent": {
-          "type": "object",
-          "required": [
-            "voice_importance",
-            "voice_description",
-            "music_mood",
-            "sfx_policy"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "voice_importance": {
-              "enum": [
-                "low",
-                "medium",
-                "high",
-                "critical"
-              ]
-            },
-            "voice_description": {
-              "type": "string"
-            },
-            "music_mood": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "sfx_policy": {
-              "enum": [
-                "none",
-                "sparse",
-                "normal"
-              ]
-            }
-          }
-        },
-        "uncertainties": {
-          "type": "array",
-          "description": "Ambiguities the intent gate must resolve (or the system must paper over with default_assumption).",
-          "items": {
-            "type": "object",
-            "required": [
-              "question",
-              "impact",
-              "default_assumption"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "question": {
-                "type": "string"
-              },
-              "impact": {
-                "enum": [
-                  "low",
-                  "medium",
-                  "high"
-                ]
-              },
-              "default_assumption": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "confidence": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Intent parser's self-rated confidence that this intent_spec is faithful to the raw inputs."
-        }
-      }
-    },
-    "payload_outline": {
-      "type": "object",
-      "description": "v4 Layer 2 output. World-setting + asset-library lock layer. MUST generate the asset library (character/scene/prop/text/audio asset ids) BEFORE any shot is planned. Passes through outline gate + asset adv loop.",
-      "required": [
-        "source_intent_id",
-        "title",
-        "logline",
-        "global_style_bible",
-        "narrative_beats",
-        "scene_asset_ids",
-        "character_asset_ids",
-        "prop_asset_ids",
-        "audio_bible",
-        "review_state"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "source_intent_id": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "logline": {
-          "type": "string"
-        },
-        "global_style_bible": {
-          "type": "object",
-          "required": [
-            "visual_style",
-            "palette",
-            "texture",
-            "forbidden_styles",
-            "text_preservation_policy"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "visual_style": {
-              "type": "string"
-            },
-            "palette": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "texture": {
-              "type": "string"
-            },
-            "forbidden_styles": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "text_preservation_policy": {
-              "type": "string",
-              "description": "How embedded text glyphs (titles, labels) must be preserved across all shots."
-            }
-          }
-        },
-        "narrative_beats": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "required": [
-              "beat_id",
-              "title",
-              "purpose",
-              "target_duration_sec",
-              "emotional_turn",
-              "must_show",
-              "must_not_show"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "beat_id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              },
-              "purpose": {
-                "type": "string"
-              },
-              "target_duration_sec": {
-                "type": "number",
-                "minimum": 0
-              },
-              "emotional_turn": {
-                "type": "string"
-              },
-              "must_show": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Asset_id refs that MUST appear in this beat."
-              },
-              "must_not_show": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "scene_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "node_ids of asset nodes with asset_kind=scene."
-        },
-        "character_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "node_ids of asset nodes with asset_kind=character."
-        },
-        "prop_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "node_ids of asset nodes with asset_kind=prop."
-        },
-        "audio_bible": {
-          "type": "object",
-          "required": [
-            "voice_description",
-            "music_profile",
-            "mix_policy"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "voice_profile_id": {
-              "type": "string",
-              "description": "node_id of an audio_profile node; optional if voice not yet locked."
-            },
-            "voice_description": {
-              "type": "string"
-            },
-            "music_profile": {
-              "type": "object",
-              "required": [
-                "mood",
-                "genre",
-                "bpm_range",
-                "avoid"
-              ],
-              "additionalProperties": false,
-              "properties": {
-                "mood": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "genre": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "bpm_range": {
-                  "type": "array",
-                  "minItems": 2,
-                  "maxItems": 2,
-                  "items": {
-                    "type": "number",
-                    "minimum": 0
-                  },
-                  "description": "[low_bpm, high_bpm]."
-                },
-                "avoid": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            "mix_policy": {
-              "type": "object",
-              "required": [
-                "target_lufs",
-                "ducking",
-                "subtitle_sync_required"
-              ],
-              "additionalProperties": false,
-              "properties": {
-                "target_lufs": {
-                  "type": "number"
-                },
-                "ducking": {
-                  "type": "boolean"
-                },
-                "subtitle_sync_required": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "review_state": {
-          "type": "object",
-          "required": [
-            "status",
-            "rounds",
-            "review_node_ids"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "status": {
-              "enum": [
-                "draft",
-                "under_review",
-                "locked",
-                "needs_revision"
-              ]
-            },
-            "rounds": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "review_node_ids": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "decision_node_id": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          }
-        }
-      }
-    },
-    "payload_asset": {
-      "type": "object",
-      "description": "v4 first-class asset (character, scene, prop, text_panel, logo_free_symbol, voice_profile, music_track). Generated via /asset-ref-generator, reviewed via /asset-review-loop (passes through asset gate before being referenced by any shot). For visual assets: output_ref carries file_path+data_url+sha256. For audio assets: audio_ref carries voice_timbre+dialect+sample_url.",
-      "required": [
-        "asset_kind",
-        "name",
-        "identity_lock",
-        "ref_requirements",
-        "model",
-        "generation_prompt",
-        "review_status",
-        "version"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "asset_kind": {
-          "enum": [
-            "character",
-            "scene",
-            "prop",
-            "text_panel",
-            "logo_free_symbol",
-            "voice_profile",
-            "music_track"
+            "target_node_id",
+            "reviewer",
+            "gate_kind"
           ]
-        },
-        "name": {
-          "type": "string"
-        },
-        "visual_description": {
-          "type": "string",
-          "description": "For visual assets (character, scene, prop, text_panel, logo_free_symbol)."
-        },
-        "audio_description": {
-          "type": "string",
-          "description": "For audio assets (voice_profile, music_track)."
-        },
-        "identity_lock": {
-          "type": "object",
-          "required": [
-            "must_preserve",
-            "must_avoid"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "must_preserve": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Identity traits that MUST be preserved across shots (e.g. 'silver hair', 'red scarf', 'square jawline')."
-            },
-            "must_avoid": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Traits the ref MUST avoid (e.g. 'celebrity likeness', 'corporate branding')."
-            }
-          }
-        },
-        "ref_requirements": {
-          "type": "object",
-          "required": [
-            "aspect_ratio",
-            "background",
-            "isolated_reference",
-            "data_url_required"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "aspect_ratio": {
-              "type": "string",
-              "description": "e.g. '1:1', '16:9'. v4 default for character/prop refs is '1:1'."
-            },
-            "background": {
-              "type": "string",
-              "description": "e.g. 'white', 'transparent', 'studio gray'."
-            },
-            "pose": {
-              "type": "string"
-            },
-            "isolated_reference": {
-              "type": "boolean",
-              "description": "True = subject only, no scene context."
-            },
-            "data_url_required": {
-              "type": "boolean",
-              "description": "True = output_ref MUST carry a data_url (for codex image-2 multi-ref input)."
-            }
-          }
-        },
-        "output_ref": {
-          "type": "object",
-          "description": "For visual assets: the rendered reference image.",
-          "required": [
-            "file_path",
-            "data_url",
-            "sha256",
-            "width",
-            "height",
-            "mime"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "file_path": {
-              "type": "string"
-            },
-            "data_url": {
-              "type": "string",
-              "description": "Base64 data: URL of the image, ready to pass as a multi-ref input to codex image-2."
-            },
-            "sha256": {
-              "type": "string"
-            },
-            "width": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "height": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "mime": {
-              "type": "string"
-            }
-          }
-        },
-        "audio_ref": {
-          "type": "object",
-          "description": "For audio assets (voice_profile, music_track).",
-          "required": [
-            "voice_timbre",
-            "dialect"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "file_path": {
-              "type": "string"
-            },
-            "voice_timbre": {
-              "type": "string",
-              "description": "e.g. 'soft female mid-range Chinese voice, contemplative, low energy'."
-            },
-            "dialect": {
-              "type": "string"
-            },
-            "sample_url": {
-              "type": "string"
-            }
-          }
-        },
-        "model": {
-          "type": "string",
-          "description": "Generation model identifier (e.g. 'gpt-image-2', 'pippit_native')."
-        },
-        "generation_prompt": {
-          "type": "string",
-          "description": "The exact prompt sent to the generation model. Provenance for audit cascade."
-        },
-        "review_status": {
-          "enum": [
-            "pending",
-            "approved",
-            "rejected",
-            "superseded",
-            "locked"
-          ]
-        },
-        "version": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "1-based version; bumped on regen. Asset library treats version+name as the natural key."
-        }
-      }
-    },
-    "payload_asset_review": {
-      "type": "object",
-      "description": "v4 asset-specific review. Extends the review concept with the 5-dim asset gate rubric (identity_lock_satisfied, ref_quality, bg_isolation, reuse_readiness, safety_ip). Reviewer-independence rule preserved: Codex never sees CC narrative_notes.",
-      "required": [
-        "reviewer",
-        "target_asset_id",
-        "review_scores",
-        "failure_modes_flagged"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "reviewer": {
-          "enum": [
-            "CC",
-            "Codex",
-            "Gemini"
-          ]
-        },
-        "target_asset_id": {
-          "type": "string",
-          "description": "node_id of the asset being reviewed."
-        },
-        "review_scores": {
-          "$ref": "#/$defs/asset_review_scores"
-        },
-        "failure_modes_flagged": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "narrative_notes": {
-          "type": "string",
-          "description": "OPTIONAL — only for the reviewer's own consumption. MUST NEVER be passed to Codex when Codex acts as the decision gate (reviewer-independence — ARCHITECTURE.md section 9)."
-        }
-      }
-    },
-    "payload_shot": {
-      "type": "object",
-      "description": "v4 Layer 3 single shot spec. Each shot references locked asset_ids only — introducing a new asset forces a fallback to Layer 2. The first frame is generated via /frame-condition-builder (multi-ref composite). Pippit/Seedance i2v runs with start_frame only; end_frame is forbidden (ARCHITECTURE.md section 14). Continuation between shots uses last_clear_frame from the prior clip.",
-      "required": [
-        "source_storyboard_id",
-        "sequence_index",
-        "beat_id",
-        "target_duration_sec",
-        "scene_asset_id",
-        "character_asset_ids",
-        "prop_asset_ids",
-        "text_asset_ids",
-        "composition",
-        "frame_condition_id",
-        "intermediate_guide_ids",
-        "video_generation",
-        "continuation",
-        "audio",
-        "review_gates"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "source_storyboard_id": {
-          "type": "string"
-        },
-        "sequence_index": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "beat_id": {
-          "type": "string",
-          "description": "Refs outline.narrative_beats[].beat_id."
-        },
-        "target_duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "scene_asset_id": {
-          "type": "string"
-        },
-        "character_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "prop_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "text_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "composition": {
-          "type": "object",
-          "required": [
-            "start_frame_prompt",
-            "spatial_relationships",
-            "must_preserve_from_refs",
-            "must_not_add"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "start_frame_prompt": {
-              "type": "string",
-              "description": "Narrative description of the frozen action at frame start; consumed by frame_condition generation prompt template."
-            },
-            "spatial_relationships": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "must_preserve_from_refs": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "must_not_add": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "frame_condition_id": {
-          "type": "string",
-          "description": "node_id of the frame_condition node that supplies this shot's start frame."
-        },
-        "intermediate_guide_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Optional additional guide images. Policy: optional_reference_only_not_end_keyframe. NEVER sent to Pippit as --asset-ids alongside start_frame."
-        },
-        "video_generation": {
-          "type": "object",
-          "required": [
-            "provider",
-            "mode",
-            "start_frame_asset_id",
-            "end_frame_policy",
-            "prompt",
-            "negative_prompt_notes",
-            "attempt_budget"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "provider": {
-              "const": "pippit_seedance"
-            },
-            "mode": {
-              "const": "image_to_video"
-            },
-            "start_frame_asset_id": {
-              "type": "string",
-              "description": "Pippit asset_id of the uploaded start_frame (NOT the same as a wiki node_id; this is the Pippit-side asset ID returned by upload_file.py)."
-            },
-            "end_frame_policy": {
-              "const": "do_not_send",
-              "description": "Pippit must NEVER receive an end_frame. Sending both start+end collapses middle frames erratically."
-            },
-            "prompt": {
-              "type": "string",
-              "description": "Pippit-ready narrative i2v prompt. Pippit 搬运工原则: no camera/lens/lighting vocabulary."
-            },
-            "negative_prompt_notes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "attempt_budget": {
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        },
-        "continuation": {
-          "type": "object",
-          "required": [
-            "condition_source",
-            "last_clear_frame_required_for_next"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "previous_clip_id": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "node_id of the clip_accepted that this shot continues from; null on the first shot."
-            },
-            "condition_source": {
-              "enum": [
-                "start_frame",
-                "previous_last_clear_frame"
-              ],
-              "description": "Whether the start_frame_asset_id was built fresh ('start_frame') or derived from the previous clip's last_clear_frame ('previous_last_clear_frame')."
-            },
-            "last_clear_frame_required_for_next": {
-              "type": "boolean",
-              "description": "True = the next shot will need a continuity_anchor extracted from this shot's accepted clip."
-            }
-          }
-        },
-        "audio": {
-          "type": "object",
-          "required": [
-            "voice_timbre",
-            "dialogue",
-            "subtitle_text_zh",
-            "subtitle_text_en",
-            "music_cue",
-            "sfx_cues"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "voice_profile_id": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "voice_timbre": {
-              "type": "string",
-              "description": "Per-shot voice timbre string (e.g. 'soft female mid-range zh'). Plain text — Pippit treats unquoted text as voice description."
-            },
-            "dialogue": {
-              "type": "string",
-              "description": "Per-shot dialogue. v4 audio contract: dialogue MUST be wrapped in quote marks (e.g. '\"让我接手吧。\"'). Pippit reads quoted strings as TTS targets."
-            },
-            "subtitle_text_zh": {
-              "type": "string"
-            },
-            "subtitle_text_en": {
-              "type": "string"
-            },
-            "music_cue": {
-              "type": "string"
-            },
-            "sfx_cues": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "review_gates": {
-          "type": "object",
-          "required": [
-            "storyboard_json_gate",
-            "frame_condition_gate",
-            "clip_gate",
-            "audio_gate"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "storyboard_json_gate": {
-              "enum": [
-                "pending",
-                "pass",
-                "fail"
-              ]
-            },
-            "frame_condition_gate": {
-              "enum": [
-                "pending",
-                "pass",
-                "fail"
-              ]
-            },
-            "clip_gate": {
-              "enum": [
-                "pending",
-                "pass",
-                "fail"
-              ]
-            },
-            "audio_gate": {
-              "enum": [
-                "pending",
-                "pass",
-                "fail"
-              ]
-            }
-          }
-        }
-      }
-    },
-    "payload_frame_condition": {
-      "type": "object",
-      "description": "v4 multi-ref composite first frame for one shot. Default method: codex_image2_multi_ref (Route A, codex image-2 with multiple input refs via data_url). Fallback methods: python_rembg_pil_collage (Gemini's Route B) and python_collage_then_gpt4o_redraw (collage harmonized by gpt-image-2).",
-      "required": [
-        "target_shot_id",
-        "method",
-        "input_ref_asset_ids",
-        "output_frame",
-        "model",
-        "generation_prompt",
-        "harmonization_applied",
-        "review_status",
-        "review_node_ids"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "target_shot_id": {
-          "type": "string"
-        },
-        "method": {
-          "enum": [
-            "codex_image2_multi_ref",
-            "python_rembg_pil_collage",
-            "python_collage_then_gpt4o_redraw"
-          ]
-        },
-        "input_ref_asset_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "node_ids of the asset nodes used as input refs."
-        },
-        "output_frame": {
-          "type": "object",
-          "required": [
-            "file_path",
-            "data_url",
-            "sha256",
-            "width",
-            "height",
-            "mime"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "file_path": {
-              "type": "string"
-            },
-            "data_url": {
-              "type": "string"
-            },
-            "sha256": {
-              "type": "string"
-            },
-            "width": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "height": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "mime": {
-              "type": "string"
-            }
-          }
-        },
-        "model": {
-          "type": "string",
-          "description": "e.g. 'gpt-image-2'."
-        },
-        "generation_prompt": {
-          "type": "string",
-          "description": "The exact prompt sent to the image-2 multi-ref composite call."
-        },
-        "harmonization_applied": {
-          "type": "boolean",
-          "description": "True if the composite went through a Seedance/image-2 harmonization pass (e.g. lighting/color match)."
-        },
-        "review_status": {
-          "enum": [
-            "pending",
-            "approved",
-            "rejected"
-          ]
-        },
-        "review_node_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "payload_continuity_anchor": {
-      "type": "object",
-      "description": "v4 last-clear-frame extracted from an accepted clip. Used as the continuity anchor for the NEXT shot's i2v input. Default extraction: laplacian_variance (cv2.Laplacian variance), higher variance = clearer (more edges). Algorithm in ARCHITECTURE.md section 15.",
-      "required": [
-        "source_clip_id",
-        "extraction_method",
-        "selected_frame_index",
-        "selected_frame_timestamp_sec",
-        "laplacian_variance",
-        "blur_threshold_used",
-        "output_frame",
-        "motion_blur_tail_trimmed_sec"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "source_clip_id": {
-          "type": "string",
-          "description": "node_id of the clip_accepted from which this frame was extracted."
-        },
-        "extraction_method": {
-          "enum": [
-            "laplacian_variance",
-            "manual_pick"
-          ]
-        },
-        "selected_frame_index": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "selected_frame_timestamp_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "laplacian_variance": {
-          "type": "number",
-          "description": "cv2.Laplacian variance of the selected frame. Higher = clearer."
-        },
-        "blur_threshold_used": {
-          "type": "number",
-          "description": "The blur_threshold passed to the extractor (default 100.0; calibrated per Seedance output)."
-        },
-        "output_frame": {
-          "type": "object",
-          "required": [
-            "file_path",
-            "sha256",
-            "width",
-            "height"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "file_path": {
-              "type": "string"
-            },
-            "data_url": {
-              "type": "string"
-            },
-            "sha256": {
-              "type": "string"
-            },
-            "width": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "height": {
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        },
-        "motion_blur_tail_trimmed_sec": {
-          "type": "number",
-          "minimum": 0,
-          "description": "How much of the clip end (in seconds) was discarded because no clear frame was found there."
-        }
-      }
-    },
-    "payload_clip_attempt": {
-      "type": "object",
-      "description": "v4 Pippit i2v attempt. Extends v1.1 segment_attempt with source_shot_id + frame_condition_id for full provenance.",
-      "required": [
-        "thread_id",
-        "run_id",
-        "web_thread_link",
-        "local_file_path",
-        "frame_paths",
-        "duration_sec",
-        "model",
-        "source_shot_id",
-        "frame_condition_id"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "thread_id": {
-          "type": "string"
-        },
-        "run_id": {
-          "type": "string"
-        },
-        "web_thread_link": {
-          "type": "string",
-          "description": "Pippit web URL for human traceability."
-        },
-        "local_file_path": {
-          "type": "string",
-          "description": "Path to the downloaded mp4."
-        },
-        "frame_paths": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Paths of extracted key frames."
-        },
-        "duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "model": {
-          "type": "string",
-          "description": "Generation model identifier (e.g. 'seedance-2.0')."
-        },
-        "seed": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "attempt_index": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "1-based attempt index within the same shot."
-        },
-        "source_shot_id": {
-          "type": "string",
-          "description": "node_id of the shot this clip attempts to fulfill."
-        },
-        "frame_condition_id": {
-          "type": "string",
-          "description": "node_id of the frame_condition that supplied this attempt's start frame."
-        }
-      }
-    },
-    "payload_clip_accepted": {
-      "type": "object",
-      "description": "v4 passed-gate clip. Extends v1.1 segment_accepted with source_shot_id + frame_condition_id + (optionally) continuity_anchor_for_next_shot_id.",
-      "required": [
-        "thread_id",
-        "run_id",
-        "web_thread_link",
-        "local_file_path",
-        "frame_paths",
-        "duration_sec",
-        "model",
-        "accepted_at",
-        "accepted_continuity_anchor_path",
-        "source_shot_id",
-        "frame_condition_id"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "thread_id": {
-          "type": "string"
-        },
-        "run_id": {
-          "type": "string"
-        },
-        "web_thread_link": {
-          "type": "string"
-        },
-        "local_file_path": {
-          "type": "string",
-          "description": "Path to the accepted mp4 (under artifacts/accepted/)."
-        },
-        "frame_paths": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "model": {
-          "type": "string"
-        },
-        "seed": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "attempt_index": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "accepted_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "accepted_continuity_anchor_path": {
-          "type": "string",
-          "description": "Path to the last-clear-frame PNG extracted from this accepted clip; mirrored by the continuity_anchor node."
-        },
-        "source_shot_id": {
-          "type": "string"
-        },
-        "frame_condition_id": {
-          "type": "string"
-        },
-        "continuity_anchor_for_next_shot_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "node_id of the continuity_anchor generated from this clip and consumed by the next shot. Null on the last shot."
-        },
-        "active_lineage_id": {
-          "type": "string",
-          "description": "Which lineage this clip belongs to; used during rollback to know which clips are sibling-superseded."
-        },
-        "acceptance_stage": {
-          "type": "string",
-          "enum": [
-            "clip_gate_keep",
-            "assembly_checked",
-            "final_accepted",
-            "superseded_by_rollback"
-          ],
-          "description": "v2.1 semantic shift: clip_gate_keep means 'locally OK', not 'permanently in the cut'. Only final_accepted means a clip is in the stitched output."
-        },
-        "assembly_checked_by_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "assembly_attempt node_ids that reviewed this clip"
-        },
-        "invalidated_by_decision_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "If this clip was superseded by a rollback, the decision node_id that did it."
-        }
-      }
-    },
-    "payload_audio_profile": {
-      "type": "object",
-      "description": "v4 reusable voice timbre + dialect spec. Referenced by shot.audio.voice_profile_id and outline.audio_bible.voice_profile_id. voice_timbre is a complete description suitable for the Pippit message (Pippit-native audio; no separate TTS pipeline).",
-      "required": [
-        "name",
-        "voice_timbre",
-        "dialect",
-        "provider",
-        "usage_constraints"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "e.g. 'narrator_main', 'alice_dialogue'."
-        },
-        "voice_timbre": {
-          "type": "string",
-          "description": "Complete description suitable for the Pippit message (e.g. 'soft female mid-range Chinese voice, contemplative, low energy')."
-        },
-        "dialect": {
-          "enum": [
-            "zh-cmn",
-            "zh-yue",
-            "en-us",
-            "en-gb",
-            "bilingual_zh_en",
-            "other"
-          ]
-        },
-        "provider": {
-          "enum": [
-            "pippit_native",
-            "tts_human_recording",
-            "external_tts"
-          ]
-        },
-        "sample_url": {
-          "type": "string"
-        },
-        "usage_constraints": {
-          "type": "object",
-          "required": [
-            "forbid_words",
-            "required_words"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "forbid_words": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "required_words": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      }
-    },
-    "payload_service_job": {
-      "type": "object",
-      "description": "v4 /aris-movie daemon queue item. Tracks one end-to-end run (intent -> outline -> assets -> shots -> stitch) with budget cap and human checkpoints. State mirrored in outputs/aris_movie_jobs.sqlite + outputs/jobs/<job_id>/state.json.",
-      "required": [
-        "job_type",
-        "target_intent_id",
-        "priority",
-        "status",
-        "enqueued_at",
-        "current_stage",
-        "budget_credits_used",
-        "budget_credits_max",
-        "human_checkpoint_at",
-        "log_path"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "job_type": {
-          "enum": [
-            "full_pipeline",
-            "outline_only",
-            "shot_only",
-            "retry",
-            "resume"
-          ]
-        },
-        "target_intent_id": {
-          "type": "string"
-        },
-        "priority": {
-          "type": "integer"
-        },
-        "status": {
-          "enum": [
-            "pending",
-            "running",
-            "paused",
-            "completed",
-            "failed",
-            "cancelled"
-          ]
-        },
-        "enqueued_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "started_at": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "date-time"
-        },
-        "completed_at": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "date-time"
-        },
-        "current_stage": {
-          "enum": [
-            "intent",
-            "outline",
-            "asset_gen",
-            "asset_review",
-            "storyboard",
-            "shot",
-            "stitch",
-            "done"
-          ]
-        },
-        "budget_credits_used": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "budget_credits_max": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "human_checkpoint_at": {
-          "type": "array",
-          "items": {
-            "enum": [
-              "intent",
-              "outline",
-              "asset_gen",
-              "asset_review",
-              "storyboard",
-              "shot",
-              "stitch",
-              "done"
-            ]
-          },
-          "description": "Stages where the daemon pauses for human approval before proceeding."
-        },
-        "log_path": {
-          "type": "string"
-        }
-      }
-    },
-    "cc_narrative_assembly_scores": {
-      "type": "object",
-      "description": "Cross-shot narrative coherence rubric per ARCHITECTURE.md §16.4. CC fills these. All optional (missing dim = skip per gate rule).",
-      "properties": {
-        "beat_order_fidelity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "causal_continuity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "character_state_continuity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "transition_legibility": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "pacing_rhythm": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "setup_payoff_alignment": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "gap_or_redundancy_absence": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
         }
       },
-      "additionalProperties": false
-    },
-    "gemini_visual_assembly_scores": {
-      "type": "object",
-      "description": "Cross-shot visual coherence rubric per ARCHITECTURE.md §16.4 (Gemini's 8-dim specialist proposal 2026-05-26). Gemini fills these. All optional (missing dim = skip).",
-      "properties": {
-        "entity_identity_preservation": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "spatial_geometry_anchoring": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "axis_180_compliance": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "motion_vector_handoff": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "lighting_palette_persistence": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "pacing_temporal_rhythm": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "hallucination_suppression": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "transition_intent_alignment": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        }
-      },
-      "additionalProperties": false
-    },
-    "payload_assembly_attempt": {
-      "type": "object",
       "required": [
-        "source_storyboard_id",
-        "scope",
-        "shot_range",
-        "clip_accepted_ids",
-        "preview_mp4_path",
-        "preview_sha256",
-        "audio_policy",
-        "ffmpeg_command",
-        "review_status"
-      ],
+        "node_type",
+        "payload"
+      ]
+    },
+    {
+      "title": "decision",
       "properties": {
-        "source_storyboard_id": {
-          "type": "string"
+        "node_type": {
+          "const": "decision"
         },
-        "scope": {
-          "type": "string",
-          "enum": [
-            "seam_check",
-            "rolling_window",
-            "beat_boundary",
-            "stride_safety_net",
-            "repair_check",
-            "final_full"
-          ]
-        },
-        "shot_range": {
+        "payload": {
           "type": "object",
           "required": [
-            "start_sequence_index",
-            "end_sequence_index"
-          ],
-          "properties": {
-            "start_sequence_index": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "end_sequence_index": {
-              "type": "integer",
-              "minimum": 0
-            }
-          }
-        },
-        "beat_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Only set when scope=beat_boundary"
-        },
-        "clip_accepted_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "shot_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "preview_mp4_path": {
-          "type": "string"
-        },
-        "preview_sha256": {
-          "type": "string"
-        },
-        "concat_list_path": {
-          "type": "string"
-        },
-        "sample_frame_paths": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Per-shot 3-frame grid (start/mid/last_clear)"
-        },
-        "boundary_frame_paths": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "last-before-cut + first-after-cut for each shot boundary"
-        },
-        "duration_sec": {
-          "type": "number",
-          "minimum": 0
-        },
-        "audio_policy": {
-          "type": "string",
-          "enum": [
-            "muted_no_mix",
-            "passthrough_debug_only"
+            "target_node_id",
+            "verdict",
+            "gate_kind"
           ]
-        },
-        "ffmpeg_command": {
-          "type": "string"
-        },
-        "review_status": {
-          "type": "string",
-          "enum": [
-            "pending",
-            "passed",
-            "failed",
-            "rolled_back"
-          ]
-        },
-        "cc_review_id": {
-          "type": "string"
-        },
-        "gemini_review_id": {
-          "type": "string"
-        },
-        "codex_synth_review_id": {
-          "type": "string"
-        },
-        "point_of_divergence_shot_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Gemini-located shot where visual drift first becomes irrecoverable (only set when rollback emitted)"
         }
-      }
-    },
-    "payload_panel_attempt": {
-      "type": "object",
-      "additionalProperties": true,
+      },
       "required": [
-        "source_panel_id",
-        "image_path",
-        "attempt_index"
-      ],
+        "node_type",
+        "payload"
+      ]
+    },
+    {
+      "title": "failure_mode",
       "properties": {
-        "source_panel_id": {
-          "type": "string"
+        "node_type": {
+          "const": "failure_mode"
         },
-        "image_path": {
-          "type": "string",
-          "description": "project-relative; NEVER absolute (privacy)"
-        },
-        "attempt_index": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "model": {
-          "type": "string"
-        },
-        "is_baked_duo": {
-          "type": "boolean"
-        },
-        "image_sha256": {
-          "type": "string"
+        "payload": {
+          "type": "object",
+          "required": [
+            "layer",
+            "affected_shot_ids",
+            "active"
+          ]
         }
-      }
+      },
+      "required": [
+        "node_type",
+        "payload"
+      ]
     }
-  }
+  ],
+  "$comment": "acceptance_stage (panel_attempt), point_of_divergence/strike_count_for_target/rewrite_from_*/frozen_prefix_clip_ids (decision, assembly), review_scores (review, upstream gates) are OPTIONAL payload fields written by the staged-acceptance engine upgrade + the cross-layer gates; not required so the pre-upgrade trace validates."
 }
