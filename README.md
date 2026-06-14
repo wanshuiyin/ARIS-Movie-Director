@@ -19,6 +19,35 @@ deterministic token-diff** before a panel is kept. *Looks right ≠ passes* — 
 wrong (`+6.2` expected vs `+6.25` observed) is rejected. Every attempt, retry, and decision lands in an
 inspectable **research-wiki** trace.
 
+**🔬 Method at a glance.** Read the figure left-to-right — the loop the paragraph above describes
+(*author a source of truth → bake → cross-model gate*) is exactly its three stages: **(1)** authored
+`comic.json` + locked refs, **(2)** the per-panel audited spiral, **(3)** assembly + release. The bottom-left
+failure is the whole rule: *a beautiful but wrong literal still fails* (`+6.2` expected vs `+6.25` observed).
+
+![ARIS-Movie-Director — method overview](docs/method_figure.png)
+
+<sub>**Figure 1** — from story intent to a verified movie, end-to-end (the loop described above). Full caption ↓</sub>
+
+<details><summary><b>Figure 1 — stages, gates, and provenance</b> (click to expand)</summary>
+
+> **(1) Authored source of truth** — asset library · outline · storyboard compile into `comic.json` (`content_svg · expected_literals · identity_ref`). **(2) The audited spiral (per panel)** — a content-SVG blueprint is baked by image_gen, then a 3-reviewer cross-model `panel_gate` (CC narrative ‖ Gemini + Codex visual *blind-transcribe* → a deterministic token-diff · single-vote veto) returns a deterministic `verdict`: **KEEP**, or **RETRY** (≤4/panel) re-baked with the failed attempt's repair note; every attempt/review/decision/failure is logged to the `research-wiki`. **(3) Assembly + release** — a cast-aware `page_assembly_gate` (repair drift → re-bake, ≤6/run) ships PNG panels + a single-file HTML viewer. The punchline (bottom-left): **a beautiful panel with a wrong number does not pass** — `+6.2` expected vs `+6.25` observed fails the token-diff.
+>
+> *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by the method-figure panel — **Gemini + Codex blind-transcribe + a deterministic `content_diff`, then a Claude structural sign-off** — until clean. The **exact prompt sequence that baked this image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference: [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
+
+</details>
+
+**This first release is image-based** — the movie is told in baked still frames you flip through. **Video-based generation is what comes next; this is just the beginning.**
+
+> **▶ [Watch the image-based movie in your browser](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)** — flip through all 19 scenes of the cross-model-audited reference run.
+
+[![Watch the movie — cover](docs/comic_cover_v4.webp)](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)
+
+<table><tr><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_audit.webp" alt="audit page"></a></td><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_panels.webp" alt="multi-panel page"></a></td><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_fix.webp" alt="the fix beat"></a></td></tr></table>
+
+<sub>A few frames from the reference movie — including the story's own integrity beat: a run that **reported `+6.2`** improvement but **really moved `+1.4`** (that's the *plot*, distinct from the figure's bake-time `+6.2`/`+6.25` token-diff). **[Watch all 19 scenes →](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)**</sub>
+
+<details><summary><b>⚡ What the audit gate actually catches</b> — the problem → mechanism table</summary>
+
 | The problem | What ARIS-Movie-Director does about it |
 |---|---|
 | A panel can look right while changing a number, label, or code token. | `comic.json` locks the `expected_literals`; independent visual reviewers **blind-transcribe** what's actually in the pixels; an exact token-diff rejects any wrong or missing literal. |
@@ -28,53 +57,19 @@ inspectable **research-wiki** trace.
 | Retry loops go opaque or endless. | Per-panel attempts and assembly repairs are **bounded**; each failure carries a repair note; a non-convergent panel is **flagged for a human**, never silently shipped. |
 | A demo hides what was tried and thrown away. | Every attempt / review / decision / failure-mode is written to the research-wiki — the reference run ships a **198-node** trace you can read. |
 
+</details>
+
+<details><summary><b>🧭 Positioning</b> — ARIS lineage; an audit layer, <i>not</i> a generation/orchestration claim</summary>
+
 ARIS-Movie-Director is the **multimodal vertical of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series**: ARIS taught a research agent to work while you sleep, and its **research-wiki + multi-agent-debate** ideas are exactly what make a generated story *auditable* — the same loop (author a source of truth → let a model bake the look → ratify with a cross-model panel), now producing character-consistent visual stories instead of papers.
 
-**Related work — where we fit.** The field already generates and orchestrates visual stories well, and we build
-on that, not against it: **[JoyAI-Echo](https://github.com/jd-opensource/JoyAI-Echo)** (JD) is strong at
-long-form text→video with synced audio and memory-based character consistency;
-**[FireRed-OpenStoryline](https://github.com/FireRedTeam/FireRed-OpenStoryline)** (Xiaohongshu) is a strong
-conversational video-editing agent — NL planning, tool orchestration, human-in-the-loop, reusable style skills;
-**[NEWTON](https://arxiv.org/abs/2605.18396)** shows planner-plus-verifier loops for *physically*-grounded
-video. ARIS-Movie-Director is **complementary** — it doesn't claim better generation or broader orchestration;
-it adds the **audit layer** around a generated visual story: blind cross-model reads → deterministic
-literal-diffs → bounded retry → an inspectable trace.
+The framework knows nothing about any particular story — a project plugs in via `examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a **19-scene / 24-frame** pixel-art movie about an autonomous research run, and ships its **real, inspectable generation trace** as proof the multi-agent loop actually ran.
 
-**This first release is image-based** — the movie is told in baked still frames you flip through. **Video-based generation is what comes next; this is just the beginning.**
+**Related work — where we fit.** The field already generates and orchestrates visual stories well, and we build on that, not against it: **[JoyAI-Echo](https://github.com/jd-opensource/JoyAI-Echo)** (JD) is strong at long-form text→video with synced audio and memory-based character consistency; **[FireRed-OpenStoryline](https://github.com/FireRedTeam/FireRed-OpenStoryline)** (Xiaohongshu) is a strong conversational video-editing agent — NL planning, tool orchestration, human-in-the-loop, reusable style skills; **[NEWTON](https://arxiv.org/abs/2605.18396)** shows planner-plus-verifier loops for *physically*-grounded video. ARIS-Movie-Director is **complementary** — it doesn't claim better generation or broader orchestration; it adds the **audit layer** around a generated visual story: blind cross-model reads → deterministic literal-diffs → bounded retry → an inspectable trace.
 
-The framework knows nothing about any particular story — a project plugs in via
-`examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a **19-scene / 24-frame**
-pixel-art movie about an autonomous research run, and ships its **real, inspectable generation trace** as proof
-the multi-agent loop actually ran.
+</details>
 
 ---
-
-> **▶ [Watch the image-based movie in your browser](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)** — flip through all 19 scenes of the cross-model-audited reference run.
-
-[![Watch the movie — cover](docs/comic_cover_v4.webp)](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)
-
-<table><tr><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_audit.webp" alt="audit page"></a></td><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_panels.webp" alt="multi-panel page"></a></td><td width="33%"><a href="https://wanshuiyin.github.io/ARIS-Movie-Director/comic/"><img src="docs/preview_fix.webp" alt="the fix beat"></a></td></tr></table>
-
-<sub>A few frames from the reference movie — *looks right ≠ passes*: a beautiful frame whose number is wrong (`+6.2` reported vs `+1.4` real) is caught by the gate. **[Watch all 19 scenes →](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)**</sub>
-
-![ARIS-Movie-Director — method overview](docs/method_figure.png)
-
-> **Figure 1.** From story intent to a verified movie, end-to-end. **(1) Authored source of truth** —
-> asset library · outline · storyboard compile into `comic.json` (`content_svg · expected_literals ·
-> identity_ref`). **(2) The audited spiral (per panel)** — a content-SVG blueprint is baked by image_gen,
-> then a 3-reviewer cross-model `panel_gate` (CC narrative ‖ Gemini + Codex visual *blind-transcribe* → a deterministic token-diff · single-vote veto)
-> returns a deterministic `verdict`: **KEEP**, or **RETRY** (≤4/panel) re-baked with the failed attempt's
-> repair note; every attempt/review/decision/failure is logged to the `research-wiki`. **(3) Assembly +
-> release** — a cast-aware `page_assembly_gate` (repair drift → re-bake, ≤6/run) ships PNG panels + a
-> single-file HTML viewer. The punchline (bottom-left): **a beautiful panel with a wrong number does not
-> pass** — `+6.2` expected vs `+6.25` observed fails the token-diff.
->
-> *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned
-> `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by the method-figure
-> panel — **Gemini + Codex blind-transcribe + a deterministic `content_diff`, then a Claude structural sign-off** —
-> until clean. The **exact prompt sequence that baked this
-> image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference:
-> [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
 
 ## Quickstart
 
