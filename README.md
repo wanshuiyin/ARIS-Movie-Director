@@ -1,13 +1,23 @@
-# ARIS-Movie-Director
+<p align="center">
+  <img src="docs/aris_logo.svg" alt="ARIS — Auto Research in Sleep" width="640">
+</p>
 
-A reusable **director framework** for generating narrative comics / 连环画 (and, later, other
-visual stories) with **cross-model adversarial review**, a **persistent research wiki**, and a
-**deterministic-SVG → codex-bake** narrative-figure pipeline.
+# ARIS-Movie-Director (ARIS 连环画导演)
+
+> Hand a fuzzy story to your agent, wake up to a **cross-model-audited comic** 🎬 — the ARIS series' first multimodal vertical.
+
+**📚 Jump to** — [▶ Read the comic](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quickstart](#quickstart) · [🔬 How it works](#how-it-works) · [📝 Author your own](skills/comic-director/references/comic_authoring.md) · [🧩 Layout](#layout)
+
+[![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
+
+**ARIS-Movie-Director is the multimodal vertical of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series.** ARIS taught a research agent to work while you sleep; its **research-wiki + multi-agent-debate** philosophy turns out to apply just as well to *making things you can look at*. Same loop — **author a deterministic source of truth → let an image model bake the look → ratify it with a cross-model adversarial panel** — now producing **character-consistent, fact-checked visual stories** instead of papers. *Looks right ≠ passes:* a beautiful panel with a wrong number is rejected by a deterministic token-diff. **The ARIS series unlocks multimodal generation for the first time** — text-first research → multimodal-first storytelling.
 
 The framework knows nothing about any particular story — a project plugs in via
 `examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a 24-panel
 pixel-art comic about an autonomous research run, and ships the **real generation trace** (198 wiki
 nodes) as proof the multi-agent loop actually ran.
+
+---
 
 > **▶ [Read the interactive comic in your browser](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)** — flip through all 19 pages of the cross-model-audited reference run.
 
@@ -62,25 +72,24 @@ Author your own input against [`schemas/blueprint.schema.json`](skills/method-fi
 to draw any figure — see the worked example in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
 **C · Make your own comic — input: a `comic.json` → output: panels + viewer**
-Author `examples/<name>/comic.json` (per panel: `scene` · `expected_literals` · `identity_ref` — full field
-spec in **[`docs/comic-json.md`](docs/comic-json.md)** / [`schemas/comic.schema.json`](schemas/comic.schema.json);
-copy `examples/comic_m3_audit/comic.json` as a template), then **launch the spiral** through an
-**agent / workflow runtime** (e.g. Claude Code's Workflow tool). It's a *workflow script*, **not a shell
-command** — the runtime supplies the `codex image_gen` bake + the `codex`/`gemini` gate:
-```js
-// In Claude Code, ask: "generate panels S01,S02 for examples/mycomic" — which issues:
-Workflow({ scriptPath: "packages/core/spiral_engine.js",
-           args: { projectRoot: "/ABS/PATH/examples/mycomic", panelIds: "S01,S02" } })
-```
+You don't hand-write `comic.json` — give your agent a fuzzy idea and let it author the IR
+(idea → `comic_brief` → Step-0 → `comic.json`; see **[`comic_authoring.md`](skills/comic-director/references/comic_authoring.md)**;
+fields in [`docs/comic-json.md`](docs/comic-json.md) / [`schemas/comic.schema.json`](schemas/comic.schema.json);
+copy `examples/comic_m3_audit/comic.json` as a template). Then run the spiral — **one command**, like the figure path:
 ```bash
-python3 packages/viewer/build_comic.py examples/mycomic   # then (re)build the viewer from the kept panels
+python3 skills/comic-director/scripts/run_comic.py \
+    --project examples/comic_m3_audit --page P02_b08 --panels S12,S13,S14,S15 \
+    --dry-run                 # validate + print every bake prompt (no image_gen) — run this FIRST
+# drop --dry-run to bake; add --finalize to rebuild the viewer when the run is shippable
 ```
-Per panel it bakes with `codex image_gen`, runs the 3-model `panel_gate`, writes the wiki, and on KEEP
-projects to `comic.json`. Full launch args + runtime behavior: **[`docs/spiral-runtime.md`](docs/spiral-runtime.md)**.
+Per panel it renders the content-SVG blueprint, bakes with `codex image_gen`, runs the 3-model `panel_gate`,
+writes the wiki, and on KEEP projects to `comic.json`. Needs the **`codex` + `gemini` CLIs** + headless Chrome.
+> `run_comic.py` is a standalone subprocess port of the comic engine — no agent runtime needed. (Inside an
+> agent runtime you can instead drive `packages/core/spiral_engine.js` via the Workflow tool — same result.)
+> Args + runtime behavior (caps 4/panel · 6/run, throttle → fresh run, assembly): **[`docs/spiral-runtime.md`](docs/spiral-runtime.md)**.
 >
-> **image_gen throttling:** if a bake is rate-limited mid-run the engine stops cleanly and returns
-> `escalated.fresh_run_required = true`. After cooldown, launch a **fresh** run for the remaining panels —
-> do **not** `resumeFromRunId` (it replays the cached throttle).
+> **image_gen throttling:** a rate-limited bake stops cleanly with `fresh_run_required`. After cooldown,
+> launch a **fresh** run for the remaining panels — do **not** resume cached state.
 
 ## How it works
 
