@@ -1,4 +1,4 @@
-# Authoring a comic — fuzzy idea → `comic.json` (you don't hand-write JSON)
+# Authoring a movie — fuzzy idea → `comic.json` (you don't hand-write JSON)
 
 You should **not** type `comic.json` by hand. The intended path mirrors the figure side's
 `brief → Step-0 → blueprint`: you give your agent a vague idea, your agent authors the structured IR, and
@@ -45,7 +45,7 @@ runtime** — this repo is self-contained; ARIS main is only an *optional* upstr
 > story, but the path is generic: swap in your SVG and your literals. A panel with no technical figure sets
 > `content_svg: null` and relies on `scene` + `bubbles` alone.
 
-> **② Identity is bring-your-own; the ARIS chibi duo is just the example.** The reference comic's
+> **② Identity is bring-your-own; the ARIS chibi duo is just the example.** The reference movie's
 > `executor`/`reviewer` chibi pair and `assets/duo_canonical_ref_v001.png` are **one** identity set, shipped
 > so the trace is reproducible — not a required cast. Point each panel's `condition.identity_ref` at *your*
 > canonical character sheet (a project-relative `.png`), or leave it `null` to fall back to the project's

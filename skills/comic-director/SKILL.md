@@ -1,14 +1,14 @@
 ---
 name: comic-director
-description: Generate a character-consistent, cross-model-audited narrative comic (连环画) from a comic.json — bake each panel, gate it with a 3-model panel, retry/assemble, project to the viewer. The comic-side twin of method-figure.
+description: Generate a character-consistent, cross-model-audited narrative movie (image-based today; video next) from a comic.json — bake each frame, gate it with a 3-model panel, retry/assemble, project to the viewer. The movie-side twin of method-figure.
 ---
 
 # comic-director
 
-Turn an authored `comic.json` into baked panels + a clickable viewer, through the **audited spiral**: per
-panel, render a deterministic content-SVG blueprint → bake a pixel-art panel (`codex image_gen`) → a
-3-reviewer cross-model `panel_gate` → keep / retry → page assembly → projection. The comic twin of
-`method-figure` (figures); same philosophy, different output.
+Turn an authored `comic.json` into baked frames + a clickable viewer, through the **audited spiral**: per
+frame, render a deterministic content-SVG blueprint → bake a pixel-art frame (`codex image_gen`) → a
+3-reviewer cross-model `panel_gate` → keep / retry → page assembly → projection. The movie twin of
+`method-figure` (figures); same philosophy, different output. (Image-based today; video-based is next.)
 
 ## Input contract / who decides WHAT, who only renders
 This skill is **render + verify**. The contract boundary is **`comic.json`**.
@@ -35,7 +35,7 @@ Full field spec for `comic.json`: [`docs/comic-json.md`](../../docs/comic-json.m
    identity against the ref you supply, per character, cast-aware (absence ≠ drift).
 
 ## Run it (one command — `scripts/run_comic.py`)
-A standalone, pure-stdlib **faithful port** of `packages/core/spiral_engine.js`'s comic branch — it shells
+A standalone, pure-stdlib **faithful port** of `packages/core/spiral_engine.js`'s movie branch — it shells
 the `codex` + `gemini` CLIs directly, so it runs WITHOUT the agent/workflow runtime.
 ```bash
 # author comic.json first (Step-0), then:
