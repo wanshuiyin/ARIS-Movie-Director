@@ -40,6 +40,7 @@
       "visual_hint": {"type": "string", "description": "art direction for image_gen, NOT rendered as text"},
       "asset_ref": {"type": "string", "description": "id of an asset in assets[] — anchors a character to its identity"},
       "must_render": {"type": "boolean", "default": true},
+      "source": {"type": "string", "description": "traceability: the upstream brief field this node came from (e.g. 'brief:components/bake'). An un-traceable node when a brief was given is a Refuse-and-Escalate — see references/blueprint_authoring.md"},
       "expected_tokens": {"type": "array", "items": {"type": "string"},
         "description": "tokens the panel must blind-transcribe from this node; the hard-diff fails if missing"},
       "forbidden_tokens": {"type": "array", "items": {"type": "string"}}}}},

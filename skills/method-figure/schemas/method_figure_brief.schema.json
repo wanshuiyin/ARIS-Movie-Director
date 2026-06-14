@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/skills/method-figure/method_figure_brief.schema.json",
+  "title": "method_figure_brief — the ARIS upstream hand-off (paper-plan → method-figure)",
+  "description": "The SEMANTIC brief paper-plan emits (after its claims_matrix) for a method/architecture figure. It decides WHAT the figure depicts; Step-0 turns it into a blueprint.json; method-figure renders+verifies. method-figure never invents anything not in this brief.",
+  "type": "object",
+  "required": ["figure_id", "figure_purpose", "components", "flows"],
+  "properties": {
+    "figure_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "figure_purpose": {"type": "string", "description": "e.g. 'Figure 1 method overview'"},
+    "headline_claim": {"type": "string", "description": "the contribution this figure must support"},
+    "headline_number": {"type": "string", "description": "the result/number to feature, verbatim (e.g. '+1.4', '0.89')"},
+    "caption_thesis": {"type": "string", "description": "the one-sentence thesis the figure should make a reader feel"},
+    "topology_constraint": {"enum": ["linear_flow", "feedback_loop", "hierarchical_stack", "left_to_right_phases", "free"],
+      "default": "left_to_right_phases", "description": "lock the layout logic so the renderer doesn't free-style the topology"},
+    "components": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["id", "label", "one_line"], "properties": {
+      "id": {"type": "string"}, "label": {"type": "string", "description": "exact display text"},
+      "role": {"type": "string"}, "one_line": {"type": "string", "description": "one-line description shown in the box"},
+      "phase": {"type": "string"},
+      "visual_priority": {"enum": ["core", "primary", "secondary", "background"], "default": "primary",
+        "description": "core innovations get visual weight/center; background modules are quiet"},
+      "identity_ref": {"type": "string", "description": "id in identity_refs[] if a character/mascot lives here"}}}},
+    "flows": {"type": "array", "items": {"type": "object", "required": ["from", "to", "kind"], "properties": {
+      "from": {"type": "string"}, "to": {"type": "string"},
+      "kind": {"enum": ["flow", "keep", "retry", "repair", "write", "audit", "human"]},
+      "label": {"type": "string"}, "direction": {"enum": ["forward", "back"], "default": "forward"}}}},
+    "phases": {"type": "array", "items": {"type": "object", "required": ["id", "label"], "properties": {
+      "id": {"type": "string"}, "label": {"type": "string"}, "members": {"type": "array", "items": {"type": "string"}}}}},
+    "inputs": {"type": "array", "items": {"type": "string"}},
+    "outputs": {"type": "array", "items": {"type": "string"}},
+    "callouts": {"type": "array", "items": {"type": "object", "required": ["title", "lines"], "properties": {
+      "title": {"type": "string"}, "lines": {"type": "array", "items": {"type": "string"}}, "anchor": {"type": "string"}}}},
+    "symbol_registry": {"type": "array", "description": "map every figure symbol to its paper/equation variable so they never disagree",
+      "items": {"type": "object", "properties": {"figure_symbol": {"type": "string"}, "paper_variable": {"type": "string"}, "meaning": {"type": "string"}}}},
+    "identity_refs": {"type": "array", "items": {"type": "object", "required": ["id", "path"], "properties": {
+      "id": {"type": "string"}, "path": {"type": "string"}, "traits": {"type": "array", "items": {"type": "string"}}}},
+      "description": "the project's locked visual identities (created upstream, read-only); most papers have none"},
+    "forbidden_tokens": {"type": "array", "items": {"type": "string"},
+      "description": "terms the figure must NOT contain (avoid wrong/competing names)"},
+    "target_profile": {"enum": ["readme", "paper", "slide"], "default": "paper"}
+  }
+}

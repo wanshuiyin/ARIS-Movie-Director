@@ -51,6 +51,33 @@ blind-transcribe-then-hard-diff loop turns (a) into a reliable result and catche
 - **SERIALIZE BAKES** — never run two image generations at once; the global generated-images dir + the
   newest-after-marker pickup will cross-pollinate.
 
+## Input contract / ARIS hand-off (who decides WHAT, who only renders)
+This skill is **pure render + verify**. The contract boundary is **`blueprint.json`**. Ownership:
+- **Upstream owns the semantics** — what to depict, the labels, the graph, the grouping, the headline
+  claim/number, the identity refs. method-figure does NOT choose content and **must not invent** a node,
+  claim, number, or method structure (if one is missing it ESCALATES, it does not make it up).
+- **Step-0 (an LLM authoring step) owns translation** — turn the upstream brief/prose into a schema-valid
+  `blueprint.json` (`schemas/blueprint.schema.json`), preserving every claim/number verbatim. See
+  `references/blueprint_authoring.md`.
+- **method-figure owns** validation → condition render → image bake → cross-model panel → diff → retry, and
+  has VETO power: it returns `FAILED / Logic Drift` rather than ship a figure whose pixels contradict the blueprint.
+
+**The direct input** = `blueprint.json` (+ optional `identity_sheet.png` — the project's "visual constitution",
+read-only here). **Where the blueprint comes from**, in authority order:
+1. an existing `blueprint.json` (use as-is) ·
+2. **a `method_figure_brief`** (`schemas/method_figure_brief.schema.json`) — the canonical ARIS hand-off ·
+3. an `experiment-plan` method spec (fallback for an implementation/workflow diagram) ·
+4. a `paper-write` method section (prose — weakest, lossy) ·
+5. a free-text system/method description.
+
+**ARIS integration:** the canonical producer is **`paper-plan`** — after its `claims_matrix`, it emits a
+**`method_figure_brief`** (the components, flows, phases, the headline claim/number, identity refs,
+`forbidden_tokens`). The ARIS main agent runs **Step-0** to convert that brief into `blueprint.json` (with a
+**traceability matrix**: every node/edge must trace to a brief field — an un-traceable node is a Refuse-and-
+Escalate, not a render), then runs method-figure. `experiment-plan`/`paper-write`/free-text are accepted
+alternates when no plan exists. The identity sheet is created once (e.g. by `research-refine`) and locked by
+`paper-plan`; method-figure only reads it.
+
 ## Fast path — one command
 After you author `blueprint.json` (step ① below), the whole loop is one command:
 ```bash
