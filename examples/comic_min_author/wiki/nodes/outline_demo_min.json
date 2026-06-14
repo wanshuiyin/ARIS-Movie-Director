@@ -1,0 +1,40 @@
+{
+  "node_id": "outline:demo_min",
+  "node_type": "outline_spec",
+  "title": "demo outline",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "source_intent_id": "intent:demo_min",
+    "title": "Demo",
+    "logline": "one panel proves the pipeline",
+    "tagline": "author → bake",
+    "design_constraint": "1 page",
+    "target_page_count": 1,
+    "narrative_beats": [
+      "B01 the demo panel"
+    ],
+    "beat_table": [
+      {
+        "beat": "B01",
+        "page": "P01",
+        "shot": "S01"
+      }
+    ],
+    "motif_arcs": {
+      "demo_number": [
+        "42"
+      ]
+    },
+    "character_asset_ids": [
+      "asset:demo_cast"
+    ],
+    "scene_asset_ids": [],
+    "prop_asset_ids": [],
+    "global_style_bible": "ART_BIBLE.md",
+    "budget": {
+      "pages": 1,
+      "new_bakes": 1
+    }
+  }
+}

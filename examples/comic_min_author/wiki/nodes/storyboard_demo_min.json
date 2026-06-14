@@ -1,0 +1,27 @@
+{
+  "node_id": "storyboard:demo_min",
+  "node_type": "storyboard_spec",
+  "title": "demo storyboard",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "source_outline_id": "outline:demo_min",
+    "page_order": [
+      "P01"
+    ],
+    "page_ids": [
+      "P01"
+    ],
+    "panel_ids": [
+      "panel:demo_s01"
+    ],
+    "global_policies": {
+      "text_mode_default": "baked",
+      "page_order_authority": "storyboard"
+    },
+    "motif_ledger_id": "motif:demo_min",
+    "consolidated_asset_requests": [
+      "asset:demo_cast"
+    ]
+  }
+}

@@ -8,6 +8,8 @@
   "properties": {
     "version": {"const": "method-figure/blueprint/v1"},
     "figure_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "compiled_from_brief": {"type": "object", "properties": {"type": {"type": "string"}},
+      "description": "present iff Step-0 (compile_brief.py) produced this blueprint from a method_figure_brief. When present, validate_blueprint.py REQUIRES a 'source' on every node/edge/group/callout/asset (full traceability, GUARD-10)."},
     "title": {"type": "object", "properties": {"main": {"type": "string"}, "sub": {"type": "string"}}},
     "canvas": {"type": "object", "required": ["width", "height"], "properties": {
       "width": {"type": "number"}, "height": {"type": "number"}, "background": {"type": "string", "default": "#FFFFFF"}}},
@@ -21,11 +23,13 @@
       "role": {"enum": ["identity_sheet", "character_ref", "style_ref"]},
       "lock_traits": {"type": "array", "items": {"type": "string"},
         "description": "the must-preserve visual traits, e.g. 'blue hoodie, no beard'"},
-      "license": {"type": "string"}}}},
+      "license": {"type": "string"},
+      "source": {"type": "string", "description": "traceability: the brief field this asset came from"}}}},
     "groups": {"type": "array", "items": {"type": "object", "required": ["id", "label_exact", "bounds"], "properties": {
       "id": {"type": "string"}, "label_exact": {"type": "string"},
       "bounds": {"type": "object", "required": ["x", "y", "w", "h"]},
-      "tone": {"type": "string"}, "order": {"type": "integer"}}}},
+      "tone": {"type": "string"}, "order": {"type": "integer"},
+      "source": {"type": "string", "description": "traceability: the brief phase this group came from"}}}},
     "nodes": {"type": "array", "minItems": 1, "items": {"type": "object",
       "required": ["id", "label_exact", "pos"], "properties": {
       "id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
@@ -51,17 +55,27 @@
       "direction": {"enum": ["forward", "back"], "default": "forward"},
       "route": {"type": "object"},
       "must_render": {"type": "boolean", "default": true},
+      "source": {"type": "string", "description": "traceability: the brief flow this edge came from"},
       "expected_tokens": {"type": "array", "items": {"type": "string"}}}}},
     "callouts": {"type": "array", "items": {"type": "object", "required": ["id", "title_exact"], "properties": {
       "id": {"type": "string"}, "title_exact": {"type": "string"},
       "lines_exact": {"type": "array", "items": {"type": "string"}},
       "anchor": {"type": "string"}, "pos": {"type": "object"}, "size": {"type": "object"},
       "accent": {"type": "string"}, "visual_hint": {"type": "string"},
+      "source": {"type": "string", "description": "traceability: the brief field this callout came from"},
       "expected_tokens": {"type": "array", "items": {"type": "string"}}}}},
+    "forbidden_tokens": {"type": "array", "items": {"type": "string"},
+      "description": "figure-wide banned terms (wrong/competing names); also injected per-node and used as the per-round DELETE-list (GUARD-3)"},
     "style": {"type": "object", "description": "palette / font / arrow DEFAULTS only — not content authority"},
     "rail": {"type": "object", "properties": {"label_exact": {"type": "string"}}},
     "acceptance": {"type": "object", "properties": {
       "min_core_score": {"type": "integer", "default": 4},
+      "required_transcribers": {"type": "array", "items": {"type": "string"}, "default": ["gemini", "codex"],
+        "description": "the AUTOMATED blind-transcribe panel run_spiral.py actually runs (Gemini + Codex vision); the hard-diff is over these."},
+      "codex_policy": {"enum": ["required_not_sole", "veto_only", "scored"], "default": "required_not_sole",
+        "description": "Codex's approve IS required for panel-clean (run_spiral.py needs gemini-approve + codex-approve + empty diff), but as the generator family it is NEVER the sole acquitter — the deterministic content_diff and Claude's structural sign-off are also required."},
+      "claude_structural_signoff_required": {"type": "boolean", "default": true,
+        "description": "the calling agent (Claude) gives the final structural sign-off AFTER the automated panel — the loop can drive but can't acquit."},
       "required_approvers": {"type": "array", "items": {"type": "string"}, "default": ["gemini", "claude"]},
       "veto_fields": {"type": "array", "items": {"type": "string"}, "default": ["anomalies", "missing_tokens", "wrong_edges"]},
       "max_repeated_failure": {"type": "integer", "default": 2}}}

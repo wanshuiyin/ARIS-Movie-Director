@@ -244,8 +244,8 @@ def assembly_verdict(cc, gem, mode="html"):
     min_dim, ssum = min(dims), sum(dims)
     drift = [x for x in (gem.get("drift_panels") or []) if isinstance(x, str)]
     if min_dim < 2 or ssum < 16:
-        return {"v": "rollback", "reason": f"[{mode}] assembly weak (min={min_dim} sum={ssum}/25)", "drift_panels": drift}
-    return {"v": "accept", "reason": f"[{mode}] assembly ok (min={min_dim} sum={ssum}/25)", "drift_panels": []}
+        return {"v": "rollback", "reason": f"[{mode}] assembly weak (min={min_dim} sum={ssum}/25)", "drift_panels": drift, "point_of_divergence": (drift[0] if drift else None)}
+    return {"v": "accept", "reason": f"[{mode}] assembly ok (min={min_dim} sum={ssum}/25)", "drift_panels": [], "point_of_divergence": None}
 
 # ── generation: render content_svg -> blueprint PNG -> codex image_gen bake -> pickup (engine 191-271) ──
 def bake_prompt_body(cfg, bake_lang, invariants):
@@ -460,6 +460,7 @@ def parse_args():
     ap.add_argument("--panels", required=True, help="comma-separated panel ids, e.g. S12,S13,S14,S15")
     ap.add_argument("--bake-lang", default="zh", help="bubble language baked into the image (zh proven clean)")
     ap.add_argument("--max-total", type=int, default=4); ap.add_argument("--max-rollbacks", type=int, default=6)
+    ap.add_argument("--strike-escalate", type=int, default=2)   # a panel drifting ≥N assembly rounds → author-layer rewrite
     ap.add_argument("--finalize", action="store_true"); ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--skip-assembly", action="store_true")
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
@@ -526,6 +527,7 @@ def main():
                 escalated = escalated or {"pid": pid, "why": "no panel ever generated (image_gen down?)"}; break
 
     asm = None
+    drift_strikes, rewrite_storyboard = {}, []   # strike-escalation + KEEP≠final author-layer bounce-backs
     page_mode = "baked" if any((cfg_map.get(k["pid"]) or {}).get("text_mode") == "baked" for k in kept) else "html"
     if not escalated and len(kept) >= 2 and not args.skip_assembly:
         asm_round = 0
@@ -537,9 +539,19 @@ def main():
             if asm_round >= args.max_rollbacks: flagged.append(f"{args.page}:assembly"); break
             drifters = [p for p in d if any(k["pid"] == p for k in kept)]
             if not drifters: flagged.append(f"{args.page}:assembly"); break
-            log(f"  ⤺ cross-frame repair round {asm_round + 1}: re-bake {drifters}")
+            # STRIKE-ESCALATION: a panel that keeps drifting is a storyboard/blueprint problem → author-layer
+            # rewrite, not more bakes. (Comic = independent panels; the escalation unit is the single panel.)
+            for pid in drifters: drift_strikes[pid] = drift_strikes.get(pid, 0) + 1
+            for pid in [p for p in drifters if drift_strikes[p] >= args.strike_escalate]:
+                if pid not in rewrite_storyboard: rewrite_storyboard.append(pid)
+                if pid not in flagged: flagged.append(pid)
+                log(f"  ⚑ {pid} drifted {drift_strikes[pid]}× (≥{args.strike_escalate}) → ESCALATE to author layer (rewrite_storyboard_from {pid}); a re-bake can't fix a spec problem")
+            rebakeable = [p for p in drifters if drift_strikes[p] < args.strike_escalate]
+            if not rebakeable:
+                log("  ⚑ all remaining drifters escalated to an author-layer rewrite → stop"); break
+            log(f"  ⤺ cross-frame repair round {asm_round + 1}: re-bake {rebakeable} (point_of_divergence={asm['verdict'].get('point_of_divergence') or rebakeable[0]})")
             any_fixed = False
-            for pid in drifters:
+            for pid in rebakeable:
                 if throttled: break
                 if total_by.get(pid, 0) >= args.max_total + args.max_rollbacks:
                     if pid not in flagged: flagged.append(pid)
@@ -564,6 +576,10 @@ def main():
 
     any_needs_human = any(k["needs_human"] for k in kept) or len(flagged) > 0
     shippable = (not escalated) and (not throttled) and (not any_needs_human) and (asm["verdict"]["v"] == "accept" if asm else len(kept) >= 1)
+    # STAGED ACCEPTANCE (KEEP≠final): panel_gate KEEP = panel_accepted; page_accepted only when assembly accepts.
+    page_accepted = (asm["verdict"]["v"] == "accept") if asm else len(kept) >= 1
+    for k in kept:
+        k["acceptance_stage"] = "page_accepted" if (page_accepted and not k["needs_human"] and k["pid"] not in flagged) else "panel_accepted"
 
     if args.finalize and shippable and os.path.exists(paths["BUILD"]):
         log("finalize: building viewer")
@@ -571,7 +587,8 @@ def main():
 
     report = {"page": args.page, "panel_ids": panel_ids, "kept": kept, "flagged_for_human": flagged,
               "needs_human": any_needs_human, "shippable": shippable, "throttled": throttled, "escalated": escalated,
-              "assembly": (asm["verdict"] if asm else None), "attempts_per_panel": total_by, "finalize": bool(args.finalize and shippable)}
+              "assembly": (asm["verdict"] if asm else None), "rewrite_storyboard": rewrite_storyboard,
+              "attempts_per_panel": total_by, "finalize": bool(args.finalize and shippable)}
     print("\n" + json.dumps(report, ensure_ascii=False, indent=2))
     if escalated or throttled: sys.exit(2)
     if any_needs_human: sys.exit(3)

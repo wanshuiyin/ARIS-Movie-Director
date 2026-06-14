@@ -26,9 +26,19 @@
         "decides",
         "failure_of",
         "rollback_of",
-        "supersedes"
+        "supersedes",
+        "derived_from",
+        "plans_asset",
+        "uses_asset",
+        "uses_style_anchor",
+        "uses_blueprint",
+        "uses_motif_ledger",
+        "produced_by_image2",
+        "reviewed_by",
+        "violates_continuity",
+        "anchors_continuity"
       ],
-      "description": "comic-wiki edge vocabulary: attempt_of (attempt->panel), reviews (review->attempt), decides (decision->attempt), failure_of (failure_mode->attempt), rollback_of / supersedes (cross-frame repair links)"
+      "description": "the EXACT edge vocabulary cli/validate_wiki.py enforces (kept in sync with its EDGE_TYPES). RUNTIME: attempt_of (attempt->panel), reviews (review->target), decides (decision->target), failure_of (failure_mode->target), rollback_of / supersedes (cross-frame repair links). AUTHOR-LAYER: derived_from, plans_asset, uses_asset, uses_style_anchor, uses_blueprint, uses_motif_ledger, produced_by_image2, reviewed_by, violates_continuity, anchors_continuity."
     },
     "reviewer": {
       "enum": ["cc", "codex", "gemini", "system", "user"],

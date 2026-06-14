@@ -1,0 +1,33 @@
+{
+  "node_id": "panel:demo_s01",
+  "node_type": "panel_spec",
+  "title": "demo panel S01",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "source_storyboard_id": "storyboard:demo_min",
+    "page_id": "P01",
+    "panel_id": "panel:demo_s01",
+    "sequence_index": 1,
+    "page_type": "single",
+    "world": "warm-lab",
+    "asset_ids": [
+      "asset:demo_cast"
+    ],
+    "text_mode": "baked",
+    "expected_literals": [
+      "DEMO",
+      "42"
+    ],
+    "content_blueprint": "blueprint:demo_s01",
+    "bubbles": [
+      {
+        "text": "DEMO"
+      }
+    ],
+    "side_narration": "the chibi holds up the number 42",
+    "motifs": {
+      "demo_number": "42"
+    }
+  }
+}

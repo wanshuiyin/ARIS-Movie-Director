@@ -1,0 +1,58 @@
+{
+  "schema_version": "method-figure/brief/v1",
+  "figure_id": "aris_movie_director_method",
+  "figure_purpose": "ARIS-Movie-Director",
+  "headline_claim": "Looks right != pass",
+  "headline_number": "+6.2",
+  "caption_thesis": "A baked panel that looks right can still be wrong; only a blind cross-model literal-diff passes it.",
+  "topology_constraint": "left_to_right_phases",
+  "target_profile": "readme",
+  "forbidden_tokens": ["self-judge", "LLM-as-a-judge"],
+  "identity_refs": [
+    {
+      "id": "cast",
+      "path": "identity_sheet.png",
+      "traits": [
+        "researcher: black hair, glasses, black tee",
+        "executor: brown hair, blue hoodie, no beard",
+        "reviewer: black hair, beard, green hoodie"
+      ]
+    }
+  ],
+  "phases": [
+    {"id": "p1", "label": "1 · Authored Source of Truth", "members": ["outline", "storyboard", "comicjson"]},
+    {"id": "p2", "label": "2 · The Audited Spiral  (per panel)", "members": ["blueprint", "bake", "gate", "verdict", "keep", "wiki"]},
+    {"id": "p3", "label": "3 · Assembly + Release", "members": ["assembly", "viewer"]}
+  ],
+  "components": [
+    {"id": "researcher", "label": "researcher", "one_line": "hands over the night", "role": "human author", "visual_priority": "secondary", "identity_ref": "cast"},
+    {"id": "brief", "label": "story brief", "one_line": "24h deadline", "role": "input document", "visual_priority": "secondary"},
+    {"id": "outline", "label": "outline", "one_line": "story beats", "role": "authored layer", "phase": "p1"},
+    {"id": "storyboard", "label": "storyboard", "one_line": "scene + dialogue + literals", "role": "authored layer", "phase": "p1"},
+    {"id": "comicjson", "label": "comic.json", "one_line": "single source of truth", "role": "contract artifact", "phase": "p1", "visual_priority": "core"},
+    {"id": "blueprint", "label": "content-SVG", "one_line": "exact SVG blueprint", "role": "deterministic condition", "phase": "p2"},
+    {"id": "bake", "label": "image_gen BAKE", "one_line": "blueprint + identity", "role": "generator", "phase": "p2", "visual_priority": "core"},
+    {"id": "gate", "label": "panel_gate", "one_line": "CC | Gemini | Codex", "role": "cross-model review", "phase": "p2", "visual_priority": "core", "identity_ref": "cast"},
+    {"id": "verdict", "label": "verdict", "one_line": "literal diff", "role": "decision", "phase": "p2"},
+    {"id": "keep", "label": "KEEP", "one_line": "panel accepted", "role": "accept state", "phase": "p2"},
+    {"id": "wiki", "label": "research-wiki", "one_line": "failures logged", "role": "memory", "phase": "p2"},
+    {"id": "assembly", "label": "page assembly_gate", "one_line": "coherence + drift check", "role": "page review", "phase": "p3"},
+    {"id": "viewer", "label": "release", "one_line": "PNG panels + HTML", "role": "output", "phase": "p3"}
+  ],
+  "flows": [
+    {"from": "researcher", "to": "brief", "kind": "flow"},
+    {"from": "brief", "to": "outline", "kind": "flow"},
+    {"from": "outline", "to": "comicjson", "kind": "flow"},
+    {"from": "storyboard", "to": "comicjson", "kind": "flow"},
+    {"from": "comicjson", "to": "blueprint", "kind": "flow", "label": "source"},
+    {"from": "blueprint", "to": "bake", "kind": "flow", "label": "render"},
+    {"from": "bake", "to": "gate", "kind": "flow"},
+    {"from": "gate", "to": "verdict", "kind": "flow"},
+    {"from": "verdict", "to": "keep", "kind": "keep", "label": "keep"},
+    {"from": "verdict", "to": "bake", "kind": "retry", "label": "RETRY (max 4)", "direction": "back"},
+    {"from": "gate", "to": "wiki", "kind": "write", "label": "write"},
+    {"from": "keep", "to": "assembly", "kind": "flow"},
+    {"from": "assembly", "to": "bake", "kind": "repair", "label": "repair drift", "direction": "back"},
+    {"from": "assembly", "to": "viewer", "kind": "flow", "label": "accept"}
+  ]
+}

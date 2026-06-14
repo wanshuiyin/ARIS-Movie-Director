@@ -6,6 +6,8 @@
   "type": "object",
   "required": ["figure_id", "figure_purpose", "components", "flows"],
   "properties": {
+    "schema_version": {"const": "method-figure/brief/v1",
+      "description": "optional but recommended — pins the brief contract paper-plan emits and compile_brief.py consumes"},
     "figure_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
     "figure_purpose": {"type": "string", "description": "e.g. 'Figure 1 method overview'"},
     "headline_claim": {"type": "string", "description": "the contribution this figure must support"},

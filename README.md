@@ -60,34 +60,41 @@ open  examples/comic_m3_audit/outputs/index.html
 ```
 …or just open the hosted one: **https://wanshuiyin.github.io/ARIS-Movie-Director/comic/**
 
-**B · Make a method figure — input: a blueprint → output: `figure.png`**
-One command runs the whole spiral (render condition → `gpt-image-2` bake → 3-model gate → retry until clean):
+**B · Make a method figure — input: a brief → output: `figure.png`**
+Feed ONE ARIS-format artifact — a `method_figure_brief.json` (the same brief `paper-plan` emits after its
+claims_matrix) — and one command runs the whole spiral (Step-0 compile → render condition → `gpt-image-2` bake →
+Gemini+Codex blind panel + `content_diff` → retry until clean → Claude structural sign-off):
 ```bash
+# OUR example brief bakes ARIS's own Figure 1 — swap in your own method_figure_brief.json
 python3 skills/method-figure/scripts/run_spiral.py \
-    skills/method-figure/examples/method_figure/blueprint.json \   # ← OUR example (re-bakes ARIS's own Figure 1)
-    --identity docs/figassets/aris_identity_sheet.png \            # ← OUR example cast; --identity is OPTIONAL / BYO
+    skills/method-figure/examples/method_figure/method_figure_brief.json \
     --out-dir figures/method_figure/demo
-#  -> figures/method_figure/demo/figure.png   (+ trace.jsonl of every round)
+#  -> figures/method_figure/demo/figure.png   (the PANEL-CLEAN candidate, awaiting your structural sign-off)
+#     (+ blueprint.json + traceability.json + trace.jsonl of every round)
+#  first run? use --p0-only (zero image credits: validate+compile+render+lint). NOTE: --dry-run still writes these files.
 ```
-Needs the **`codex` and `gemini` CLIs** on PATH (the cross-model gate + the bake) and headless Chrome.
+The brief is auto-compiled into the content-locked `blueprint.json` (**Step-0 is a deterministic step inside the
+skill** — you never hand-write a blueprint or place coordinates), the identity sheet is resolved from the brief's
+`identity_refs[].path` (no separate `--identity` to manage), and every node is traceability-checked back to a
+brief field (an un-traceable node fails closed). Needs the **`codex` and `gemini` CLIs** on PATH and headless Chrome.
 
-> **Those two inputs are just our worked example** — the command as-shown re-bakes *ARIS's own* Figure 1.
-> For *your* figure you don't hand-write the blueprint: your agent authors it from a `method_figure_brief`
-> (**Step-0** — see [`blueprint_authoring.md`](skills/method-figure/references/blueprint_authoring.md) /
-> [`schemas/blueprint.schema.json`](skills/method-figure/schemas/blueprint.schema.json)). Point your coding
-> agent — e.g. the **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project** —
-> at your paper and have it emit the brief → blueprint, then run the command above on *your* JSON. `--identity`
-> is **optional**: the ARIS chibi sheet is only the example cast — omit it, or point at your own character sheet.
-> The worked 4-round convergence is in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
+> **Only have a paper, no brief yet?** Point your coding agent — e.g. the
+> **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project** — at your paper to
+> emit the `method_figure_brief.json` first (claims/numbers verbatim) — the exact SOP + prompt is
+> [`paper_to_brief.md`](skills/method-figure/references/paper_to_brief.md), then run the command above.
+> **Power-user:** already have a hand-tuned blueprint? `run_spiral.py blueprint.json --identity sheet.png
+> --out-dir … --from-blueprint` runs the legacy path. The worked 4-round convergence (the exact prompts) is in
+> [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
-**C · Make your own movie — input: a `comic.json` → output: frames + viewer**
-You don't hand-write `comic.json` — give your agent a fuzzy idea and let it author the IR (your agent can be
-any coding agent, e.g. the **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project**)
-following the **Phase-1 SOP** (asset library → outline → storyboard → `comic.json`):
-**[`authored_source_of_truth.md`](skills/comic-author/references/authored_source_of_truth.md)**
-(field mapping in [`comic_authoring.md`](skills/comic-author/references/comic_authoring.md);
-fields in [`docs/comic-json.md`](docs/comic-json.md) / [`schemas/comic.schema.json`](schemas/comic.schema.json);
-copy `examples/comic_m3_audit/comic.json` as a template). Then run the spiral — **one command**, like the figure path:
+**C · Make your own movie — input: a fuzzy idea → output: frames + viewer**
+Phase 1 is an **agent workflow, not a shell CLI**: you point your coding agent (Claude, Codex, … — e.g. the
+**[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project**) at the
+**[`comic-author`](skills/comic-author/SKILL.md)** orchestrator; the agent FOLLOWS its ordered steps
+(intent → outline → storyboard → assets → blueprints → `comic.json`), each step a detailed skill it runs, each
+`--gate` an agent procedure (cross-model review → fuse), authoring the wiki nodes + the `comic.json`. (Per-layer
+detail: [`authored_source_of_truth.md`](skills/comic-author/references/authored_source_of_truth.md); IR fields:
+[`docs/comic-json.md`](docs/comic-json.md) / [`schemas/comic.schema.json`](schemas/comic.schema.json); copy
+`examples/comic_m3_audit/comic.json` as a template.) Then Phase 2/3 IS a real one-command CLI — the spiral:
 ```bash
 python3 skills/comic-director/scripts/run_comic.py \
     --project examples/comic_m3_audit --page P02_b08 --panels S12,S13,S14,S15 \

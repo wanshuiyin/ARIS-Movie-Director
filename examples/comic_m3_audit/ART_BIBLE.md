@@ -27,6 +27,11 @@
 - **审计/讨论的场景**:可走"暖实验室"(人在真实世界看屏)或"暗数字空间"(人进了 wiki 空洞)——按 beat 选,但两者并存、别全暗。
 - gate 评 `style_consistency` 时:**冷暖是 by-design 的,不是漂移**;只标"该暖的场景冷了 / 该暗的数字物暖了"这种错配。
 
+### 0.6 STYLE_PREFIX（machine-readable — `build_prompt.py` 按 panel 的 `world` 读取这几行；≤200 字符，无镜头/光圈词）
+STYLE_PREFIX[warm-lab]: flat pixel-art comic; warm real-world interior — Edison-lamp glow, warm wood, cozy lab/bedroom, cold-blue night city out the window; chibi cast in warm light; 1-step shading, crisp integer pixels
+STYLE_PREFIX[dark-cyber]: flat pixel-art comic; digital ARIS world — dark_navy_void #0A0E27 + neon (warning-red/amber/invariant-purple/success-green); wiki-void / terminal / audit panels; 1-step shading, crisp integer pixels
+STYLE_PREFIX[starfield]: flat pixel-art; full-bleed dark-navy starfield — glowing star-nodes + thin connecting lines, NO characters; deep night palette, 1-step shading, crisp integer pixels
+
 ## 1. 角色身份锁(authority = `movie-wiki/assets/refs/sprites/duo_canonical_ref_v001.png`)
 
 每个出现双人的格子,**必须**把 `duo_canonical_ref` 作为 condition 注入;身份不对 = panel_gate 直接 reject。

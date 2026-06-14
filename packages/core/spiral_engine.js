@@ -42,7 +42,7 @@ const PATH_RE = /^\/[A-Za-z0-9._/-]+$/
 for (const [k, v] of [['projectRoot', PROJ], ['repoRoot', REPO]]) {
   if (!v || !PATH_RE.test(v)) throw new Error(`unsafe ${k} (must be an absolute path with no spaces or shell metacharacters, matching ${PATH_RE}): ${JSON.stringify(v)}`)
 }
-const MAX_TOTAL = 4, MAX_ROLLBACKS = 6   // per-panel bakes in the main loop / extra repair rounds at assembly (unified budget = MAX_TOTAL + MAX_ROLLBACKS)
+const MAX_TOTAL = 4, MAX_ROLLBACKS = 6, STRIKE_ESCALATE = 2   // a panel drifting ≥2 assembly rounds → author-layer rewrite, not more bakes   // per-panel bakes in the main loop / extra repair rounds at assembly (unified budget = MAX_TOTAL + MAX_ROLLBACKS)
 const FINALIZE = ARGS.finalize === true
 const absImg = (p) => !p ? '' : (p.startsWith('/') ? p : PROJ + '/' + p)  // resolve panel image path (abs or project-rel) — one helper
 const relImg = (p) => !p ? '' : (p.startsWith(PROJ + '/') ? p.slice(PROJ.length + 1) : p)  // project-relative for wiki nodes — NEVER persist an absolute path (leaks $HOME/username on a public release)
@@ -142,8 +142,10 @@ function assemblyVerdict(cc, gem, mode = 'html') {
   const dims = [cc?.reading_order ?? 0, cc?.page_rhythm ?? 0, gem?.cross_panel_identity ?? 0, gem?.cross_panel_style ?? 0, textDim]
   const minDim = Math.min(...dims), sum = dims.reduce((a, b) => a + b, 0)
   const drift = Array.isArray(gem?.drift_panels) ? gem.drift_panels.filter(x => typeof x === 'string') : []   // which panels the reviewer says break the page
-  if (minDim < 2 || sum < 16) return { v: 'rollback', reason: `[${mode}] assembly weak (min=${minDim} sum=${sum}/25)`, drift_panels: drift }
-  return { v: 'accept', reason: `[${mode}] assembly ok (min=${minDim} sum=${sum}/25)`, drift_panels: [] }
+  // point_of_divergence = the first named drifter (the caller re-orders by reading order); surfaced for the
+  // audit + to anchor which panel the cross-frame repair / author-escalation starts from.
+  if (minDim < 2 || sum < 16) return { v: 'rollback', reason: `[${mode}] assembly weak (min=${minDim} sum=${sum}/25)`, drift_panels: drift, point_of_divergence: drift[0] || null }
+  return { v: 'accept', reason: `[${mode}] assembly ok (min=${minDim} sum=${sum}/25)`, drift_panels: [], point_of_divergence: null }
 }
 
 // ── schemas ──
@@ -341,6 +343,8 @@ let kept = []
 const totalByPanel = {}, pending = {}
 let escalated = null, throttled = false
 const flagged = []                 // panels accepted best-so-far for HUMAN review (design R10)
+const driftStrikes = {}            // per-panel assembly-drift strike counter → strike-escalation to the author layer
+const rewriteStoryboard = []       // KEEP≠final: panels assembly bounced back for an author-layer storyboard/blueprint rewrite
 // FAIL-CLOSED: if comic.json couldn't be loaded, every cfg would be empty → mode defaults + the faithfulness token-check goes
 // vacuous (a bad panel could keep). Refuse to run rather than run an ungated gate.
 const asciiTok = e => typeof e === 'string' && (e.toLowerCase().match(/[a-z0-9+._-]+/g) || []).length > 0
@@ -431,9 +435,20 @@ if (!escalated && kept.length >= 2) {
     if (asmRound >= MAX_ROLLBACKS) { log(`  ⚑ assembly still drifting after ${MAX_ROLLBACKS} rollbacks → flagged for HUMAN`); flagged.push(`${PAGE}:assembly`); break }
     const drifters = d.filter(p => kept.some(k => k.pid === p))
     if (!drifters.length) { log(`  ⚑ assembly drift not localized to specific panels → flagged for HUMAN (no blind re-bake)`); flagged.push(`${PAGE}:assembly`); break }
-    log(`  ⤺ CROSS-FRAME repair round ${asmRound + 1}: re-bake drift panel(s) [${drifters.join(',')}]`)
+    // STRIKE-ESCALATION: a panel that keeps being named a drifter is a STORYBOARD/BLUEPRINT problem, not a
+    // re-bake problem — escalate it to the author layer (rewrite_storyboard_from) instead of burning more bakes.
+    // (Comic = independent panels → NO prefix-freeze / rollback-to-prior; the escalation unit is the single panel.)
+    for (const pid of drifters) driftStrikes[pid] = (driftStrikes[pid] || 0) + 1
+    for (const pid of drifters.filter(p => driftStrikes[p] >= STRIKE_ESCALATE)) {
+      if (!rewriteStoryboard.includes(pid)) rewriteStoryboard.push(pid)
+      if (!flagged.includes(pid)) flagged.push(pid)
+      log(`  ⚑ ${pid} drifted ${driftStrikes[pid]}× (≥${STRIKE_ESCALATE}) → ESCALATE to author layer (rewrite_storyboard_from ${pid}); a re-bake can't fix a spec problem`)
+    }
+    const rebakeable = drifters.filter(p => driftStrikes[p] < STRIKE_ESCALATE)
+    if (!rebakeable.length) { log(`  ⚑ all remaining drifters escalated to an author-layer rewrite → stop`); break }
+    log(`  ⤺ CROSS-FRAME repair round ${asmRound + 1}: re-bake drift panel(s) [${rebakeable.join(',')}] (point_of_divergence=${asm.verdict.point_of_divergence || rebakeable[0]})`)
     let anyFixed = false
-    for (const pid of drifters) {
+    for (const pid of rebakeable) {
       if (throttled) break
       const cfg = CONFIG[pid] || {}
       if ((totalByPanel[pid] || 0) >= MAX_TOTAL + MAX_ROLLBACKS) {   // unified per-panel generation budget — cross-frame repair does NOT bypass the '4/panel + 6 repair' cap
@@ -468,6 +483,10 @@ if (!escalated && kept.length >= 2) {
 // assembly-accept + finalize:true into downstream consumers.
 const anyNeedsHuman = kept.some(k => k.needs_human) || flagged.length > 0
 const shippable = !escalated && !throttled && !anyNeedsHuman && (asm ? asm.verdict.v === 'accept' : kept.length >= 1)
+// STAGED ACCEPTANCE (KEEP≠final): a panel_gate KEEP is only `panel_accepted`; it becomes `page_accepted` ONLY
+// when the page assembly accepts (or there was no cross-panel concern — a single kept panel).
+const pageAccepted = asm ? asm.verdict.v === 'accept' : kept.length >= 1
+for (const k of kept) k.acceptance_stage = (pageAccepted && !k.needs_human && !flagged.includes(k.pid)) ? 'page_accepted' : 'panel_accepted'
 return {
   page: PAGE,
   panel_ids: PANEL_IDS,
@@ -478,6 +497,7 @@ return {
   throttled,
   escalated,
   assembly: asm ? asm.verdict : null,
+  rewrite_storyboard: rewriteStoryboard,   // KEEP≠final: panels assembly strike-escalated to an author-layer rewrite
   attempts_per_panel: totalByPanel,
   finalize: FINALIZE && shippable,   // a FINALIZE request is HONORED only when the page is actually shippable
 }

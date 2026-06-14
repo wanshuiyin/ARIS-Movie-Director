@@ -1,0 +1,13 @@
+{
+  "node_id": "style:demo_warm",
+  "node_type": "style_anchor",
+  "title": "warm-lab style",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "dimension": "world_palette",
+    "value": "warm-lab: Edison glow, warm wood, flat pixel-art",
+    "source": "ART_BIBLE.md §0.6 STYLE_PREFIX[warm-lab]",
+    "locked": true
+  }
+}

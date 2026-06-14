@@ -1,0 +1,7 @@
+# ARIS-Movie-Director — Python deps. The scripts are otherwise pure stdlib.
+# jsonschema: the documented schema-validate step (validate_blueprint.py / comic-json-compiler) uses it.
+jsonschema>=4.0
+# EXTERNAL tools (NOT pip — install + authenticate separately; run `python3 cli/preflight.py` to verify):
+#   - codex   (OpenAI Codex CLI)        — image bake + Codex reviewer
+#   - gemini  (Gemini CLI)              — Gemini reviewer (`gemini --model auto-gemini-3`)
+#   - chromium / google-chrome (headless) — rasterizes SVG blueprints / comic pages

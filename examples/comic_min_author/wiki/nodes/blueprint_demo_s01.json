@@ -1,0 +1,31 @@
+{
+  "node_id": "blueprint:demo_s01",
+  "node_type": "blueprint",
+  "title": "demo blueprint S01",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "source_panel_id": "panel:demo_s01",
+    "content_svg": "assets/panel_demo_v1.svg",
+    "expected_literals": [
+      "DEMO",
+      "42"
+    ],
+    "safe_zones": [
+      {
+        "id": "main",
+        "x": 0.1,
+        "y": 0.6,
+        "w": 0.8,
+        "h": 0.2
+      }
+    ],
+    "html_bubbles": [],
+    "crop": {
+      "shape": "wide"
+    },
+    "negative_space_policy": "lower band reserved",
+    "generator_script": "assets/panel_demo_v1.svg",
+    "file_sha256": "3ef53f7f0d7a37f1519bfa5709c81b7f9c1ae8941dabeb69ef2075701914549a"
+  }
+}

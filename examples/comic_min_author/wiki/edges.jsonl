@@ -1,0 +1,12 @@
+{"src": "outline:demo_min", "dst": "intent:demo_min", "type": "derived_from"}
+{"src": "outline:demo_min", "dst": "style:demo_warm", "type": "uses_style_anchor"}
+{"src": "outline:demo_min", "dst": "asset:demo_cast", "type": "plans_asset"}
+{"src": "storyboard:demo_min", "dst": "outline:demo_min", "type": "derived_from"}
+{"src": "storyboard:demo_min", "dst": "motif:demo_min", "type": "uses_motif_ledger"}
+{"src": "panel:demo_s01", "dst": "storyboard:demo_min", "type": "derived_from"}
+{"src": "panel:demo_s01", "dst": "asset:demo_cast", "type": "uses_asset"}
+{"src": "blueprint:demo_s01", "dst": "panel:demo_s01", "type": "derived_from"}
+{"src": "blueprint:demo_s01", "dst": "asset:demo_cast", "type": "uses_asset"}
+{"src": "prompt:demo_s01", "dst": "panel:demo_s01", "type": "derived_from"}
+{"src": "prompt:demo_s01", "dst": "blueprint:demo_s01", "type": "uses_blueprint"}
+{"src": "cont:demo_ddl", "dst": "panel:demo_s01", "type": "anchors_continuity"}

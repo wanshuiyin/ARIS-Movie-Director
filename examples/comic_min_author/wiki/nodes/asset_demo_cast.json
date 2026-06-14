@@ -1,0 +1,18 @@
+{
+  "node_id": "asset:demo_cast",
+  "node_type": "asset",
+  "title": "demo cast sheet",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "asset_kind": "character",
+    "name": "demo_cast",
+    "visual_description": "one ARIS chibi, blue hoodie, flat pixel-art",
+    "identity_lock": "demo chibi: brown hair, blue hoodie, no beard",
+    "ref_requirements": {
+      "output_ref": "assets/cast_sheet_v1.png"
+    },
+    "review_status": "locked",
+    "version": 1
+  }
+}

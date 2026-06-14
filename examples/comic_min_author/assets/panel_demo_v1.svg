@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <rect width="640" height="360" fill="#FFF8EE"/>
+  <rect x="40" y="40" width="560" height="280" rx="14" fill="#FFFFFF" stroke="#E0C9A6"/>
+  <text x="60" y="90" font-family="monospace" font-size="28" fill="#1F2937">DEMO</text>
+  <text x="60" y="140" font-family="monospace" font-size="40" fill="#EA580C">42</text>
+  <rect x="60" y="220" width="520" height="70" rx="8" fill="#FDF2E2" stroke="#F4C18A"/>
+</svg>

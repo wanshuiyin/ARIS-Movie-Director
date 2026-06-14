@@ -1,0 +1,16 @@
+{
+  "node_id": "cont:demo_ddl",
+  "node_type": "continuity_constraint",
+  "title": "demo continuity",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "family": "demo_number",
+    "constraint_text": "demo_number reads exactly 42 on S01",
+    "applies_to_panel_ids": [
+      "panel:demo_s01"
+    ],
+    "source_node_id": "motif:demo_min",
+    "active": true
+  }
+}

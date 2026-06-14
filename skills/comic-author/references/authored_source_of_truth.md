@@ -1,4 +1,9 @@
-# Phase 1 — Authored Source of Truth (the SOP your agent follows)
+# Phase 1 — Authored Source of Truth (the layer→skill index)
+
+> **Canonical workflow = [`../SKILL.md`](../SKILL.md)** — the comic-author orchestrator (the ordered 9-step
+> pipeline intent→style→outline→storyboard→assets→blueprints→prompts→`comic.json`, each step a detailed skill +
+> its `comic-cross-layer-gate` gate). This document is the **per-layer detail + the executed worked-example
+> artifacts** behind that pipeline; the orchestrator is the source of truth for ORDER, GATES, and BARRIERS.
 
 This is the **left third of Figure 1** — *Asset Library → Outline → Storyboard → `comic.json`* — turned into a
 followable procedure so it isn't left for the user to reinvent. You hand your agent a fuzzy idea; your agent

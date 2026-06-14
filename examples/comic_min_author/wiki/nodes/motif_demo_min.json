@@ -1,0 +1,23 @@
+{
+  "node_id": "motif:demo_min",
+  "node_type": "motif_ledger",
+  "title": "demo motif ledger",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "source_storyboard_id": "storyboard:demo_min",
+    "columns": [
+      "demo_number"
+    ],
+    "rows": [
+      {
+        "panel": "S01",
+        "demo_number": "42"
+      }
+    ],
+    "invariants": [
+      "demo_number constant"
+    ],
+    "mirror_locks": []
+  }
+}

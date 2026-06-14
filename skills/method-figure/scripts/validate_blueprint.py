@@ -32,9 +32,13 @@ def main():
     gids = {g.get("id") for g in groups}
     if len(gids) != len([g.get('id') for g in groups]): errs.append("duplicate group ids")
     nodeset = set(ids)
+    asset_ids = {a.get("id") for a in bp.get("assets", [])}
+    # when Step-0 compiled this blueprint from a brief, EVERY object must trace back (GUARD-10).
+    traced = bool(bp.get("compiled_from_brief"))
     for e in edges:
         if e.get("from") not in nodeset: errs.append(f"edge.from '{e.get('from')}' is not a node id")
         if e.get("to") not in nodeset: errs.append(f"edge.to '{e.get('to')}' is not a node id")
+        if traced and not e.get("source"): errs.append(f"edge '{e.get('from')}->{e.get('to')}' missing 'source' (compiled_from_brief)")
     def in_canvas(x, y): return -2 <= x <= cw + 2 and -2 <= y <= ch + 2
     for n in nodes:
         if "label_exact" not in n and "label" not in n: errs.append(f"node '{n.get('id')}' has no label_exact")
@@ -44,17 +48,33 @@ def main():
             if not (in_canvas(p["x"] - w / 2, p["y"] - h / 2) and in_canvas(p["x"] + w / 2, p["y"] + h / 2)):
                 errs.append(f"node '{n.get('id')}' box (pos {p}, size {s}) extends outside canvas {cw}x{ch}")
         if n.get("group") and n["group"] not in gids: errs.append(f"node '{n.get('id')}' group '{n['group']}' undefined")
+        # asset_ref integrity — checked PER NODE (this block was previously misplaced in the callouts loop,
+        # so it only ever saw the last node and never actually validated a character anchor).
+        if n.get("asset_ref") and n["asset_ref"] not in asset_ids:
+            errs.append(f"node '{n.get('id')}' asset_ref '{n['asset_ref']}' not in assets[]")
+        if traced and not n.get("source"): errs.append(f"node '{n.get('id')}' missing 'source' (compiled_from_brief)")
     for g in groups:
+        if traced and not g.get("source"): errs.append(f"group '{g.get('id')}' missing 'source' (compiled_from_brief)")
         b = g.get("bounds") or {}
         if cw and ch and not (in_canvas(b.get("x", 0), b.get("y", 0)) and in_canvas(b.get("x", 0) + b.get("w", 0), b.get("y", 0) + b.get("h", 0))):
             errs.append(f"group '{g.get('id')}' bounds {b} outside canvas {cw}x{ch}")
+    callout_boxes = []
     for c in bp.get("callouts", []):
-        p = c.get("pos") or {}
-        if cw and ch and "x" in p and "y" in p and not in_canvas(p["x"], p["y"]):
-            errs.append(f"callout '{c.get('id')}' pos {p} outside canvas {cw}x{ch}")
-        if n.get("asset_ref"):
-            if n["asset_ref"] not in {a.get("id") for a in bp.get("assets", [])}:
-                errs.append(f"node '{n.get('id')}' asset_ref '{n['asset_ref']}' not in assets[]")
+        p = c.get("pos") or {}; s = c.get("size") or {}
+        if cw and ch and "x" in p and "y" in p:
+            w = s.get("w", 0); h = s.get("h", 0)
+            if not (in_canvas(p["x"] - w / 2, p["y"] - h / 2) and in_canvas(p["x"] + w / 2, p["y"] + h / 2)):
+                errs.append(f"callout '{c.get('id')}' box (pos {p}, size {s}) extends outside canvas {cw}x{ch}")
+            if w and h: callout_boxes.append((c.get("id"), p["x"] - w / 2, p["y"] - h / 2, p["x"] + w / 2, p["y"] + h / 2))
+        if traced and not c.get("source"): errs.append(f"callout '{c.get('id')}' missing 'source' (compiled_from_brief)")
+    # callouts must not overlap each other (the default-stack bug)
+    for i in range(len(callout_boxes)):
+        for j in range(i + 1, len(callout_boxes)):
+            a, b = callout_boxes[i], callout_boxes[j]
+            if a[1] < b[3] and b[1] < a[3] and a[2] < b[4] and b[2] < a[4]:
+                errs.append(f"callouts '{a[0]}' and '{b[0]}' overlap (each callout needs its own band slot)")
+    for a in bp.get("assets", []):
+        if traced and not a.get("source"): errs.append(f"asset '{a.get('id')}' missing 'source' (compiled_from_brief)")
     # locked-label collision (would make the blind-transcribe diff ambiguous)
     labels = [(n.get("label_exact") or n.get("label", "")).strip() for n in nodes]
     dup = sorted({l for l in labels if l and labels.count(l) > 1})

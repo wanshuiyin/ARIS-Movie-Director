@@ -1,0 +1,29 @@
+{
+  "node_id": "intent:demo_min",
+  "node_type": "intent_spec",
+  "title": "demo intent",
+  "status": "locked",
+  "created_at": "2026-06-14T12:00:00Z",
+  "payload": {
+    "raw_input_refs": [
+      "user idea: a 1-page demo comic"
+    ],
+    "user_goal": "show the author pipeline end-to-end",
+    "audience": "framework users",
+    "format": "single-page comic",
+    "constraints": [
+      "1 page",
+      "1 panel"
+    ],
+    "subjects": [
+      "the ARIS chibi"
+    ],
+    "source_skeleton": null,
+    "dual_identity": {
+      "warm": "lab",
+      "digital": "wiki"
+    },
+    "uncertainties": [],
+    "confidence": 0.9
+  }
+}
