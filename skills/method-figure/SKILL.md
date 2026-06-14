@@ -165,7 +165,9 @@ accepted_round, verdicts}`. Failures are kept — the fixes that were needed are
 | photo-realistic scenes / long narrative comics | no (comics use the framework's spiral engine) |
 
 A converged worked example ships in `examples/method_figure/`: the ARIS-Movie-Director Figure 1 — blueprint +
-figure.png + condition.svg + the real 4-round `trace.jsonl` (unanimous 3-model APPROVE).
+figure.png + condition.svg + the real 4-round `trace.jsonl` (unanimous 3-model APPROVE). `PROMPTS.md` there
+publishes the **exact, unedited prompt sequence** that baked it (all 4 `gpt-image-2` bakes + the cross-model
+critiques, paths redacted) — the canonical exhibit of *how detailed a condition must be*; copy its shape.
 
 ## Implemented / roadmap
 - ✅ `scripts/run_spiral.py` — the one-command orchestrator (bake→pickup→panel→diff→consolidate→decide loop

@@ -23,7 +23,9 @@ nodes) as proof the multi-agent loop actually ran.
 >
 > *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned
 > `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by a 3-model panel
-> (Claude ‖ Gemini-3 ‖ GPT-5.5) until all three APPROVED.*
+> (Claude ‖ Gemini-3 ‖ GPT-5.5) until all three APPROVED. The **exact prompt sequence that baked this
+> image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference:
+> [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
 
 ## How it works
 
