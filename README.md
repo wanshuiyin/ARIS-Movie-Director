@@ -10,14 +10,42 @@
 
 [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
-**ARIS-Movie-Director is the multimodal vertical of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series — a director for AI-generated movies.** ARIS taught a research agent to work while you sleep; its **research-wiki + multi-agent-debate** philosophy applies just as well to *making things you can watch*. Same loop — **author a deterministic source of truth → let a generative model bake the look → ratify it with a cross-model adversarial panel** — now producing **character-consistent, fact-checked visual stories** instead of papers. *Looks right ≠ passes:* a beautiful frame whose number is wrong is rejected by a deterministic token-diff. **The ARIS series unlocks multimodal generation for the first time:** text-first research → multimodal-first storytelling.
+Generated visual stories can look coherent while quietly changing the facts — a chart rounds a number, a
+label mutates, a character's face drifts — and the run still ships, because the same system that drew the
+frame is the one saying it looks fine. **ARIS-Movie-Director treats every frame as an auditable artifact:**
+author a deterministic `comic.json` first (lock the `expected_literals` + identity refs *before* any pixels),
+let a generative model bake the look, then require **independent cross-model blind-transcription + a
+deterministic token-diff** before a panel is kept. *Looks right ≠ passes* — a beautiful frame whose number is
+wrong (`+6.2` expected vs `+6.25` observed) is rejected. Every attempt, retry, and decision lands in an
+inspectable **research-wiki** trace.
+
+| The problem | What ARIS-Movie-Director does about it |
+|---|---|
+| A panel can look right while changing a number, label, or code token. | `comic.json` locks the `expected_literals`; independent visual reviewers **blind-transcribe** what's actually in the pixels; an exact token-diff rejects any wrong or missing literal. |
+| The model that baked an image can wave its own output through. | The bake never self-attests — independent visual models (a **different family** from the generator) read it blind, and a **deterministic** diff, not a model's opinion, decides **KEEP / RETRY**. |
+| A frame can be baked with nothing to check it against. | Phase 1 authors `content_svg` · `identity_ref` · `ART_BIBLE` · `expected_literals` *before* pixels; a baked figure-panel with **no** gateable literals **fails closed**. |
+| Character & style drift accumulate across a long sequence. | Locked identity refs + asset review (准×3) + a style bible + a **cast-aware** assembly gate check consistency *while allowing* intended scene/cast variation (absence ≠ drift). |
+| Retry loops go opaque or endless. | Per-panel attempts and assembly repairs are **bounded**; each failure carries a repair note; a non-convergent panel is **flagged for a human**, never silently shipped. |
+| A demo hides what was tried and thrown away. | Every attempt / review / decision / failure-mode is written to the research-wiki — the reference run ships a **198-node** trace you can read. |
+
+ARIS-Movie-Director is the **multimodal vertical of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series**: ARIS taught a research agent to work while you sleep, and its **research-wiki + multi-agent-debate** ideas are exactly what make a generated story *auditable* — the same loop (author a source of truth → let a model bake the look → ratify with a cross-model panel), now producing character-consistent visual stories instead of papers.
+
+**Related work — where we fit.** The field already generates and orchestrates visual stories well, and we build
+on that, not against it: **[JoyAI-Echo](https://github.com/jd-opensource/JoyAI-Echo)** (JD) is strong at
+long-form text→video with synced audio and memory-based character consistency;
+**[FireRed-OpenStoryline](https://github.com/FireRedTeam/FireRed-OpenStoryline)** (Xiaohongshu) is a strong
+conversational video-editing agent — NL planning, tool orchestration, human-in-the-loop, reusable style skills;
+**[NEWTON](https://arxiv.org/abs/2605.18396)** shows planner-plus-verifier loops for *physically*-grounded
+video. ARIS-Movie-Director is **complementary** — it doesn't claim better generation or broader orchestration;
+it adds the **audit layer** around a generated visual story: blind cross-model reads → deterministic
+literal-diffs → bounded retry → an inspectable trace.
 
 **This first release is image-based** — the movie is told in baked still frames you flip through. **Video-based generation is what comes next; this is just the beginning.**
 
 The framework knows nothing about any particular story — a project plugs in via
 `examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a **19-scene / 24-frame**
-pixel-art movie about an autonomous research run, and ships the **real generation trace** (198 wiki
-nodes) as proof the multi-agent loop actually ran.
+pixel-art movie about an autonomous research run, and ships its **real, inspectable generation trace** as proof
+the multi-agent loop actually ran.
 
 ---
 
