@@ -46,6 +46,16 @@ assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickabl
    (never launch two bakes at once) — there is NO code-level lock or per-run temp dir.
 5. **Disconnect mid-run** killed in-flight agents once ("agent stalled on all attempts"); recovered via
    Workflow resume (resumeFromRunId) — the unchanged-prefix cache made S01 a 100% cache hit.
+6. **Asset filename collision = silent run-order downgrade.** Two generators wrote the same path
+   `wandb_exact_parse_060_071_v1.svg` with different content: `gen_core_assets.py` (a generic single-line
+   chart) and `gen_b06_blueprints.py` (the richer two-series S08 "UPGRADE"). With no run-order script,
+   whoever ran last won — re-running `gen_core_assets.py` after the upgrade silently reverted S08's chart
+   to the wrong version (caught only because git-LFS flagged the working-tree diff; nobody had edited it).
+   This is the same "re-run breaks it" class as incident 1. FIXED (option A+): removed the dead duplicate
+   so `gen_b06` is the sole owner, and added `gen/check_asset_collisions.py` — a static linter that fails
+   fast if ANY filename is written by >1 generator (NOT a "skip if exists" guard, which would hide the
+   order bug). Enforces "one visual dialect, never two" at the file level. Cross-model adjudicated (codex
+   gpt-5.5 xhigh).
 
 ## Known weaknesses still standing (candidates for release)
 - **Wiki timestamps are placeholders.** `Date.now()`/`new Date()` are unavailable in the workflow

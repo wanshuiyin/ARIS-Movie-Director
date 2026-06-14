@@ -6,7 +6,7 @@ Outputs (all under ../assets/):
   stamp_family_v1.svg             — DUP/SURVIVES/REJECT/ACCEPT/WARN_corrected/SUBMITTED/AUDIT + mini glyphs
   mug_states_ref_v1.svg           — HER 'ML RESEARCH' motif cup: hot / fading / cold
   wandb_curve_template_v1.svg     — the curve template sheet (3 named instances side by side)
-  wandb_exact_parse_060_071_v1.svg / wandb_exact_parse_071_066_v1.svg / wandb_exact_parse_078_089_v1.svg
+  wandb_exact_parse_071_066_v1.svg / wandb_exact_parse_078_089_v1.svg  (060_071 is owned by gen_b06: S08 two-series upgrade)
   tokyo_fragment_chip_v1.svg      — the broken-JSON chip at 4 scales + the repaired variant (S17-internal use)
   wiki_starmap_nodes_v1.json      — THE single truth source of star coordinates (S16b + S22)
   wiki_starmap_v1.svg             — S16b labeled star-map (only 4 big gated labels)
@@ -72,7 +72,10 @@ o.append(curve_panel(60, 64, 360, 220, P1, "0.60→0.71", GREEN))
 o.append(curve_panel(460, 64, 360, 220, P2, "0.71→0.66", RED, dip_at=4))
 o.append(curve_panel(860, 64, 360, 220, P3, "0.78→0.89", GREEN))
 w("wandb_curve_template_v1.svg", svg_doc(1280, 320, "".join(o)))
-w("wandb_exact_parse_060_071_v1.svg", svg_doc(640, 360, curve_panel(20, 20, 600, 320, P1, "0.60→0.71", GREEN)))
+# NOTE: wandb_exact_parse_060_071_v1.svg is OWNED by gen_b06_blueprints.py — S08 needs the richer
+# two-series "random-mask vs schema-first" upgrade, so the generic single-line version was removed
+# here to keep one canonical source per token (check_asset_collisions.py enforces this).
+# The two below are unused library stock (no panel consumes them today); kept as documented spares.
 w("wandb_exact_parse_071_066_v1.svg", svg_doc(640, 360, curve_panel(20, 20, 600, 320, P2, "0.71→0.66", RED, dip_at=4)))
 w("wandb_exact_parse_078_089_v1.svg", svg_doc(640, 360, curve_panel(20, 20, 600, 320, P3, "0.78→0.89", GREEN)))
 
