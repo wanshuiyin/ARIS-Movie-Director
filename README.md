@@ -11,7 +11,7 @@ nodes) as proof the multi-agent loop actually ran.
 
 > **▶ [Read the interactive comic in your browser](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)** — flip through all 19 pages of the cross-model-audited reference run.
 
-[![Read the interactive comic — cover](docs/comic_cover.webp)](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)
+[![Read the interactive comic — cover](docs/comic_cover_titled.webp)](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)
 
 ![ARIS-Movie-Director — method overview](docs/method_figure.png)
 
