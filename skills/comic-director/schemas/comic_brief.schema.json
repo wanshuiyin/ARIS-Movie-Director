@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/skills/comic-director/comic_brief.schema.json",
+  "title": "comic_brief — the upstream hand-off (idea → Step-0 → comic.json)",
+  "description": "The SEMANTIC brief a USER's agent emits from a fuzzy idea. It decides WHAT the comic depicts; Step-0 compiles it into a schema-valid comic.json (schemas/comic.schema.json); run_comic.py bakes + verifies. Mirrors method_figure_brief.schema.json. See references/comic_authoring.md.",
+  "type": "object",
+  "required": ["comic_id", "logline", "beats"],
+  "properties": {
+    "comic_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "logline": {"type": "string", "description": "one-sentence premise the whole comic must land"},
+    "thesis": {"type": "string", "description": "the point a reader should feel by the end"},
+    "cast": {"type": "array", "description": "the recurring characters + their locked identity",
+      "items": {"type": "object", "required": ["id"], "properties": {
+        "id": {"type": "string", "description": "e.g. executor | reviewer | researcher"},
+        "identity_ref": {"type": "string", "description": "project-relative .png canonical sheet (BYO; null → project canonical)"},
+        "traits": {"type": "array", "items": {"type": "string"}, "description": "locked visual traits, e.g. 'blue hoodie','no beard'"}}}},
+    "worlds": {"type": "array", "items": {"type": "string"},
+      "description": "the palette/world tags this comic uses (define them in ART_BIBLE.md), e.g. warm-lab, dark-cyber"},
+    "beats": {"type": "array", "minItems": 1, "description": "the story beats, in reading order (one per page)",
+      "items": {"type": "object", "required": ["id", "panels"], "properties": {
+        "id": {"type": "string", "description": "beat/page id, e.g. B02"},
+        "page_type": {"enum": ["cover", "single", "grid", "grid2x2", "feature", "finale"], "default": "single"},
+        "title": {"type": "object", "properties": {"zh": {"type": "string"}, "en": {"type": "string"}}},
+        "narration": {"type": "object", "properties": {"zh": {"type": "string"}, "en": {"type": "string"}}},
+        "panels": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/panel_brief"}}}}},
+    "target_locale": {"enum": ["en", "zh"], "default": "en"},
+    "bake_lang": {"enum": ["zh", "en"], "default": "zh", "description": "which dialogue language gets baked into the image"}
+  },
+  "$defs": {
+    "panel_brief": {
+      "type": "object",
+      "required": ["id", "scene"],
+      "properties": {
+        "id": {"type": "string", "description": "panel id, e.g. S12"},
+        "world": {"type": "string", "description": "which world tag (must be one of brief.worlds)"},
+        "scene": {"type": "string", "description": "what's in the panel — props, staging, composition (becomes condition.scene)"},
+        "staging": {"type": "object", "properties": {
+          "executor": {"type": "string"}, "reviewer": {"type": "string"}},
+          "description": "per-character action (becomes condition.chibi_action)"},
+        "identity_ref": {"type": "string", "description": "BYO character sheet for this panel; null → project canonical"},
+        "figure": {"type": "object", "description": "the technical figure this panel carries (if any)",
+          "properties": {
+            "blueprint_svg": {"type": "string", "description": "project-relative .svg YOU author = the content authority (→ condition.content_svg)"},
+            "headline_literals": {"type": "array", "items": {"type": "string"},
+              "description": "the exact numbers/keys/code tokens that MUST survive the bake (→ condition.expected_literals; REQUIRED if blueprint_svg is set)"}}},
+        "dialogue": {"type": "array", "items": {"type": "object", "required": ["speaker", "text"], "properties": {
+          "speaker": {"type": "string", "description": "a cast id"},
+          "style": {"type": "string", "description": "say | shout | terse | thought | whisper"},
+          "text": {"type": "object", "properties": {"zh": {"type": "string"}, "en": {"type": "string"}}}}}},
+        "text_mode": {"enum": ["baked", "html", "code"], "default": "baked",
+          "description": "baked = dialogue drawn into the image; html = HTML bubble overlay in the viewer"}
+      }
+    }
+  }
+}
