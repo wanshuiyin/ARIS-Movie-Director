@@ -6,7 +6,7 @@
 
 > Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — image-based today, **video next**.
 
-**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quickstart](#quickstart) · [🔬 How it works](#how-it-works) · [📝 Author your own](skills/comic-author/references/authored_source_of_truth.md) · [🧩 Layout](#layout)
+**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quickstart](#quickstart) · [🔬 How it works](#how-it-works) · [📝 Make your own (comic-author)](skills/comic-author/SKILL.md) · [🧩 Layout](#layout)
 
 [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
@@ -15,7 +15,7 @@
 **This first release is image-based** — the movie is told in baked still frames you flip through. **Video-based generation is what comes next; this is just the beginning.**
 
 The framework knows nothing about any particular story — a project plugs in via
-`examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a 24-frame
+`examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a **19-scene / 24-frame**
 pixel-art movie about an autonomous research run, and ships the **real generation trace** (198 wiki
 nodes) as proof the multi-agent loop actually ran.
 
@@ -34,7 +34,7 @@ nodes) as proof the multi-agent loop actually ran.
 > **Figure 1.** From story intent to a verified movie, end-to-end. **(1) Authored source of truth** —
 > asset library · outline · storyboard compile into `comic.json` (`content_svg · expected_literals ·
 > identity_ref`). **(2) The audited spiral (per panel)** — a content-SVG blueprint is baked by image_gen,
-> then a 3-reviewer cross-model `panel_gate` (CC ‖ Gemini ‖ Codex · *blind token-diff* · single-vote veto)
+> then a 3-reviewer cross-model `panel_gate` (CC narrative ‖ Gemini + Codex visual *blind-transcribe* → a deterministic token-diff · single-vote veto)
 > returns a deterministic `verdict`: **KEEP**, or **RETRY** (≤4/panel) re-baked with the failed attempt's
 > repair note; every attempt/review/decision/failure is logged to the `research-wiki`. **(3) Assembly +
 > release** — a cast-aware `page_assembly_gate` (repair drift → re-bake, ≤6/run) ships PNG panels + a
@@ -42,25 +42,83 @@ nodes) as proof the multi-agent loop actually ran.
 > pass** — `+6.2` expected vs `+6.25` observed fails the token-diff.
 >
 > *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned
-> `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by a 3-model panel
-> (Claude ‖ Gemini-3 ‖ GPT-5.5) until all three APPROVED. The **exact prompt sequence that baked this
+> `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by the method-figure
+> panel — **Gemini + Codex blind-transcribe + a deterministic `content_diff`, then a Claude structural sign-off** —
+> until clean. The **exact prompt sequence that baked this
 > image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference:
 > [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
 
 ## Quickstart
 
-This framework produces two things — a **character-consistent movie** (image-based today) and a
-**research/method figure**. Pick the path for the output you want.
+This framework makes two **cross-model-audited** things — **your own character-consistent movie** (image-based
+today) and a **research/method figure**. Pick your path.
 
-**A · See the reference movie — zero setup, no API**
+**A · Make your own movie — fuzzy idea → audited frames + a clickable viewer**
+Hand your agent a fuzzy story; wake up to a baked, fact-checked movie. The path has **two honest halves**:
+**Phase 1 is an AGENT WORKFLOW, not a shell CLI** — your coding agent (Claude, Codex, …) follows
+[`comic-author`](skills/comic-author/SKILL.md) to author the source of truth, and every `--gate` is an agent
+procedure ([`comic-cross-layer-gate`](skills/comic-cross-layer-gate/SKILL.md)), not a binary. **Phase 2/3 is the
+real spiral** — `comic.json` → baked panels → cross-model gate → viewer — run by `run_comic.py` (a standalone
+subprocess CLI port, no agent runtime) **or** `packages/core/spiral_engine.js` (via a workflow runtime); same result.
+
+- 🧭 **Intent** — fuzzy idea → `intent_spec` · **stop for your approval**
+- 🎨 **Style lock** — the `ART_BIBLE.md` + locked `style_anchor`s (warm-lab / dark-cyber / starfield)
+- 🧱 **Outline** — 3-lens debate → synthesis → `outline_spec` · **stop for your approval**
+- 🎞️ **Storyboard** — pages · panels · the MOTIF STATE TABLE · consolidated `asset_requests`
+- 🧑‍🎨 **Assets** — a single-source library, reviewed to `locked` (准×3 same-round unanimity)
+- 📐 **Blueprints** — a deterministic `content_svg` per panel (no baked bubbles)
+- 🧾 **Prompts** — exact bake prompts + verbatim `expected_literals` (搬运工原則)
+- ✅ **Compile** — schema-valid `comic.json`; the zero-credit `p0_proof` gate runs BEFORE any image credit
+- 🔥 **Spiral bake** — render → `codex image_gen` → 3-reviewer `panel_gate` → keep / retry / cross-frame rollback → assembly → viewer
+
+<details><summary>📐 flow — Phase-1 agent workflow → Phase-2/3 spiral</summary>
+
+```text
+fuzzy idea
+  └─ Phase 1 · comic-author AGENT WORKFLOW (your agent follows the skills)
+       intent ─(you approve)─ style ─ outline ─(you approve)─ storyboard ─ assets(locked) ─ blueprints ─ prompts ─ comic.json
+                 each step = a detailed skill + its --gate (agent procedure: fan out cross-model reviewers → fuse → flip status)
+  └─ comic.json + locked assets + the author wiki trace
+  └─ Phase 2/3 · spiral engine   (run_comic.py  OR  spiral_engine.js via a workflow runtime)
+       content_svg ─ bake (codex image_gen) ─ panel_gate (CC narrative ‖ Gemini visual ‖ Codex visual ─
+                     deterministic token-diff over the blind transcriptions · single-vote veto) ─ keep/retry
+                     ─ page assembly_gate ─ project to comic.json ─ single-file HTML viewer
+```
+</details>
+
+**Typical flow**
+1. **Author Phase 1 with your agent** (no CLI): *"Follow `skills/comic-author/SKILL.md` for this idea: «…». Stop for my approval at the intent + outline gates; produce `examples/<name>/comic.json` + locked assets + content-SVG blueprints + the wiki trace."*
+2. **Dry-run the spiral** (no image_gen): `python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run`
+3. **Bake** the audited panels: drop `--dry-run`; add `--finalize` to rebuild the viewer once the run is shippable.
+4. `open examples/<name>/outputs/index.html`
+
+> **TL;DR — there is NO one-command "fuzzy-idea → movie" CLI** (Phase 1 is an agent workflow by design). The only
+> one-command part is Phase 2/3, once `comic.json` exists:
+> `run_comic.py --project examples/<name> --page <PAGE> --panels … --finalize`. `run_comic.py` is a standalone
+> subprocess port of the spiral engine (no agent runtime). **image_gen throttling:** a rate-limited bake stops
+> cleanly with `fresh_run_required` — after cooldown launch a **fresh** run for the remaining panels, do **not**
+> resume cached state. Args + caps (4/panel · 6/run, assembly): [`docs/spiral-runtime.md`](docs/spiral-runtime.md).
+
+**Skills involved:** [`comic-author`](skills/comic-author/SKILL.md) (orchestrator) → comic-intent-parser →
+comic-style-bible-lock → comic-outline-creator → comic-storyboard-creator → comic-asset-ref-generator /
+comic-asset-review-loop → comic-blueprint-author → comic-panel-prompt-builder → comic-json-compiler →
+[`comic-director`](skills/comic-director/SKILL.md) (the spiral). Copy the author-node shapes from
+[`examples/comic_min_author/`](examples/comic_min_author/).
+
+🔄 **Human-in-the-loop:** intent + outline are **hard human gates** — your agent drafts + cross-model-reviews them
+but never proceeds until you approve; a bake that won't converge flags the panel/storyboard for you, never
+silently ships. **Prereqs:** a coding agent for Phase 1; **`codex` + `gemini` CLIs + headless Chrome** for Phase 2/3
+(`python3 cli/preflight.py` to verify).
+
+**B · See the reference movie — zero setup, no API**
 ```bash
 python3 cli/validate_wiki.py examples/comic_m3_audit          # verify the shipped trace -> PASS (198 nodes, 26 edges)
 python3 packages/viewer/build_comic.py examples/comic_m3_audit   # (re)build the single-file viewer from comic.json + panels
 open  examples/comic_m3_audit/outputs/index.html
 ```
-…or just open the hosted one: **https://wanshuiyin.github.io/ARIS-Movie-Director/comic/**
+…or just open the hosted one: **https://wanshuiyin.github.io/ARIS-Movie-Director/comic/** — all **19 scenes / 24 frames**.
 
-**B · Make a method figure — input: a brief → output: `figure.png`**
+**C · Make a method figure — input: a brief → output: `figure.png`**
 Feed ONE ARIS-format artifact — a `method_figure_brief.json` (the same brief `paper-plan` emits after its
 claims_matrix) — and one command runs the whole spiral (Step-0 compile → render condition → `gpt-image-2` bake →
 Gemini+Codex blind panel + `content_diff` → retry until clean → Claude structural sign-off):
@@ -86,33 +144,12 @@ brief field (an un-traceable node fails closed). Needs the **`codex` and `gemini
 > --out-dir … --from-blueprint` runs the legacy path. The worked 4-round convergence (the exact prompts) is in
 > [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
-**C · Make your own movie — input: a fuzzy idea → output: frames + viewer**
-Phase 1 is an **agent workflow, not a shell CLI**: you point your coding agent (Claude, Codex, … — e.g. the
-**[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project**) at the
-**[`comic-author`](skills/comic-author/SKILL.md)** orchestrator; the agent FOLLOWS its ordered steps
-(intent → outline → storyboard → assets → blueprints → `comic.json`), each step a detailed skill it runs, each
-`--gate` an agent procedure (cross-model review → fuse), authoring the wiki nodes + the `comic.json`. (Per-layer
-detail: [`authored_source_of_truth.md`](skills/comic-author/references/authored_source_of_truth.md); IR fields:
-[`docs/comic-json.md`](docs/comic-json.md) / [`schemas/comic.schema.json`](schemas/comic.schema.json); copy
-`examples/comic_m3_audit/comic.json` as a template.) Then Phase 2/3 IS a real one-command CLI — the spiral:
-```bash
-python3 skills/comic-director/scripts/run_comic.py \
-    --project examples/comic_m3_audit --page P02_b08 --panels S12,S13,S14,S15 \
-    --dry-run                 # validate + print every bake prompt (no image_gen) — run this FIRST
-# drop --dry-run to bake; add --finalize to rebuild the viewer when the run is shippable
-```
-Per panel it renders the content-SVG blueprint, bakes with `codex image_gen`, runs the 3-model `panel_gate`,
-writes the wiki, and on KEEP projects to `comic.json`. Needs the **`codex` + `gemini` CLIs** + headless Chrome.
-> `run_comic.py` is a standalone subprocess port of the movie spiral engine — no agent runtime needed. (Inside an
-> agent runtime you can instead drive `packages/core/spiral_engine.js` via the Workflow tool — same result.)
-> Args + runtime behavior (caps 4/panel · 6/run, throttle → fresh run, assembly): **[`docs/spiral-runtime.md`](docs/spiral-runtime.md)**.
->
-> **image_gen throttling:** a rate-limited bake stops cleanly with `fresh_run_required`. After cooldown,
-> launch a **fresh** run for the remaining panels — do **not** resume cached state.
-
 ## How it works
 
-Per panel, the **spiral engine** (`packages/core/spiral_engine.js`, run via a workflow runtime):
+### Movie pipeline — Phase-1 authoring (agent workflow) + Phase-2/3 spiral
+Phase 1: your agent follows the `comic-author` skills to author `comic.json` + locked assets (path A above).
+Phase 2/3, per panel — the **spiral engine** (`packages/core/spiral_engine.js` via a workflow runtime, **or** its
+standalone subprocess port `run_comic.py`, no agent runtime — same result):
 
 ```
 author a deterministic content-SVG blueprint  ->  render to PNG
@@ -128,8 +165,19 @@ author a deterministic content-SVG blueprint  ->  render to PNG
    ->  project to comic.json  ->  single-file clickable HTML viewer
 ```
 
-The gate is the point: a beautiful panel with a wrong number does **not** pass. Faithfulness is a
-token-diff over reviewers who are never shown the expected values.
+### Method-figure pipeline — one command (`run_spiral.py <brief>`)
+`method_figure_brief.json` → Step-0 `compile_brief.py` (deterministic, fail-closed traceability) → a content-locked
+`blueprint.json` → white-bg condition render → `gpt-image-2` bake → **Gemini + Codex blind-transcribe + a
+deterministic `content_diff`** → retry re-asserting the locked labels → **Claude structural sign-off** → `figure.png`.
+
+### Why the two gates differ (both correct, by design)
+The **movie** `panel_gate` is a **3-reviewer** panel (CC *narrative* ‖ Gemini *visual* ‖ Codex *visual*) — a story
+panel must land its beat AND be visually on-model. The **method-figure** panel is **Gemini + Codex
+blind-transcribe + the deterministic `content_diff`**, with **Claude** the post-pass structural sign-off — a
+figure has no "beat", so the bar is exact labels + clean layout, not narrative. Both obey the one rule:
+
+> The gate is the point: a beautiful panel/figure with a wrong number does **not** pass. Faithfulness is a
+> token-diff over reviewers who are never shown the expected values.
 
 ## Layout
 
