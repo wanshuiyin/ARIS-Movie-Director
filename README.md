@@ -64,17 +64,25 @@ open  examples/comic_m3_audit/outputs/index.html
 One command runs the whole spiral (render condition → `gpt-image-2` bake → 3-model gate → retry until clean):
 ```bash
 python3 skills/method-figure/scripts/run_spiral.py \
-    skills/method-figure/examples/method_figure/blueprint.json \
-    --identity docs/figassets/aris_identity_sheet.png \
+    skills/method-figure/examples/method_figure/blueprint.json \   # ← OUR example (re-bakes ARIS's own Figure 1)
+    --identity docs/figassets/aris_identity_sheet.png \            # ← OUR example cast; --identity is OPTIONAL / BYO
     --out-dir figures/method_figure/demo
 #  -> figures/method_figure/demo/figure.png   (+ trace.jsonl of every round)
 ```
 Needs the **`codex` and `gemini` CLIs** on PATH (the cross-model gate + the bake) and headless Chrome.
-Author your own input against [`schemas/blueprint.schema.json`](skills/method-figure/schemas/blueprint.schema.json)
-to draw any figure — see the worked example in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
+
+> **Those two inputs are just our worked example** — the command as-shown re-bakes *ARIS's own* Figure 1.
+> For *your* figure you don't hand-write the blueprint: your agent authors it from a `method_figure_brief`
+> (**Step-0** — see [`blueprint_authoring.md`](skills/method-figure/references/blueprint_authoring.md) /
+> [`schemas/blueprint.schema.json`](skills/method-figure/schemas/blueprint.schema.json)). Point your coding
+> agent — e.g. the **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project** —
+> at your paper and have it emit the brief → blueprint, then run the command above on *your* JSON. `--identity`
+> is **optional**: the ARIS chibi sheet is only the example cast — omit it, or point at your own character sheet.
+> The worked 4-round convergence is in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
 **C · Make your own movie — input: a `comic.json` → output: frames + viewer**
-You don't hand-write `comic.json` — give your agent a fuzzy idea and let it author the IR
+You don't hand-write `comic.json` — give your agent a fuzzy idea and let it author the IR (your agent can be
+any coding agent, e.g. the **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project**)
 (idea → `comic_brief` → Step-0 → `comic.json`; see **[`comic_authoring.md`](skills/comic-director/references/comic_authoring.md)**;
 fields in [`docs/comic-json.md`](docs/comic-json.md) / [`schemas/comic.schema.json`](schemas/comic.schema.json);
 copy `examples/comic_m3_audit/comic.json` as a template). Then run the spiral — **one command**, like the figure path:

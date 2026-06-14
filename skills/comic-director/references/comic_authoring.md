@@ -28,8 +28,10 @@ run_comic.py  →  bakes each panel, gates it cross-model, and writes back image
 
 This is a direct mirror of `skills/method-figure/references/blueprint_authoring.md` +
 `method_figure_brief.schema.json`. Full field reference for the target IR: [`docs/comic-json.md`](../../../docs/comic-json.md)
-+ [`schemas/comic.schema.json`](../../../schemas/comic.schema.json). **Do not depend on the ARIS main repo at
-runtime** — this repo is self-contained; ARIS main is only an *optional* upstream brief producer.
++ [`schemas/comic.schema.json`](../../../schemas/comic.schema.json). Your authoring agent can be any coding
+agent — e.g. the [**ARIS** main project](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep),
+which can read your source material and emit the `comic_brief` → `comic.json`. **Do not depend on ARIS main at
+runtime** though — this repo is self-contained; ARIS main is only an *optional* upstream brief producer.
 
 ---
 
