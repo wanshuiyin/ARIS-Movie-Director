@@ -40,7 +40,9 @@ def main():
         if bad and "image_generation" not in low and "generated_images" not in low:
             print(json.dumps({"ok": False, "reason": f"codex log shows non-native fallback markers {bad}"}), file=sys.stderr)
             sys.exit(1)
-    cands = [p for p in glob.glob(os.path.join(os.path.expanduser(a.dir), "*.png"))
+    # recursive: native codex images nest under ~/.codex/generated_images/<session-uuid>/ig_*.png
+    # (the old top-level-only glob found nothing). `**` + recursive matches both nested and top-level.
+    cands = [p for p in glob.glob(os.path.join(os.path.expanduser(a.dir), "**", "*.png"), recursive=True)
              if os.path.getmtime(p) >= a.marker - 1]
     cands.sort(key=os.path.getmtime, reverse=True)
     for p in cands:

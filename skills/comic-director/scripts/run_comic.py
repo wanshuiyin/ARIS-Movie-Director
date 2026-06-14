@@ -49,21 +49,52 @@ def sh(cmd, timeout, **kw):
 def sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16] if os.path.exists(path) else ""
 
+def bake_run(cmd, timeout):
+    """Run the codex image bake in its OWN process group and kill the WHOLE group on timeout — the engine's
+    `pkill -P` watchdog, so a runaway image_gen child can't keep writing into the global dir and pollute the
+    next panel's pickup. (sh()/subprocess.run timeout would orphan the children.)"""
+    import signal
+    try:
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    except Exception as e:
+        return _Fail(f"bake spawn error: {e}")
+    try:
+        out, _ = p.communicate(timeout=timeout)
+        r = _Fail(""); r.returncode = p.returncode; r.stdout = out or ""; r.stderr = ""; return r
+    except subprocess.TimeoutExpired:
+        try: os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+        except Exception:
+            try: p.kill()
+            except Exception: pass
+        try: out, _ = p.communicate(timeout=10)
+        except Exception: out = ""
+        return _Fail(f"bake timeout after {timeout}s (process group killed)\n{out or ''}")
+
+# clamp every reviewer score to a finite 0..5 (the engine's SCORE schema bound). The pure-subprocess port has
+# NO schema validation, so a stray 50 could KEEP and a numeric string could crash min(); out-of-range/non-numeric
+# → None (fail-closed: the verdict's completeness check then forces a retry). Numeric strings ("4") → 4.0.
+SCORE_KEYS = ("identity_consistency", "style_consistency", "composition_readability", "artifact_severity",
+              "baked_text_quality", "narrative_beat_fidelity", "composition_story", "reading_order", "page_rhythm",
+              "cross_panel_identity", "cross_panel_style", "text_fits_safezone", "baked_text_legibility")
+def clamp_scores(rv):
+    if not isinstance(rv, dict): return rv
+    for k in SCORE_KEYS:
+        if k in rv:
+            try: f = float(rv[k])
+            except (TypeError, ValueError): rv[k] = None; continue
+            rv[k] = f if 0 <= f <= 5 else None
+    return rv
+
 def extract_json(text, required_key=None):
-    """pull the first balanced {...} that (optionally) has required_key — skips prose/preamble fragments."""
+    """pull the first JSON object that (optionally) has required_key — uses a real JSON decoder so braces
+    inside string values (e.g. observed_literals, repair text) don't break parsing; skips prose preambles."""
+    dec = json.JSONDecoder()
     s = text.find("{")
     while s != -1:
-        depth = 0
-        for i in range(s, len(text)):
-            if text[i] == "{": depth += 1
-            elif text[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        j = json.loads(text[s:i + 1])
-                        if required_key is None or (isinstance(j, dict) and required_key in j): return j
-                    except Exception: pass
-                    break
+        try:
+            j, _ = dec.raw_decode(text[s:])
+            if isinstance(j, dict) and (required_key is None or required_key in j): return j
+        except Exception: pass
         s = text.find("{", s + 1)
     return None
 
@@ -188,7 +219,8 @@ def panel_verdict(cc, gem, cdx, cfg):
             if is_num(e): return False
             parts = re.findall(r"[a-z0-9]+", e)
             return len(parts) > 0 and all(p in S[1] for p in parts)
-        exp = [e for e in (cfg.get("expected_literals") or []) if isinstance(e, str)]
+        _el = cfg.get("expected_literals")
+        exp = [e for e in _el if isinstance(e, str)] if isinstance(_el, list) else []
         missing = [e for e in exp if not (hit(e, gem_s) and hit(e, cdx_s))] if reviewers_ok else exp
         figure_ungated = bool(cfg.get("content_svg")) and len(exp) == 0
         tokens_ok = reviewers_ok and not figure_ungated and len(missing) == 0
@@ -280,9 +312,9 @@ def generate_panel(paths, pid, cfg, ai, invariants, args, bakelog):
         return {"status": "generation_failed", "image_path": "", "failure_kind": "other", "gen_failed_reason": "image-gen lock contended >20min"}
     try:
         marker = time.time()
-        r = sh(["codex", "exec", full_prompt, "-i", cpng, "-i", id_ref_abs,
-                "--sandbox", "workspace-write", "-c", f"model_reasoning_effort={args.effort}", "--skip-git-repo-check"],
-               args.bake_timeout)
+        r = bake_run(["codex", "exec", full_prompt, "-i", cpng, "-i", id_ref_abs,
+                      "--sandbox", "workspace-write", "-c", f"model_reasoning_effort={args.effort}", "--skip-git-repo-check"],
+                     args.bake_timeout)
         open(bakelog, "w").write((getattr(r, "stdout", "") or "") + "\n---STDERR---\n" + (getattr(r, "stderr", "") or ""))
         pk = sh(["python3", paths["PICKUP"], "--marker", str(marker), "--out", out,
                  "--min-bytes", str(args.min_bytes), "--log", bakelog, "--aspect", str(1280 / 720)], 60)
@@ -303,11 +335,6 @@ def is_throttle(gen, reason=""):
     return not gen.get("failure_kind") and bool(re.search(r"rate|limit|throttl|server|unavailable|429|quota", reason or "", re.I))
 
 # ── the 3 cross-model reviewers (ported engine 274-316) ──
-CC_PROMPT = ('You are the CC NARRATIVE reviewer in ARIS comic panel_gate for {pid} (mode={mode}). Judge STORY only. '
-             'Read panel {pid} from "{comic}": its .condition.scene, its .bubbles, .caption, and the page beat. '
-             'Score 0-5: narrative_beat_fidelity, composition_story. Return ONLY one JSON line: '
-             '{{"narrative_beat_fidelity":n,"composition_story":n,"timed_out":false}}')
-
 def _vis_json(baked):
     if baked:
         return ('{"identity_consistency":n,"style_consistency":n,"composition_readability":n,"artifact_severity":n,'
@@ -321,25 +348,37 @@ def _vis_json(baked):
 ANATOMY = (' If the panel has characters, ENUMERATE each one\'s visible hands and set anatomy_defect_present=true on any '
            'wrong count (!=2)/third/floating/merged hand (single-vote veto).')
 
-def review_cc(paths, pid, cfg, args):
-    p = CC_PROMPT.format(pid=pid, mode=cfg.get("text_mode"), comic=paths["COMICJSON"])
-    r = sh(["codex", "exec", p, "--sandbox", "read-only", "-c", f"model_reasoning_effort={args.review_effort}", "--skip-git-repo-check"], args.review_timeout)
+def _id_desc(cfg):
+    return cfg.get("identity_desc") or "blue executor: brown hair, NO beard; green reviewer: dark hair, beard"
+
+def review_cc(paths, pid, cfg, img, args):
+    # CC scores STORY; it may glance at the actual panel to judge composition_story (engine 284).
+    p = (f'You are the CC NARRATIVE reviewer in ARIS comic panel_gate for {pid} (mode={cfg.get("text_mode")}). '
+         f'Judge STORY only — you may glance at the attached panel image but score narrative, not pixels. '
+         f'Read panel {pid} from "{paths["COMICJSON"]}": its .condition.scene, .bubbles, .caption, and the page beat. '
+         f'Score 0-5: narrative_beat_fidelity, composition_story. Output ONLY one JSON line: '
+         '{"narrative_beat_fidelity":n,"composition_story":n,"timed_out":false}')
+    r = sh(["codex", "exec", p, "-i", img, "--sandbox", "read-only", "-c", f"model_reasoning_effort={args.review_effort}", "--skip-git-repo-check"], args.review_timeout)
     return extract_json((getattr(r, "stdout", "") or "") + (getattr(r, "stderr", "") or ""), required_key="narrative_beat_fidelity") or {"timed_out": True}
 
-def review_gemini(paths, pid, img, idref, baked, args):
+def review_gemini(paths, pid, img, idref, id_desc, baked, args):
     shape = _vis_json(baked)
-    p = (f"@{img} @{idref} @{paths['BIBLE']} Review this ARIS comic panel ({pid}) vs the identity ref + ART_BIBLE. "
-         f"Score 0-5. baked={baked}: if baked, observed_literals = verbatim transcription of every number/label/code you can READ (never guess); "
-         f"content_corruption_present = any garbled/illegal token.{ANATOMY} Output ONLY one JSON line: {shape}")
+    p = (f"@{img} @{idref} @{paths['BIBLE']} Review this ARIS comic panel ({pid}). Image #1 is the panel; image #2 is the "
+         f"identity reference ({id_desc}) — judge each character against it. Honor ART_BIBLE. Score 0-5. baked={baked}: if baked, "
+         f"observed_literals = verbatim transcription of every number/label/code you can READ (never guess); content_corruption_present = "
+         f"any garbled/illegal token.{ANATOMY} Output ONLY one JSON line: {shape}")
     r = sh(["gemini", "--model", "auto-gemini-3", "-p", p], args.review_timeout)
     return extract_json((getattr(r, "stdout", "") or "") + (getattr(r, "stderr", "") or ""), required_key="identity_consistency") or {"timed_out": True}
 
-def review_codex(paths, pid, img, idref, baked, args):
+def review_codex(paths, pid, img, idref, id_desc, bible_excerpt, baked, args):
+    # NOTE: codex `-i` is --image; do NOT pass ART_BIBLE.md (a .md) via -i. Inline the style rules as text instead;
+    # attach only the two images (panel + identity ref).
     shape = _vis_json(baked)
-    p = (f"Review this ARIS comic panel ({pid}) vs the identity ref + ART_BIBLE (attached images). Score 0-5. "
-         f"baked={baked}: if baked, observed_literals = verbatim transcription of numbers/labels/code you can READ (never guess); "
-         f"content_corruption_present = garbled tokens.{ANATOMY} Output ONLY one JSON line: {shape}")
-    r = sh(["codex", "exec", p, "-i", img, "-i", idref, "-i", paths["BIBLE"],
+    p = (f"Review this ARIS comic panel ({pid}). Image #1 is the panel; image #2 is the identity reference "
+         f"({id_desc}) — judge each character against it. Score 0-5. baked={baked}: if baked, observed_literals = verbatim "
+         f"transcription of numbers/labels/code you can READ (never guess); content_corruption_present = garbled tokens.{ANATOMY} "
+         f"Style rules to honor:\n{bible_excerpt}\nOutput ONLY one JSON line: {shape}")
+    r = sh(["codex", "exec", p, "-i", img, "-i", idref,
             "--sandbox", "read-only", "-c", f"model_reasoning_effort={args.review_effort}", "--skip-git-repo-check"], args.review_timeout)
     return extract_json((getattr(r, "stdout", "") or "") + (getattr(r, "stderr", "") or ""), required_key="identity_consistency") or {"timed_out": True}
 
@@ -349,9 +388,11 @@ def panel_gate(paths, pid, gen, cfg, ai, args):
     img = abs_img(paths, gen["image_path"])
     id_rel = cfg.get("identity_ref") if cfg.get("identity_ref") and REL_PNG_RE.match(cfg.get("identity_ref") or "") and ".." not in (cfg.get("identity_ref") or "") else ""
     idref = f"{paths['PROJ']}/{id_rel}" if id_rel else paths["CANON"]
-    cc = review_cc(paths, pid, cfg, args)
-    gem = review_gemini(paths, pid, img, idref, baked, args)
-    cdx = review_codex(paths, pid, img, idref, baked, args)
+    id_desc = _id_desc(cfg)
+    bible = (open(paths["BIBLE"], encoding="utf-8").read()[:2500] if os.path.exists(paths["BIBLE"]) else "")
+    cc = clamp_scores(review_cc(paths, pid, cfg, img, args))
+    gem = clamp_scores(review_gemini(paths, pid, img, idref, id_desc, baked, args))
+    cdx = clamp_scores(review_codex(paths, pid, img, idref, id_desc, bible, baked, args))
     return {"cc": cc, "gem": gem, "cdx": cdx, "verdict": panel_verdict(cc, gem, cdx, cfg)}
 
 # ── persistence: wiki nodes + comic.json (reimplemented as direct file writes; engine 311-330) ──
@@ -391,19 +432,23 @@ def run_assembly(paths, page, kept, cfg_map, page_mode, args):
             f'Read the page narration/beat from "{paths["COMICJSON"]}". Score 0-5. Output ONLY one JSON line: '
             '{"reading_order":n,"page_rhythm":n}')
     cc_r = sh(["codex", "exec", cc_p, "--sandbox", "read-only", "-c", f"model_reasoning_effort={args.review_effort}", "--skip-git-repo-check"], args.review_timeout)
-    cc = extract_json((getattr(cc_r, "stdout", "") or ""), required_key="reading_order") or {"timed_out": True}
+    cc = clamp_scores(extract_json((getattr(cc_r, "stdout", "") or "") + (getattr(cc_r, "stderr", "") or ""), required_key="reading_order") or {"timed_out": True})
     refs = []
     for k in kept:
         r = (cfg_map.get(k["pid"]) or {}).get("identity_ref")
         refs.append(f"{paths['PROJ']}/{r}" if r and REL_PNG_RE.match(r) and ".." not in r else paths["CANON"])
     refs = list(dict.fromkeys(refs))[:3]
     text_key = '"baked_text_legibility":n' if page_mode == "baked" else '"text_fits_safezone":n'
-    gp = (" ".join(f"@{r}" for r in refs) + f" These side-by-side comic panels [{ids}]: {listimgs} . Judge cross-panel DRIFT "
-          "(same character across panels where they appear + vs the ref = identity; same pixel style = style; "
-          "different cast/world is BY DESIGN, never drift). Output ONLY one JSON line: "
-          '{"cross_panel_identity":n,"cross_panel_style":n,' + text_key + ',"drift_panels":["id"]}')
+    # CAST-AWARE (engine 405-414): tell the reviewer each panel's INTENDED cast so a designed cast/world
+    # difference (disjoint casts, warm vs cyber world) is never mis-flagged as drift.
+    cast_lines = " ".join(f"{k['pid']}=「{((cfg_map.get(k['pid']) or {}).get('characters') or (cfg_map.get(k['pid']) or {}).get('identity_desc') or 'the duo')[:90]}」" for k in kept)
+    gp = (" ".join(f"@{r}" for r in refs) + f" These side-by-side comic panels [{ids}]: {listimgs} . Intended cast per panel: {cast_lines} . "
+          "Judge cross-panel DRIFT (same character across the panels where they appear + vs the ref = identity — a panel simply "
+          "NOT containing a character is design, NEVER a penalty; same pixel style = style — warm vs cyber world is design, not drift). "
+          "Output ONLY one JSON line: "
+          '{"cross_panel_identity":n,"cross_panel_style":n,' + text_key + ',"drift_panels":["id of a panel with a real identity break or style collapse, else omit"]}')
     g_r = sh(["gemini", "--model", "auto-gemini-3", "-p", gp], args.review_timeout)
-    gem = extract_json((getattr(g_r, "stdout", "") or ""), required_key="cross_panel_identity") or {"timed_out": True}
+    gem = clamp_scores(extract_json((getattr(g_r, "stdout", "") or "") + (getattr(g_r, "stderr", "") or ""), required_key="cross_panel_identity") or {"timed_out": True})
     return {"cc": cc, "gem": gem, "verdict": assembly_verdict(cc, gem, page_mode)}
 
 # ── main ──
@@ -470,12 +515,12 @@ def main():
             log(f"  panel_gate {pid}#{ai}: {gate['verdict']['v']} — {gate['verdict']['reason']}")
             if gate["verdict"]["v"] == "keep":
                 update_comic_json(paths, comic, pid, gen, ai)
-                kept.append({"pid": pid, "image_path": gen["image_path"], "attempt": ai, "needs_human": False}); done = True; break
+                kept.append({"pid": pid, "image_path": gen["image_path"], "image_sha256": gen.get("image_sha256"), "attempt": ai, "needs_human": False}); done = True; break
             if gate["verdict"].get("invariant"): pending[pid] = pending.get(pid, []) + [gate["verdict"]["invariant"]]
         if throttled: break
         if not done:
             if last_gen:
-                kept.append({"pid": pid, "image_path": last_gen["image_path"], "attempt": total_by[pid], "needs_human": True}); flagged.append(pid)
+                kept.append({"pid": pid, "image_path": last_gen["image_path"], "image_sha256": last_gen.get("image_sha256"), "attempt": total_by[pid], "needs_human": True}); flagged.append(pid)
                 log(f"  ⚑ {pid} exhausted {args.max_total} attempts → best-so-far flagged for HUMAN, continuing")
             else:
                 escalated = escalated or {"pid": pid, "why": "no panel ever generated (image_gen down?)"}; break
@@ -510,11 +555,11 @@ def main():
                 write_wiki(paths, pid, gen, gate, ai)
                 if gate["verdict"]["v"] == "keep":
                     idx = next((i for i, k in enumerate(kept) if k["pid"] == pid), -1)
-                    if idx >= 0: kept[idx] = {"pid": pid, "image_path": gen["image_path"], "attempt": ai, "needs_human": False}
+                    if idx >= 0: kept[idx] = {"pid": pid, "image_path": gen["image_path"], "image_sha256": gen.get("image_sha256"), "attempt": ai, "needs_human": False}
                     update_comic_json(paths, comic, pid, gen, ai); any_fixed = True
             asm_round += 1
             if throttled or not any_fixed:
-                if not any_fixed: flagged.append(f"{args.page}:assembly")
+                if not throttled and not any_fixed: flagged.append(f"{args.page}:assembly")  # throttle breaks before human-flag (engine 461-462)
                 break
 
     any_needs_human = any(k["needs_human"] for k in kept) or len(flagged) > 0
