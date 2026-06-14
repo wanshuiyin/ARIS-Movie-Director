@@ -15,3 +15,43 @@ __pycache__/
 **/panels/*_warm_lab_*.png
 **/panels/*_cleaned*.png
 **/panels/*_textfix*.png
+
+# method-figure generation scratch — keep ONLY the final figure (docs/method_figure.png),
+# the winning bake (figassets/method_codexmcp_v4.png), the blueprint, and the identity refs.
+# The figure's real record lives in skills/method-figure/examples/method_figure/trace.jsonl.
+docs/figassets/method_codexmcp_v1.png
+docs/figassets/method_codexmcp_v2.png
+docs/figassets/method_codexmcp_v3.png
+docs/figassets/method_figure_final.png
+docs/figassets/method_figure_redraw.png
+docs/figassets/method_figure_redraw.svg
+docs/figassets/method_image2_test.png
+docs/figassets/method_image2_real.png
+docs/figassets/method_condition.svg
+docs/figassets/method_skeleton.svg
+docs/figassets/method_overlay.svg
+docs/figassets/condition_cond.png
+docs/figassets/skeleton_cond.png
+
+# comic spiral attempt frames — only the comic.json-referenced SXX_panel_*.png are tracked.
+# These are retried-away bakes; the 174 wiki nodes + GENERATION_RETRO.md ARE the record, not the pixels.
+**/panels/*_cover_base_*.png
+**/panels/*_repaired*.png
+**/panels/*_render_v*.png
+**/panels/*_local*.png
+**/panels/*_imagegen*.png
+**/panels/_generated/
+**/panels/generated/
+examples/comic_m3_audit/panels/S01_panel_a03.png
+examples/comic_m3_audit/panels/S03_panel_a01.png
+examples/comic_m3_audit/panels/S03_panel_a03.png
+examples/comic_m3_audit/panels/S09_panel_a01.png
+examples/comic_m3_audit/panels/S10_panel_a01.png
+examples/comic_m3_audit/panels/S10_panel_a02.png
+examples/comic_m3_audit/panels/S10_panel_a03.png
+examples/comic_m3_audit/panels/S13_panel_a02.png
+examples/comic_m3_audit/panels/S17_panel_a01.png
+examples/comic_m3_audit/panels/S22_panel_a02.png
+# one-off local render scripts (the tracked gen_*.py blueprint builders are the real pipeline)
+examples/comic_m3_audit/gen/render_s19_local_panel.py
+examples/comic_m3_audit/gen/render_s20_cold_mug_panel.py
