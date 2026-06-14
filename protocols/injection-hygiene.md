@@ -110,7 +110,7 @@ filler-gap between key tokens defeats "ignore all **PRIOR** instructions" evasio
   not a correctness verdict.
 - `fan-out-pattern.md` — fan-out children must not write wiki/memory directly;
   the parent commits after the jury, and content is scanned at that seam.
-- `experiment-integrity.md` / `reviewer-independence.md` — a poisoned entry must
+- `artifact-integrity.md` / `reviewer-independence.md` — a poisoned entry must
   never be able to forge a reviewer verdict into a reviewer's context.
 
 > Pattern set adapted from [`NousResearch/hermes-agent`](https://github.com/NousResearch/hermes-agent)

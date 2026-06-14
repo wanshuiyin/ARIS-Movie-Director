@@ -177,3 +177,10 @@ critiques, paths redacted) — the canonical exhibit of *how detailed a conditio
   the bake for paper zero-tolerance text. Default stays `baked` (fully generated).
 - 🔭 a Claude-vision reviewer inside the orchestrator (currently the automated panel is Gemini + Codex +
   the deterministic diff; Claude — the calling agent — gives the structural sign-off on the converged figure).
+
+## Protocols (governance contracts this skill honors)
+- [`reviewer-independence`](../../protocols/reviewer-independence.md) — reviewers blind-transcribe from the image only; the generator (Codex image_gen) ≠ the visual judges.
+- [`acceptance-gate`](../../protocols/acceptance-gate.md) — the loop drives, can't acquit: ACCEPT needs the deterministic content-diff clean + Gemini approve + Codex no-veto + Claude structural sign-off.
+- [`artifact-integrity`](../../protocols/artifact-integrity.md) — the baker doesn't judge its own figure's numbers; the blueprint is ground truth, verified by the blind diff.
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`; never downgrade.
+- [`review-tracing`](../../protocols/review-tracing.md) — every round's reviewer verdicts are logged to `trace.jsonl`.

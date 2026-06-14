@@ -1,4 +1,4 @@
-# Experiment Integrity Protocol
+# Artifact Integrity Protocol
 
 ## Core Principle
 

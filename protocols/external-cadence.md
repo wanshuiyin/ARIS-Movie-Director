@@ -228,5 +228,5 @@ One-liner: **a heartbeat may say "keep going," never "good enough."**
   terminate in the identical cross-model jury.
 - `reviewer-independence.md` — why wrapping a multi-round review in an
   external timer breaks reviewer thread/memory continuity.
-- `experiment-integrity.md` — the executor never judges its own
+- `artifact-integrity.md` — the executor never judges its own
   experiment; a scheduled poll never upgrades to an integrity verdict.

@@ -15,7 +15,7 @@ skill. Every such loop terminates on a gate it evaluates each iteration:
 in. The loop body can be all Claude; the **gate** is what this contract
 governs.
 
-This is `reviewer-independence.md` and `experiment-integrity.md` applied
+This is `reviewer-independence.md` and `artifact-integrity.md` applied
 to the temporal/iterative case: those two cover single-shot review and
 single-shot experiment judging; this one covers the *recurring verdict*
 a loop makes on itself, round after round, with no human in between.
@@ -298,7 +298,7 @@ regardless of how many rounds it runs or how confident it sounds.
 
 - `reviewer-independence.md` — the single-shot form: executor never
   filters the reviewer's inputs. Type-B gates inherit this in full.
-- `experiment-integrity.md` — the experiment form: the model that writes
+- `artifact-integrity.md` — the experiment form: the model that writes
   experiment code must not judge its integrity. `/experiment-audit`'s
   Type-B verdict is the loop instance of this rule.
 - `reviewer-routing.md` — where Type-B gates send their verdict (codex

@@ -47,3 +47,10 @@ python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --p
 Your authoring agent can be any coding agent — e.g. the
 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project — but this skill is
 self-contained and does not depend on it at runtime.
+
+## Protocols (governance contracts this skill honors)
+- [`reviewer-independence`](../../protocols/reviewer-independence.md) — every cross-layer gate's reviewer (Codex/Gemini) gets file paths + an `=== EXTERNAL CONTEXT (advisory) ===` fence, never the author's interpretation.
+- [`acceptance-gate`](../../protocols/acceptance-gate.md) — each layer's gate can drive but can't acquit; user approval is the hard gate for intent/outline (never proceed without it).
+- [`artifact-integrity`](../../protocols/artifact-integrity.md) — the agent that authors a layer doesn't judge its own layer's correctness; that's the cross-layer gate (a different model family).
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`; never downgrade.
+- [`review-tracing`](../../protocols/review-tracing.md) · [`output-versioning`](../../protocols/output-versioning.md) · [`resumable-runs`](../../protocols/resumable-runs.md) · [`external-cadence`](../../protocols/external-cadence.md) — trace every gate; version asset refs (`_v{NNN}` + `supersedes`); the orchestrator is resumable + its scheduled runs are fenced.

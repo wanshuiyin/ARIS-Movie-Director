@@ -52,3 +52,10 @@ deterministic verdict, anatomy single-vote veto, throttle → fresh-run): [`../.
   serializes, but one runner per project).
 - **Don't** resume after an image_gen throttle — launch a FRESH run for the remaining panels.
 - **Don't** treat a `needs_human`/flagged panel as shippable.
+
+## Protocols (governance contracts this skill honors)
+- [`reviewer-independence`](../../protocols/reviewer-independence.md) — reviewers get file paths only; the executor (Codex image_gen) ≠ the visual judges (Gemini + Codex vision).
+- [`acceptance-gate`](../../protocols/acceptance-gate.md) — the loop can DRIVE but can't ACQUIT: a KEEP needs the deterministic token-diff clean **and** Gemini+Codex visual pass; the generator family never self-acquits; Claude gives the final structural sign-off.
+- [`artifact-integrity`](../../protocols/artifact-integrity.md) — the model that bakes a frame does not judge its own faithfulness; numbers are *verified*, never originated.
+- [`review-tracing`](../../protocols/review-tracing.md) — every reviewer's prompt+response is saved (`trace.jsonl`) so each verdict is auditable.
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`; never downgrade the reviewer tier.
