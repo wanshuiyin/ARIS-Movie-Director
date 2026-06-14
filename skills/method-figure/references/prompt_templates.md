@@ -43,8 +43,10 @@ the labels "should" say — transcribe what you ACTUALLY see, and hunt for what 
 Return STRICT JSON (the schema in references/reviewer_protocol.md): verdict, scores{text_fidelity,
 arrow_topology, layout_readability, character_identity, style_fit} 0-5, observed_tokens[] (verbatim),
 observed_edges[], identity_audit[], anomalies[] (floating/pasted labels, artifacts, stray lines, duplicated
-characters, invented nodes), blockers[] (concrete image-gen-fixable), nice_to_have[], positive_invariants[].
-A vague "looks good" is rejected — list the transcription.
+characters, invented nodes), character_anatomy[] + anatomy_defect (if the figure has characters, ENUMERATE
+each one's visible hands and set anatomy_defect=true on any wrong count / 3rd / floating / merged hand —
+a single-reviewer veto), blockers[] (concrete image-gen-fixable), nice_to_have[], positive_invariants[].
+A vague "looks good" is rejected — list the transcription, and COUNT the hands (don't eyeball them).
 ```
 
 ## C. Notes

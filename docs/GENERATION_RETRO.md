@@ -69,8 +69,10 @@ assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickabl
   the laptop screen is now dark and the traceback lives in a separate floating CYAN HOLOGRAPHIC panel
   (which also fits the story: the two chibi are agents projected from the failed run). a04 → a06; cross-model
   gated (codex gpt-5.5 xhigh ‖ gemini-3) with explicit per-hand enumeration after a first gate (a05) lazily
-  mis-counted the hands. NOTE for the framework: the original panel_gate's literal-diff did NOT catch the
-  anatomy error (extra hand) — a hand/finger-count check is a candidate gate dimension.
+  mis-counted the hands. FRAMEWORK FIX (landed): the panel_gate's literal token-diff is blind to anatomy, so
+  an `anatomy_defect` dimension was added as a SINGLE-vote veto — reviewers must now ENUMERATE each
+  character's hands (not eyeball) — in both `packages/core/spiral_engine.js` (comic panel_gate) and the
+  method-figure reviewer protocol (`reviewer_protocol.md` + `run_spiral.py` + `prompt_templates.md`).
 
 ## Known weaknesses still standing (candidates for release)
 - **Wiki timestamps are placeholders.** `Date.now()`/`new Date()` are unavailable in the workflow

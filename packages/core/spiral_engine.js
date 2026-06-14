@@ -80,6 +80,11 @@ function panelVerdict(cc, gem, cdx, cfg = {}) {
   const disagree = Math.abs((gem?.identity_consistency ?? 0) - (cdx?.identity_consistency ?? 0))
   const styleOK = minStyle >= 4 || (minStyle >= 3 && maxStyle >= 4)   // soften subjective dims to one-reviewer strictness
   const compOK = minComp >= 4 || (minComp >= 3 && maxComp >= 4)
+  // ANATOMY veto (both modes — characters appear in html AND baked panels). A CLEAR anatomical error (wrong hand count,
+  // a 3rd/floating/duplicated/merged hand, fused fingers) is a SINGLE-vote veto: like content_corruption, one reviewer
+  // seeing it blocks KEEP no matter how high the beauty scores. (The literal token-diff is blind to anatomy — this closes
+  // the gap that let a 3-handed cover ship.) Reviewers leave it false/unset for character-less panels ⇒ fail-safe no-veto.
+  const anatomyDefect = gem?.anatomy_defect_present === true || cdx?.anatomy_defect_present === true
   const repair = cdx?.failure_mode_positive_invariant || gem?.failure_mode_positive_invariant || ''
   // ── TEXT-MODE-AWARE check (the §16.9 fork point; HARDENED after the cross-model engine review) ──
   //  html mode  : the image is TEXTLESS → require a clean SAFE-ZONE for HTML overlay, fail on ANY baked glyph.
@@ -123,8 +128,8 @@ function panelVerdict(cc, gem, cdx, cfg = {}) {
     textOK = safezone && !strayText
     textReason = `safezone=${safezone} stray=${strayText}`
   }
-  const reason = `[${mode}] narr=${narr} identity=${minIdent} style=${minStyle}/${maxStyle} comp=${minComp}/${maxComp} art(g/c)=${gemArt}/${cdxArt} ${textReason} disagreeId=${disagree}`
-  if (narr >= 4 && minIdent >= 4 && styleOK && compOK && !artifactBad && textOK && disagree < 2) {
+  const reason = `[${mode}] narr=${narr} identity=${minIdent} style=${minStyle}/${maxStyle} comp=${minComp}/${maxComp} art(g/c)=${gemArt}/${cdxArt} ${textReason} anatomyDefect=${anatomyDefect} disagreeId=${disagree}`
+  if (narr >= 4 && minIdent >= 4 && styleOK && compOK && !artifactBad && textOK && !anatomyDefect && disagree < 2) {
     return { v: 'keep', reason: 'KEEP — ' + reason, invariant: '' }
   }
   // everything else = retry the SAME panel with the repair invariant injected (no cross-panel rollback for seed-anchored comics)
@@ -158,6 +163,9 @@ const VIS_SCHEMA = { type: 'object', properties: {
   identity_consistency: SCORE, style_consistency: SCORE, composition_readability: SCORE,
   artifact_severity: SCORE, safezone_present: { type: 'boolean' }, stray_text_present: { type: 'boolean' },
   baked_text_quality: SCORE, observed_literals: { type: 'array', items: { type: 'string' } }, content_corruption_present: { type: 'boolean' },
+  // anatomy gate (added after the cover shipped a 3-handed chibi the literal-diff couldn't see): character_hand_count
+  // is a per-character enumeration ("blue:2","green:2") for the audit trail; anatomy_defect_present is a SINGLE-vote veto.
+  character_hand_count: { type: 'array', items: { type: 'string' } }, anatomy_defect_present: { type: 'boolean' },
   failure_mode_positive_invariant: { type: 'string' }, timed_out: { type: 'boolean' }, notes: { type: 'string' } } }
 const WIKI_SCHEMA = { type: 'object', required: ['wrote_nodes'], properties: { wrote_nodes: { type: 'array', items: { type: 'string' } }, failure_mode_id: { type: ['string', 'null'] } } }
 const ASM_CC_SCHEMA = { type: 'object', properties: { reading_order: SCORE, page_rhythm: SCORE, notes: { type: 'string' } } }
@@ -281,8 +289,8 @@ async function panelGate(pid, gen, cfg = {}, ai = 1) {
   // BLIND transcription (observed_literals) deterministically diffed against authored ground truth in JS, so reviewers must never
   // see the expected numbers (else they rubber-stamp). They also flag content_corruption_present (garbled/illegible glyphs).
   const gemJson = baked
-    ? `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"baked_text_quality\\":n,\\"observed_literals\\":[\\"...\\"],\\"content_corruption_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"}。baked_text_quality=气泡对白文字是否清晰可读不乱码;observed_literals=逐字转录你能在画中【技术图】里确实看清的数字/标签/代码token(如 +6.2、jsonschema),只转录看清的,严禁猜测或补全;content_corruption_present=技术图里是否有明显乱码/残缺/不合法的数字或代码。`
-    : `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"safezone_present\\":true/false,\\"stray_text_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"}。safezone=有没有留干净文字区;stray_text=图里有没有冒出文字/字形。`
+    ? `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"baked_text_quality\\":n,\\"observed_literals\\":[\\"...\\"],\\"content_corruption_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"}。baked_text_quality=气泡对白文字是否清晰可读不乱码;observed_literals=逐字转录你能在画中【技术图】里确实看清的数字/标签/代码token(如 +6.2、jsonschema),只转录看清的,严禁猜测或补全;content_corruption_present=技术图里是否有明显乱码/残缺/不合法的数字或代码。另必须输出 \\"character_hand_count\\":[\\"blue:2\\",\\"green:2\\"](逐一数出画中每个角色可见的手数) 与 \\"anatomy_defect_present\\":true/false(任一角色手数≠2,或出现第三只手/悬浮手/重复手/融合多指等明显解剖错误,则为true;画中无角色则false)。`
+    : `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"safezone_present\\":true/false,\\"stray_text_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"}。safezone=有没有留干净文字区;stray_text=图里有没有冒出文字/字形。另必须输出 \\"character_hand_count\\":[\\"blue:2\\",\\"green:2\\"](逐一数出画中每个角色可见的手数) 与 \\"anatomy_defect_present\\":true/false(任一角色手数≠2,或出现第三只手/悬浮手/重复手/融合多指等明显解剖错误,则为true;画中无角色则false)。`
   const gem = agent([
     `You are the GEMINI VISUAL reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}, independent — do not consult other scores). Use watchdog-bounded CLI:`,
     '```bash',
@@ -293,8 +301,8 @@ async function panelGate(pid, gen, cfg = {}, ai = 1) {
   ].join('\n'), { label: `gate-gem:${pid}#${ai}`, phase: 'Panels', schema: VIS_SCHEMA })
 
   const cdxJson = baked
-    ? `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"baked_text_quality\\":n,\\"observed_literals\\":[\\"...\\"],\\"content_corruption_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"} (0-5)。baked_text_quality=气泡烤字是否清晰不乱码;observed_literals=逐字转录画中技术图你确实看清的数字/标签/代码,严禁猜测;content_corruption_present=有无明显乱码/残缺/不合法数字或代码。`
-    : `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"safezone_present\\":true/false,\\"stray_text_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"} (0-5)。`
+    ? `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"baked_text_quality\\":n,\\"observed_literals\\":[\\"...\\"],\\"content_corruption_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"} (0-5)。baked_text_quality=气泡烤字是否清晰不乱码;observed_literals=逐字转录画中技术图你确实看清的数字/标签/代码,严禁猜测;content_corruption_present=有无明显乱码/残缺/不合法数字或代码。另必须输出 \\"character_hand_count\\":[\\"blue:2\\",\\"green:2\\"](逐一数出画中每个角色可见的手数) 与 \\"anatomy_defect_present\\":true/false(任一角色手数≠2,或出现第三只手/悬浮手/重复手/融合多指等明显解剖错误,则为true;画中无角色则false)。`
+    : `{\\"identity_consistency\\":n,\\"style_consistency\\":n,\\"composition_readability\\":n,\\"artifact_severity\\":n,\\"safezone_present\\":true/false,\\"stray_text_present\\":true/false,\\"failure_mode_positive_invariant\\":\\"...\\"} (0-5)。另必须输出 \\"character_hand_count\\":[\\"blue:2\\",\\"green:2\\"](逐一数出画中每个角色可见的手数) 与 \\"anatomy_defect_present\\":true/false(任一角色手数≠2,或第三只手/悬浮手/重复手/融合多指等明显解剖错误则true,无角色则false)。`
   const cdx = agent([
     `You are the CODEX VISUAL reviewer in ARIS comic panel_gate for ${pid} (mode=${mode}, independent SECOND visual model — covers what Gemini's eye misses). Use watchdog-bounded CLI (codex vision review is NOT image_gen, not rate-limited):`,
     '```bash',

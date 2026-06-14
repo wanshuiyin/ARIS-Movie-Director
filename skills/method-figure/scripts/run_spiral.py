@@ -101,9 +101,13 @@ Return ONLY strict JSON (no prose) with these keys:
 "observed_tokens":["...verbatim strings you can read..."],
 "observed_edges":[{{"from_label":"","to_label":"","direction":"forward"}}],
 "identity_audit":[{{"node":"","status":"MATCH|DRIFT","issue":""}}],
+"character_anatomy":[{{"char":"","hands_visible":2,"defect":"none|extra_hand|merged|wrong_count"}}],"anatomy_defect":false,
 "anomalies":["floating/pasted-looking labels, artifacts, stray lines, duplicated characters, invented nodes"],
 "blockers":["concrete image-gen-fixable instruction"],"nice_to_have":[],"positive_invariants":["what is right, keep it"]}}
-Scores are 0-5. A vague "looks good" is rejected — you MUST list observed_tokens."""
+Scores are 0-5. A vague "looks good" is rejected — you MUST list observed_tokens.
+If the figure contains characters/mascots, do NOT eyeball it: ENUMERATE each character's visible hands one by one,
+fill character_anatomy, and set anatomy_defect=true if ANY character has a wrong hand count (!=2), a third/floating/
+duplicated/merged hand, or fused/extra fingers (character_anatomy=[] and anatomy_defect=false if there are no characters)."""
 
 def run_codex(prompt, images, effort, timeout, logf, image_gen=False):
     cmd = ["codex", "exec", prompt]
@@ -202,12 +206,15 @@ def main():
         core_keys = ["text_fidelity", "arrow_topology", "layout_readability", "style_fit"] + (["character_identity"] if a.identity else [])
         core_ok = bool(gscores) and all(gscores.get(k, 0) >= minscore for k in core_keys)
         codex_block = (rc or {}).get("blockers", []); g_anom = (rg or {}).get("anomalies", [])
+        anatomy_defect = (rg or {}).get("anatomy_defect") is True or (rc or {}).get("anatomy_defect") is True  # single-reviewer veto (figures w/ characters)
         panel_clean = (both_parsed and diff.get("content_accurate") and gv == "approve" and cv == "approve"
-                       and core_ok and not codex_block and not g_anom)
+                       and core_ok and not codex_block and not g_anom and not anatomy_defect)
         # consolidate BLOCKERS only; carry positive_invariants
+        anatomy_chars = [c for r in (rg, rc) for c in (r or {}).get("character_anatomy", []) if isinstance(c, dict) and c.get("defect") not in (None, "none")]
         last_fixes = sorted(set((rg or {}).get("blockers", []) + codex_block +
                                 [f"render the missing token exactly: {t}" for t in diff.get("missing_tokens", [])[:12]] +
-                                [f"remove the anomaly: {x}" for x in diff.get("anomalies", [])[:8]]))
+                                [f"remove the anomaly: {x}" for x in diff.get("anomalies", [])[:8]] +
+                                ([f"fix anatomy: give {c.get('char','a character')} exactly two hands ({c.get('defect')})" for c in anatomy_chars[:4]] if anatomy_defect else [])))
         invariants = sorted(set(invariants + (rg or {}).get("positive_invariants", []) + (rc or {}).get("positive_invariants", []))) [:12]
         rec = {"round": rd, "blueprint_sha": sha(a.blueprint), "condition_sha": sha(cond_png), "generated_sha": sha(png),
                "reviewers": {"gemini": gv, "codex": cv}, "core_scores_ok": core_ok,
@@ -215,7 +222,7 @@ def main():
                              "unaccounted_tokens": diff.get("unaccounted_tokens", [])},
                "fixes": last_fixes, "decision": "accept_candidate" if panel_clean else ("retry" if rd < rounds else "escalate")}
         open(trace, "a").write(json.dumps(rec, ensure_ascii=False) + "\n")
-        log(f"round {rd}: gemini={gv} codex={cv} core_ok={core_ok} diff_clean={diff.get('content_accurate')} → {rec['decision']}")
+        log(f"round {rd}: gemini={gv} codex={cv} core_ok={core_ok} diff_clean={diff.get('content_accurate')} anatomy_ok={not anatomy_defect} → {rec['decision']}")
         if panel_clean:
             shutil.copy(png, os.path.join(a.out_dir, "figure.png"))
             shutil.copy(a.blueprint, os.path.join(a.out_dir, "blueprint.json"))

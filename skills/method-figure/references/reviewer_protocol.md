@@ -10,6 +10,12 @@ The panel is the gate. Its job is to make figure quality **objective**, not a vi
 2. **Negative-Space Audit.** Beyond "what's there", every reviewer must hunt for what does NOT belong:
    floating / pasted-looking labels, background artifacts, stray lines, duplicated characters, invented
    nodes. These go in `anomalies` and are a veto.
+   - **Character anatomy (when the figure has characters/mascots).** Do NOT eyeball "looks fine" — for EACH
+     character, ENUMERATE its visible hands one by one and report the count. A wrong hand count (≠2), a
+     third / floating / duplicated / merged hand, or fused/extra fingers is an `anatomy_defect` and is a
+     **single-reviewer veto** (one reviewer seeing it blocks ACCEPT, no matter how high the beauty scores).
+     This exists because a token/label diff is blind to anatomy — a 3-handed chibi once shipped past a gate
+     that "scored 2 hands" without counting.
 3. **The maker can't acquit alone.** Codex is the generation family. A Codex `approve` may *diagnose* or
    *veto* but can NEVER be the sole acquitter. ACCEPT requires **Gemini approve + Claude structural approve +
    the hard-diff empty**.
@@ -31,6 +37,8 @@ The panel is the gate. Its job is to make figure quality **objective**, not a vi
   "observed_tokens": ["...verbatim strings you can READ..."],
   "observed_edges": [{"from_label": "...", "to_label": "...", "direction": "forward|back", "label": "..."}],
   "identity_audit": [{"node_id": "gate", "status": "MATCH|DRIFT", "issue": "..."}],
+  "character_anatomy": [{"char": "blue executor", "hands_visible": 2, "defect": "none|extra_hand|merged|wrong_count"}],  // [] if no characters
+  "anatomy_defect": false,                                  // true if ANY character above has a defect — single-reviewer veto
   "anomalies": ["floating pasted-looking 'source' label", "duplicate reviewer chibi in Release", "..."],
   "blockers": ["concrete, image-gen-fixable instruction", "..."],
   "nice_to_have": ["non-blocking polish"],
@@ -44,8 +52,9 @@ every `positive_invariant` forward into the next bake prompt so good parts aren'
 `nice_to_have` during the loop — chasing polish makes it oscillate and never converge.
 
 ## Stop rule
-- **ACCEPT** iff: `content_diff` empty (no missing_tokens / wrong_edges / anomalies) AND Gemini `approve`
-  AND Claude structural `approve` AND every core score ≥ `acceptance.min_core_score` (default 4) AND no timeout.
+- **ACCEPT** iff: `content_diff` empty (no missing_tokens / wrong_edges / anomalies) AND **no reviewer set
+  `anatomy_defect`** AND Gemini `approve` AND Claude structural `approve` AND every core score ≥
+  `acceptance.min_core_score` (default 4) AND no timeout.
 - **RETRY** iff: blockers are prompt/condition-fixable AND `round < max_rounds` → re-bake re-asserting the
   locked `*_exact` labels + the consolidated blockers + the positive_invariants.
 - **ESCALATE** to human iff: the same root failure recurs `max_repeated_failure` rounds (default 2);
