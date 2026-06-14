@@ -62,8 +62,9 @@ Author your own input against [`schemas/blueprint.schema.json`](skills/method-fi
 to draw any figure — see the worked example in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
 **C · Make your own comic — input: a `comic.json` → output: panels + viewer**
-Author `examples/<name>/comic.json` (per panel: `scene` · `expected_literals` · `identity_ref`; copy
-`examples/comic_m3_audit/comic.json` as the template), then drive `packages/core/spiral_engine.js` through an
+Author `examples/<name>/comic.json` (per panel: `scene` · `expected_literals` · `identity_ref` — full field
+spec in **[`docs/comic-json.md`](docs/comic-json.md)** / [`schemas/comic.schema.json`](schemas/comic.schema.json);
+copy `examples/comic_m3_audit/comic.json` as a template), then drive `packages/core/spiral_engine.js` through an
 **agent / workflow runtime** (e.g. Claude Code's Workflow tool). Per panel it bakes with `codex image_gen`,
 runs the 3-model `panel_gate`, writes the wiki, and on KEEP projects to `comic.json` → the viewer.
 > It's a *workflow script* (not a bare `node` CLI): it needs the runtime that supplies the `codex`/`gemini`
@@ -98,9 +99,9 @@ token-diff over reviewers who are never shown the expected values.
 
 - **packages/** — the framework runtime (core spiral, gates, conditioning, viewer)
 - **protocols/** — the cross-model review / governance contracts (framework-owned)
-- **schemas/** — versioned IR + wiki node/edge schemas (`node_schema.json`, `edge_schema.json`)
+- **schemas/** — versioned IR + wiki schemas (`comic.schema.json`, `node_schema.json`, `edge_schema.json`)
 - **cli/** — `validate_wiki.py` (the stdlib release gate for a project's wiki)
-- **docs/** — `architecture.md` (SSOT), `spiral-runtime.md`, `artifact-pipeline.md`, `GENERATION_RETRO.md`
+- **docs/** — `comic-json.md` (the authored-input spec), `architecture.md` (SSOT), `spiral-runtime.md`, `GENERATION_RETRO.md`
 - **examples/comic_m3_audit/** — the reference comic: `comic.json` IR, `gen/` blueprint scripts,
   `panels/` baked art, `wiki/` the 198-node generation trace, `outputs/` the built viewer
 

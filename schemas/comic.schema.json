@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wanshuiyin/ARIS-Movie-Director/schemas/comic.schema.json",
+  "title": "comic-ir/1.0 — the authored comic project IR",
+  "description": "See docs/comic-json.md. You author pages[] + each panel's condition{} + render fields; the spiral engine fills image_path/active_attempt_id/wiki_node_id. Lenient (additionalProperties allowed) so _notes/meta/ui_tokens pass.",
+  "type": "object",
+  "required": ["schema_version", "comic_id", "defaults", "pages", "panels"],
+  "properties": {
+    "schema_version": {"const": "comic-ir/1.0"},
+    "comic_id": {"type": "string", "minLength": 1},
+    "asset_root": {"type": "string"},
+    "defaults": {
+      "type": "object",
+      "required": ["text_mode"],
+      "properties": {
+        "text_mode": {"enum": ["html", "baked", "code"]},
+        "default_locale": {"enum": ["en", "zh"]},
+        "panels_per_page_cap": {"type": "integer", "minimum": 1},
+        "nav_default": {"type": "string"},
+        "pixel_rendering": {"type": "boolean"}
+      }
+    },
+    "identity_refs": {"type": "object"},
+    "ui_tokens": {"type": "object"},
+    "meta": {"type": "object"},
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "panel_ids"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["cover", "single", "grid", "grid2x2", "feature", "finale"]},
+          "panel_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "beat": {"type": ["string", "null"]},
+          "beat_title": {"$ref": "#/$defs/loc"},
+          "narration": {"$ref": "#/$defs/loc"},
+          "skill": {"type": "string"},
+          "title": {"$ref": "#/$defs/loc"},
+          "links": {"type": "array", "items": {
+            "type": "object", "required": ["url"],
+            "properties": {"label": {"$ref": "#/$defs/loc"}, "url": {"type": "string", "pattern": "^https://"}}}}
+        },
+        "allOf": [
+          {"if": {"properties": {"type": {"const": "grid2x2"}}},
+           "then": {"properties": {"panel_ids": {"minItems": 4, "maxItems": 4}}}}
+        ]
+      }
+    },
+    "panels": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "image_path": {"type": "string", "pattern": "\\.(png|jpe?g|webp)$",
+            "description": "engine-filled; project-relative, no absolute path, no '..'"},
+          "active_attempt_id": {"type": "string"},
+          "wiki_node_id": {"type": "string"},
+          "text_mode": {"enum": ["html", "baked", "code"]},
+          "crop": {
+            "type": "object",
+            "properties": {
+              "shape": {"enum": ["hero", "wide", "square"]},
+              "position": {"type": "array", "minItems": 2, "maxItems": 2,
+                "items": {"type": "number", "minimum": 0, "maximum": 1}},
+              "zoom": {"type": "number", "minimum": 1}
+            }
+          },
+          "safe_zones": {"type": "array", "items": {
+            "type": "object", "required": ["id"],
+            "properties": {"id": {"type": "string"},
+              "x": {"type": "number"}, "y": {"type": "number"}, "w": {"type": "number"}, "h": {"type": "number"}}}},
+          "bubbles": {"type": "array", "items": {
+            "type": "object", "required": ["text"],
+            "properties": {
+              "speaker": {"type": "string", "description": "researcher | executor | reviewer"},
+              "style": {"type": "string", "description": "say | shout | terse | thought | whisper (extensible)"},
+              "text": {"$ref": "#/$defs/loc"},
+              "anchor": {"type": "string", "description": "must be one of this panel's safe_zone ids"}
+            }}},
+          "overlays": {"type": "array"},
+          "caption": {"$ref": "#/$defs/loc"},
+          "condition": {
+            "type": "object",
+            "description": "what to GENERATE — read by the spiral engine to bake the panel",
+            "properties": {
+              "content_svg": {"type": "string", "description": "deterministic blueprint SVG = the content authority"},
+              "expected_literals": {"type": "array", "items": {"type": "string"},
+                "description": "REQUIRED (non-empty, ascii-tokenizable) when content_svg is set — the gate blind-diffs these"},
+              "world": {"type": "string", "description": "palette/world tag, e.g. warm | seam | dark"},
+              "identity_ref": {"type": "string"},
+              "identity_desc": {"type": "string"},
+              "characters": {"type": "string"},
+              "scene": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "loc": {
+      "description": "a localized string: a plain string, {zh,en}, or null",
+      "oneOf": [
+        {"type": "string"},
+        {"type": "null"},
+        {"type": "object", "properties": {"zh": {"type": "string"}, "en": {"type": "string"}}}
+      ]
+    }
+  }
+}
