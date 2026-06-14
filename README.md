@@ -6,7 +6,7 @@
 
 > Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — image-based today, **video next**.
 
-**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quickstart](#quickstart) · [🔬 How it works](#how-it-works) · [📝 Author your own](skills/comic-director/references/comic_authoring.md) · [🧩 Layout](#layout)
+**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quickstart](#quickstart) · [🔬 How it works](#how-it-works) · [📝 Author your own](skills/comic-director/references/authored_source_of_truth.md) · [🧩 Layout](#layout)
 
 [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
@@ -83,7 +83,9 @@ Needs the **`codex` and `gemini` CLIs** on PATH (the cross-model gate + the bake
 **C · Make your own movie — input: a `comic.json` → output: frames + viewer**
 You don't hand-write `comic.json` — give your agent a fuzzy idea and let it author the IR (your agent can be
 any coding agent, e.g. the **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project**)
-(idea → `comic_brief` → Step-0 → `comic.json`; see **[`comic_authoring.md`](skills/comic-director/references/comic_authoring.md)**;
+following the **Phase-1 SOP** (asset library → outline → storyboard → `comic.json`):
+**[`authored_source_of_truth.md`](skills/comic-director/references/authored_source_of_truth.md)**
+(field mapping in [`comic_authoring.md`](skills/comic-director/references/comic_authoring.md);
 fields in [`docs/comic-json.md`](docs/comic-json.md) / [`schemas/comic.schema.json`](schemas/comic.schema.json);
 copy `examples/comic_m3_audit/comic.json` as a template). Then run the spiral — **one command**, like the figure path:
 ```bash

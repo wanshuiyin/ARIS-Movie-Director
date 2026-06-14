@@ -10,12 +10,20 @@ frame, render a deterministic content-SVG blueprint → bake a pixel-art frame (
 3-reviewer cross-model `panel_gate` → keep / retry → page assembly → projection. The movie twin of
 `method-figure` (figures); same philosophy, different output. (Image-based today; video-based is next.)
 
+## The two phases (the whole of Figure 1)
+- **Phase 1 — Authored Source of Truth** (asset library → outline → storyboard → `comic.json`): a followable
+  SOP your agent runs, so you don't reinvent it — **[`references/authored_source_of_truth.md`](references/authored_source_of_truth.md)**
+  (field mapping in [`comic_authoring.md`](references/comic_authoring.md)). The reference movie's Phase 1 is
+  the executed example: `examples/comic_m3_audit/gen/`.
+- **Phase 2/3 — the Audited Spiral + Release** (bake → 3-model gate → keep/retry/assembly → viewer): this
+  skill's [`scripts/run_comic.py`](scripts/run_comic.py).
+
 ## Input contract / who decides WHAT, who only renders
-This skill is **render + verify**. The contract boundary is **`comic.json`**.
+This skill is **author (Phase 1) then render + verify (Phase 2/3)**. The contract boundary is **`comic.json`**.
 - **Upstream (your agent) owns the semantics** — the story, panels, scenes, dialogue, the per-panel
-  `condition` (content_svg + the verbatim `expected_literals`), identity refs. See
-  [`references/comic_authoring.md`](references/comic_authoring.md): a fuzzy idea → `comic_brief`
-  ([`schemas/comic_brief.schema.json`](schemas/comic_brief.schema.json)) → Step-0 → `comic.json`. You do
+  `condition` (content_svg + the verbatim `expected_literals`), identity refs + the asset library. Run the
+  Phase-1 SOP ([`authored_source_of_truth.md`](references/authored_source_of_truth.md)): a fuzzy idea →
+  `comic_brief` ([`schemas/comic_brief.schema.json`](schemas/comic_brief.schema.json)) → comic.json. You do
   **not** hand-write JSON.
 - **comic-director owns** bake → 3-model gate → keep/retry/assembly, and writes back `image_path` /
   `active_attempt_id` / `wiki_node_id` on KEEP. It never invents a number; faithfulness is a deterministic
