@@ -64,11 +64,19 @@ to draw any figure — see the worked example in [`PROMPTS.md`](skills/method-fi
 **C · Make your own comic — input: a `comic.json` → output: panels + viewer**
 Author `examples/<name>/comic.json` (per panel: `scene` · `expected_literals` · `identity_ref` — full field
 spec in **[`docs/comic-json.md`](docs/comic-json.md)** / [`schemas/comic.schema.json`](schemas/comic.schema.json);
-copy `examples/comic_m3_audit/comic.json` as a template), then drive `packages/core/spiral_engine.js` through an
-**agent / workflow runtime** (e.g. Claude Code's Workflow tool). Per panel it bakes with `codex image_gen`,
-runs the 3-model `panel_gate`, writes the wiki, and on KEEP projects to `comic.json` → the viewer.
-> It's a *workflow script* (not a bare `node` CLI): it needs the runtime that supplies the `codex`/`gemini`
-> calls. See [`docs/spiral-runtime.md`](docs/spiral-runtime.md).
+copy `examples/comic_m3_audit/comic.json` as a template), then **launch the spiral** through an
+**agent / workflow runtime** (e.g. Claude Code's Workflow tool). It's a *workflow script*, **not a shell
+command** — the runtime supplies the `codex image_gen` bake + the `codex`/`gemini` gate:
+```js
+// In Claude Code, ask: "generate panels S01,S02 for examples/mycomic" — which issues:
+Workflow({ scriptPath: "packages/core/spiral_engine.js",
+           args: { projectRoot: "/ABS/PATH/examples/mycomic", panelIds: "S01,S02" } })
+```
+```bash
+python3 packages/viewer/build_comic.py examples/mycomic   # then (re)build the viewer from the kept panels
+```
+Per panel it bakes with `codex image_gen`, runs the 3-model `panel_gate`, writes the wiki, and on KEEP
+projects to `comic.json`. Full launch args + runtime behavior: **[`docs/spiral-runtime.md`](docs/spiral-runtime.md)**.
 >
 > **image_gen throttling:** if a bake is rate-limited mid-run the engine stops cleanly and returns
 > `escalated.fresh_run_required = true`. After cooldown, launch a **fresh** run for the remaining panels —
