@@ -6,7 +6,7 @@ visual stories) with **cross-model adversarial review**, a **persistent research
 
 The framework knows nothing about any particular story — a project plugs in via
 `examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a 24-panel
-pixel-art comic about an autonomous research run, and ships the **real generation trace** (174 wiki
+pixel-art comic about an autonomous research run, and ships the **real generation trace** (198 wiki
 nodes) as proof the multi-agent loop actually ran.
 
 > **▶ [Read the interactive comic in your browser](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/)** — flip through all 19 pages of the cross-model-audited reference run.
@@ -34,6 +34,44 @@ nodes) as proof the multi-agent loop actually ran.
 > (Claude ‖ Gemini-3 ‖ GPT-5.5) until all three APPROVED. The **exact prompt sequence that baked this
 > image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference:
 > [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
+
+## Quickstart
+
+This framework produces two things — a **character-consistent comic** and a **research/method figure**.
+Pick the path for the output you want.
+
+**A · See the reference comic — zero setup, no API**
+```bash
+python3 cli/validate_wiki.py examples/comic_m3_audit          # verify the shipped trace -> PASS (198 nodes, 26 edges)
+python3 packages/viewer/build_comic.py examples/comic_m3_audit   # (re)build the single-file viewer from comic.json + panels
+open  examples/comic_m3_audit/outputs/index.html
+```
+…or just open the hosted one: **https://wanshuiyin.github.io/ARIS-Movie-Director/comic/**
+
+**B · Make a method figure — input: a blueprint → output: `figure.png`**
+One command runs the whole spiral (render condition → `gpt-image-2` bake → 3-model gate → retry until clean):
+```bash
+python3 skills/method-figure/scripts/run_spiral.py \
+    skills/method-figure/examples/method_figure/blueprint.json \
+    --identity docs/figassets/aris_identity_sheet.png \
+    --out-dir figures/method_figure/demo
+#  -> figures/method_figure/demo/figure.png   (+ trace.jsonl of every round)
+```
+Needs the **`codex` and `gemini` CLIs** on PATH (the cross-model gate + the bake) and headless Chrome.
+Author your own input against [`schemas/blueprint.schema.json`](skills/method-figure/schemas/blueprint.schema.json)
+to draw any figure — see the worked example in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
+
+**C · Make your own comic — input: a `comic.json` → output: panels + viewer**
+Author `examples/<name>/comic.json` (per panel: `scene` · `expected_literals` · `identity_ref`; copy
+`examples/comic_m3_audit/comic.json` as the template), then drive `packages/core/spiral_engine.js` through an
+**agent / workflow runtime** (e.g. Claude Code's Workflow tool). Per panel it bakes with `codex image_gen`,
+runs the 3-model `panel_gate`, writes the wiki, and on KEEP projects to `comic.json` → the viewer.
+> It's a *workflow script* (not a bare `node` CLI): it needs the runtime that supplies the `codex`/`gemini`
+> calls. See [`docs/spiral-runtime.md`](docs/spiral-runtime.md).
+>
+> **image_gen throttling:** if a bake is rate-limited mid-run the engine stops cleanly and returns
+> `escalated.fresh_run_required = true`. After cooldown, launch a **fresh** run for the remaining panels —
+> do **not** `resumeFromRunId` (it replays the cached throttle).
 
 ## How it works
 
@@ -64,25 +102,7 @@ token-diff over reviewers who are never shown the expected values.
 - **cli/** — `validate_wiki.py` (the stdlib release gate for a project's wiki)
 - **docs/** — `architecture.md` (SSOT), `spiral-runtime.md`, `artifact-pipeline.md`, `GENERATION_RETRO.md`
 - **examples/comic_m3_audit/** — the reference comic: `comic.json` IR, `gen/` blueprint scripts,
-  `panels/` baked art, `wiki/` the 174-node generation trace, `outputs/` the built viewer
-
-## Quickstart
-
-```bash
-# 1. validate the example's research-wiki trace (pure stdlib, no deps)
-python3 cli/validate_wiki.py examples/comic_m3_audit          # -> PASS (174 nodes, 26 edges)
-
-# 2. (re)build the single-file clickable viewer from comic.json + baked panels
-python3 packages/viewer/build_comic.py examples/comic_m3_audit
-open  examples/comic_m3_audit/outputs/index.html
-```
-
-Generating new panels drives `packages/core/spiral_engine.js` through a workflow runtime that can invoke
-the `codex` and `gemini` CLIs (cross-model gate) and `codex image_gen` (bake). See `docs/spiral-runtime.md`.
-
-> **Note on image_gen throttling:** if a bake is rate-limited mid-run the engine stops cleanly and returns
-> `escalated.fresh_run_required = true`. After the cooldown, launch a **fresh** run for the remaining
-> panels — do **not** `resumeFromRunId`, which would replay the cached throttle.
+  `panels/` baked art, `wiki/` the 198-node generation trace, `outputs/` the built viewer
 
 ## License
 

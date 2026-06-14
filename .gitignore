@@ -34,7 +34,7 @@ docs/figassets/condition_cond.png
 docs/figassets/skeleton_cond.png
 
 # comic spiral attempt frames — only the comic.json-referenced SXX_panel_*.png are tracked.
-# These are retried-away bakes; the 174 wiki nodes + GENERATION_RETRO.md ARE the record, not the pixels.
+# These are retried-away bakes; the 198 wiki nodes + GENERATION_RETRO.md ARE the record, not the pixels.
 **/panels/*_cover_base_*.png
 **/panels/*_repaired*.png
 **/panels/*_render_v*.png

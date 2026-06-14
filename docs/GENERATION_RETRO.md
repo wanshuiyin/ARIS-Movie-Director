@@ -14,10 +14,12 @@ is a single-vote veto) → write wiki nodes (attempt/review×3/decision/failure_
 cross-frame rollback (bounded: 4 attempts/panel, 6 rollbacks/run, then flag-for-human) → a page
 assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickable HTML viewer.
 
-## Empirical generation stats (extracted from the 174 wiki nodes)
-- 24 panels, **33 total attempts**, 18 first-try keeps, **6 panels needed retries**.
+## Empirical generation stats (extracted from the 198 wiki nodes, verified by cli/validate_wiki.py)
+- 24 panels, **37 total attempts**, 17 first-try keeps, **7 panels needed retries** (decisions: 25 keep ·
+  12 retry · 1 human-accept; 12 failure_mode nodes; 111 review nodes = 37 attempts × 3 reviewers).
 - Retry counts: **S10×4** (hero {"city":"Tok|yo"} crack + json.loads→ParseError + 0.66 — the hardest
-  literal set), S03×3 (cross-frame false-drift, see below), S01/S09/S13/S17 ×2.
+  literal set), **S01×4** (the cover, most-iterated), S03×3 (cross-frame false-drift, see below),
+  S22×3, S09/S13/S17 ×2.
 - S10 a01/a02/a03 were each vetoed by **content_corruption_present=true from BOTH codex and gemini**
   (garbled baked text) — the deterministic veto worked exactly as designed and drove 3 re-bakes.
 - Every attempt has a full 3-reviewer record (cc/codex/gemini) with blind observed_literals + 5-dim
@@ -59,7 +61,7 @@ assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickabl
 
 ## Post-run polish (manual, recorded here — NOT faked into the engine trace)
 - **Cover (S01) re-baked for two defects the original run shipped.** The 24-panel spiral run is the
-  honest engine trace (the 174 wiki nodes); this fix happened AFTER it, by hand via the codex-MCP
+  honest engine trace (the 198 wiki nodes); this fix happened AFTER it, by hand via the codex-MCP
   image_gen loop (same discipline as the README figure), so it is logged HERE rather than as a synthetic
   spiral node — authoring a fake "attempt/decision" node into the engine trace would undermine the very
   honesty the trace exists to prove. The fixes: (1) the green reviewer chibi had THREE hands (the brief
@@ -76,7 +78,7 @@ assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickabl
 
 ## Known weaknesses still standing (candidates for release)
 - **Wiki timestamps are placeholders.** `Date.now()`/`new Date()` are unavailable in the workflow
-  sandbox (they'd break resume determinism), so all 174 nodes share one of two hardcoded dates. The
+  sandbox (they'd break resume determinism), so all 198 nodes share one of two hardcoded dates. The
   "temporal trace" is really an attempt-id ordering, not a real timeline. A real timestamp could be
   passed in via `args` at launch and stamped onto nodes.
 - **Single-file viewer is 55.8 MB** (24 base64-inlined PNGs). Will be slow on GitHub Pages and near
