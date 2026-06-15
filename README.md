@@ -6,7 +6,7 @@
 
 > Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — image-based today, **video next**.
 
-**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quick Start](#quick-start) · [🔄 Workflows](#workflows) · [📝 Make your own](skills/movie-pipeline/SKILL.md) · [🧩 Layout](#layout) · [🤝 Contributing](CONTRIBUTING.md)
+**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quick Start](#quick-start) · [🔄 Workflows](#workflows) · [📝 Make your own](skills/movie-pipeline/SKILL.md) · [🧩 Layout](#layout) · [💬 Community](#community) · [📖 Cite](#citation) · [🤝 Contributing](CONTRIBUTING.md)
 
 [![CI](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml/badge.svg)](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml) · [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
@@ -131,7 +131,7 @@ wrong frame.)*
 - ✅ **Compile** — schema-valid `comic.json`; the zero-credit `p0_proof` gate runs BEFORE any image credit
 - 🔥 **Spiral bake** — render → `codex image_gen` → 3-reviewer `panel_gate` → keep / retry / cross-frame rollback → assembly → viewer
 
-<details><summary>📐 flow — the skill chain (trace it top-to-bottom)</summary>
+**📐 Flow — the skill chain (trace it top-to-bottom):**
 
 ```text
 /movie-pipeline "fuzzy idea"            one slash-command · agent-run, NOT a shell binary
@@ -166,7 +166,6 @@ wrong frame.)*
    🔄 human-in-loop — intent + outline are HARD stops; a failed p0 / panel / assembly gate stops or
                       escalates; a non-convergent panel is flagged for you, never silently shipped.
 ```
-</details>
 
 **The `panel_gate`** (Phase 2/3, per panel): the bake is read by **3 independent reviewers** — CC *narrative*
 (does it land the beat?) ‖ Gemini *visual* ‖ Codex *visual* (a second, different-family eye) — who
@@ -275,6 +274,27 @@ figure has no "beat", so the bar is exact labels + clean layout, not narrative. 
 - **docs/** — `comic-json.md` (the authored-input spec), `architecture.md` (SSOT), `spiral-runtime.md`, `GENERATION_RETRO.md`
 - **examples/comic_m3_audit/** — the reference movie: `comic.json` IR, `gen/` blueprint scripts,
   `panels/` baked art, `wiki/` the 198-node generation trace, `outputs/` the built viewer
+
+## Community
+
+**New workflows, gates, and example projects welcome.** ARIS-Movie-Director is part of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series — PRs that add an audited workflow, a gate with teeth, an example project, or a domain adaptation are welcome (start at [CONTRIBUTING.md](CONTRIBUTING.md)).
+
+Join the WeChat group (shared with the ARIS main project) for discussion on Claude Code + AI-driven multimodal generation:
+
+<img src="docs/wechat_group.jpg" alt="WeChat Group QR Code" width="300">
+
+## Citation
+
+ARIS-Movie-Director is the multimodal vertical of the **ARIS** series. If you use it in your research, please cite the ARIS paper:
+
+```bibtex
+@article{yang2026aris,
+  title={ARIS: Autonomous Research via Adversarial Multi-Agent Collaboration},
+  author={Yang, Ruofeng and Li, Yongcan and Li, Shuai},
+  journal={arXiv preprint arXiv:2605.03042},
+  year={2026}
+}
+```
 
 ## License
 
