@@ -13,9 +13,9 @@
 
 **This is an agentic, long-horizon visual generation task:** hand a fuzzy story to an agent and produce a whole
 image-based movie (the reference run is a **19-scene / 24-frame** story), not a single image. The concrete job is
-`fuzzy story → authored comic.json → audited panels → single-file viewer`. It's **agentic by design** — the
-multimodal *intelligence* (planning, gating, cross-model review, memory) lives in the **agent**, so the
-diffusion/image model is left to do one thing well: **render** the pixels.
+`fuzzy story → authored comic.json → audited panels → single-file viewer`.
+
+*It's **agentic by design** — the multimodal intelligence (planning, gating, cross-model review, memory) lives in the **agent**, so the diffusion / image model is left to do one thing well: **render** the pixels.*
 
 **The hard part is faithfulness over time.** Generated visual stories can look coherent while quietly changing
 the facts — a chart rounds a number, a label mutates, a character's face drifts — and the run still ships,
