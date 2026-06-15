@@ -4,6 +4,8 @@
 
 # ARIS-Movie-Director
 
+🌐 [中文 README](README_CN.md) · **English**
+
 > Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — no forgotten facts, no frame signing off on itself.<br>
 > *🎞️ Image-based today, **video next**.*<br>
 > *🤖 Agentic by design — planning · gating · cross-model review on the **agent**; rendering on the **diffusion model**.*
