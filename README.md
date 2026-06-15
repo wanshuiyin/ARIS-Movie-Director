@@ -5,37 +5,42 @@
 # ARIS-Movie-Director
 
 > Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — no forgotten facts, no frame signing off on itself.<br>
-> Image-based today, **video next**.
+> *🎞️ Image-based today, **video next**.*
 
 **📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quick Start](#quick-start) · [🔄 Workflows](#workflows) · [📝 Make your own](skills/movie-pipeline/SKILL.md) · [🧩 Layout](#layout) · [💬 Community](#community) · [📖 Cite](#citation) · [🤝 Contributing](CONTRIBUTING.md)
 
-[![CI](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml/badge.svg)](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml) · [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
+[![Join Community](https://img.shields.io/badge/💬_Join-Community-7C3AED?style=flat)](#community) · [![Cite](https://img.shields.io/badge/📖_Cite-BibTeX-2E7D32?style=flat)](#citation) · [![CI](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml/badge.svg)](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml) · [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
-**This is a long-horizon visual generation task:** hand a fuzzy story to an agent and produce a whole
-image-based movie (the reference run is a **19-scene / 24-frame** story), not a single image. The concrete job
-is `fuzzy story → authored comic.json → audited panels → single-file viewer`.
+**This is an agentic, long-horizon visual generation task:** hand a fuzzy story to an agent and produce a whole
+image-based movie (the reference run is a **19-scene / 24-frame** story), not a single image. The concrete job is
+`fuzzy story → authored comic.json → audited panels → single-file viewer`. It's **agentic by design** — the
+multimodal *intelligence* (planning, gating, cross-model review, memory) lives in the **agent**, so the
+diffusion/image model is left to do one thing well: **render** the pixels.
 
 **The hard part is faithfulness over time.** Generated visual stories can look coherent while quietly changing
 the facts — a chart rounds a number, a label mutates, a character's face drifts — and the run still ships,
 because the same system that drew the frame is the one saying it looks fine. Across a long horizon, two failure
 modes dominate:
 
-- 🧠 **Long-range forgetting** — over many frames, identity, established facts, and earlier decisions drift. → a **research-wiki**: persistent, inspectable memory (locked refs · `expected_literals` · every decision & failure as a node) keeps late frames anchored to early truth.
-- 🗣️ **Linear, self-approved streaming** — each frame is committed by the same model that drew it, so mistakes compound unchecked. → **multi-agent debate**: independent cross-model reviewers blind-read every frame and a deterministic diff decides **KEEP / RETRY** — no frame signs off on itself.
+- 🧠 **Long-range forgetting** — over many frames, identity, established facts, and earlier decisions drift.
+- 🗣️ **Linear, self-approved streaming** — each frame is committed by the model that drew it, so mistakes compound unchecked.
 
 **ARIS-Movie-Director treats every frame as an auditable artifact:** author a deterministic `comic.json` first
 (lock the `expected_literals` + identity refs *before* any pixels), let a generative model bake the look, then
 require **independent cross-model blind-transcription + a deterministic token-diff** before a panel is kept.
-*Looks right ≠ passes* — a beautiful frame with a wrong literal is rejected. Every attempt, retry, and decision
-lands in an inspectable **[research-wiki trace](examples/comic_m3_audit/wiki/)**. Its two ideas — the
-**research-wiki** and **multi-agent debate** — come from the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series.
+*Looks right ≠ passes* — a beautiful frame with a wrong literal is rejected. It answers the two failure modes
+with two ideas from the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series:
+- 🧠→ a **[research-wiki](examples/comic_m3_audit/wiki/)** — persistent, inspectable memory (locked refs · `expected_literals` · every decision & failure as a node) that anchors late frames to early truth.
+- 🗣️→ **multi-agent debate** — independent cross-model reviewers blind-read every frame and a deterministic diff decides **KEEP / RETRY**, so **no frame signs off on itself**. Every attempt / decision lands in that wiki trace.
 
 **🔬 Method at a glance.** Read the figure left-to-right — the [`/movie-pipeline`](skills/movie-pipeline/SKILL.md)
 agent workflow runs the full loop (*author a source of truth → bake → cross-model gate*): **(1)**
 [`comic-author`](skills/comic-author/SKILL.md) turns fuzzy intent into an authored `comic.json` + locked refs,
-**(2)** [`comic-director`](skills/comic-director/SKILL.md) runs the per-panel audited spiral, **(3)** the pipeline
-assembles accepted panels into the released viewer. The bottom-left failure is the whole rule: *a beautiful but
-wrong literal still fails* (`+6.2` expected vs `+6.25` observed).
+**(2)** [`comic-director`](skills/comic-director/SKILL.md) runs the per-panel audited spiral — the **multi-agent
+debate** (CC ‖ Gemini ‖ Codex blind-read → deterministic diff), logging every attempt / decision to the
+**[research-wiki](examples/comic_m3_audit/wiki/)** — **(3)** the pipeline assembles accepted panels into the
+released viewer. The bottom-left failure is the whole rule: *a beautiful but wrong literal still fails*
+(`+6.2` expected vs `+6.25` observed).
 
 ![ARIS-Movie-Director — method overview](docs/method_figure.png)
 
@@ -69,16 +74,6 @@ wrong literal still fails* (`+6.2` expected vs `+6.25` observed).
 | Character & style drift accumulate across a long sequence. | Locked identity refs + asset review (准×3) + a style bible + a **cast-aware** assembly gate check consistency *while allowing* intended scene/cast variation (absence ≠ drift). |
 | Retry loops go opaque or endless. | Per-panel attempts and assembly repairs are **bounded**; each failure carries a repair note; a non-convergent panel is **flagged for a human**, never silently shipped. |
 | A demo hides what was tried and thrown away. | Every attempt / review / decision / failure-mode is written to the research-wiki — the reference run ships a **198-node** trace you can read. |
-
-</details>
-
-<details><summary><b>🧭 Positioning</b> — ARIS lineage; an audit layer, <i>not</i> a generation/orchestration claim</summary>
-
-ARIS-Movie-Director is the **multimodal vertical of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series**: ARIS taught a research agent to work while you sleep, and its **research-wiki + multi-agent-debate** ideas are exactly what make a generated story *auditable* — the same loop (author a source of truth → let a model bake the look → ratify with a cross-model panel), now producing character-consistent visual stories instead of papers.
-
-The framework knows nothing about any particular story — a project plugs in via `examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a **19-scene / 24-frame** pixel-art movie about an autonomous research run, and ships its **real, inspectable generation trace** as proof the multi-agent loop actually ran.
-
-**Related work — where we fit.** The field already generates and orchestrates visual stories well, and we build on that, not against it: **[JoyAI-Echo](https://github.com/jd-opensource/JoyAI-Echo)** (JD) is strong at long-form text→video with synced audio and memory-based character consistency; **[FireRed-OpenStoryline](https://github.com/FireRedTeam/FireRed-OpenStoryline)** (Xiaohongshu) is a strong conversational video-editing agent — NL planning, tool orchestration, human-in-the-loop, reusable style skills; **[NEWTON](https://arxiv.org/abs/2605.18396)** shows planner-plus-verifier loops for *physically*-grounded video. ARIS-Movie-Director is **complementary** — it doesn't claim better generation or broader orchestration; it adds the **audit layer** around a generated visual story: blind cross-model reads → deterministic literal-diffs → bounded retry → an inspectable trace.
 
 </details>
 
@@ -267,6 +262,18 @@ figure has no "beat", so the bar is exact labels + clean layout, not narrative. 
 
 > The gate is the point: a beautiful panel/figure with a wrong number does **not** pass. Faithfulness is a
 > token-diff over reviewers who are never shown the expected values.
+
+<a id="positioning"></a>
+
+## 🧭 Positioning — ARIS lineage; an audit layer, *not* a generation/orchestration claim
+
+ARIS-Movie-Director is the **multimodal vertical of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series**: ARIS taught a research agent to work while you sleep, and its **research-wiki + multi-agent-debate** ideas are exactly what make a generated story *auditable* — the same loop (author a source of truth → let a model bake the look → ratify with a cross-model panel), now producing character-consistent visual stories instead of papers.
+
+The framework knows nothing about any particular story — a project plugs in via `examples/<name>/movie.project.json` + a `comic.json` IR. The reference example builds a **19-scene / 24-frame** pixel-art movie about an autonomous research run, and ships its **real, inspectable generation trace** as proof the multi-agent loop actually ran.
+
+**Related work — where we fit.** The field already generates and orchestrates visual stories well, and we build on that, not against it: **[JoyAI-Echo](https://github.com/jd-opensource/JoyAI-Echo)** (JD) is strong at long-form text→video with synced audio and memory-based character consistency; **[FireRed-OpenStoryline](https://github.com/FireRedTeam/FireRed-OpenStoryline)** (Xiaohongshu) is a strong conversational video-editing agent — NL planning, tool orchestration, human-in-the-loop, reusable style skills; **[NEWTON](https://arxiv.org/abs/2605.18396)** shows planner-plus-verifier loops for *physically*-grounded video. ARIS-Movie-Director is **complementary** — it doesn't claim better generation or broader orchestration; it adds the **audit layer** around a generated visual story: blind cross-model reads → deterministic literal-diffs → bounded retry → an inspectable trace.
+
+---
 
 <a id="layout"></a>
 
