@@ -6,7 +6,7 @@
 
 > Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — image-based today, **video next**.
 
-**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quickstart](#quickstart) · [🔬 How it works](#how-it-works) · [📝 Make your own (comic-author)](skills/comic-author/SKILL.md) · [🧩 Layout](#layout)
+**📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quickstart](#quickstart) · [🔬 How it works](#how-it-works) · [📝 Make your own (comic-author)](skills/comic-author/SKILL.md) · [🧩 Layout](#layout) · [🤝 Contributing](CONTRIBUTING.md)
 
 [![CI](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml/badge.svg)](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml) · [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
@@ -84,12 +84,20 @@ This framework makes two **cross-model-audited** things — **your own character
 today) and a **research/method figure**. Pick your path.
 
 **A · Make your own movie — fuzzy idea → audited frames + a clickable viewer**
-Hand your agent a fuzzy story; wake up to a baked, fact-checked movie. The path has **two honest halves**:
-**Phase 1 is an AGENT WORKFLOW, not a shell CLI** — your coding agent (Claude, Codex, …) follows
-[`comic-author`](skills/comic-author/SKILL.md) to author the source of truth, and every `--gate` is an agent
-procedure ([`comic-cross-layer-gate`](skills/comic-cross-layer-gate/SKILL.md)), not a binary. **Phase 2/3 is the
-real spiral** — `comic.json` → baked panels → cross-model gate → viewer — run by `run_comic.py` (a standalone
-subprocess CLI port, no agent runtime) **or** `packages/core/spiral_engine.js` (via a workflow runtime); same result.
+One end-to-end **slash-command agent workflow** (the ARIS `/research-pipeline` paradigm) — hand your agent a
+fuzzy story, approve two story gates, wake up to a baked, cross-model-audited movie + a clickable viewer:
+
+```text
+> /movie-pipeline "a short film about an autonomous research run"
+```
+
+It chains [`comic-author`](skills/comic-author/SKILL.md) (Phase 1 — author the source of truth) → the zero-credit
+`p0_proof` gate → [`comic-director`](skills/comic-director/SKILL.md) (Phase 2/3 — the audited spiral → viewer);
+the orchestrator is [`movie-pipeline`](skills/movie-pipeline/SKILL.md). It is an **agent** workflow, not a shell
+binary — it needs a coding-agent runtime and **pauses at intent + outline for your approval**. **Phase 2/3 also
+runs standalone** — `run_comic.py` (a subprocess CLI port, no agent runtime; this is the CI-tested slice) **or**
+`packages/core/spiral_engine.js` (via a workflow runtime); same result. *(A step that doesn't fire is safe — each
+layer consumes the prior LOCKED node, so a skipped step fails closed at the next gate, never shipping a wrong frame.)*
 
 - 🧭 **Intent** — fuzzy idea → `intent_spec` · **stop for your approval**
 - 🎨 **Style lock** — the `ART_BIBLE.md` + locked `style_anchor`s (warm-lab / dark-cyber / starfield)
@@ -116,20 +124,31 @@ fuzzy idea
 ```
 </details>
 
-**Typical flow**
-1. **Author Phase 1 with your agent** (no CLI): *"Follow `skills/comic-author/SKILL.md` for this idea: «…». Stop for my approval at the intent + outline gates; produce `examples/<name>/comic.json` + locked assets + content-SVG blueprints + the wiki trace."*
-2. **Dry-run the spiral** (no image_gen): `python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run`
-3. **Bake** the audited panels: drop `--dry-run`; add `--finalize` to rebuild the viewer once the run is shippable.
-4. `open examples/<name>/outputs/index.html`
+**Two honest ways to run it**
 
-> **TL;DR — there is NO one-command "fuzzy-idea → movie" CLI** (Phase 1 is an agent workflow by design). The only
-> one-command part is Phase 2/3, once `comic.json` exists:
-> `run_comic.py --project examples/<name> --page <PAGE> --panels … --finalize`. `run_comic.py` is a standalone
-> subprocess port of the spiral engine (no agent runtime). **image_gen throttling:** a rate-limited bake stops
-> cleanly with `fresh_run_required` — after cooldown launch a **fresh** run for the remaining panels, do **not**
-> resume cached state. Args + caps (4/panel · 6/run, assembly): [`docs/spiral-runtime.md`](docs/spiral-runtime.md).
+**1) End-to-end (one slash-command, agent-run):**
+```text
+> /movie-pipeline "«your fuzzy idea»"
+```
+The agent authors Phase 1 (pausing at **intent + outline** for your approval), clears `p0_proof`, bakes the
+audited spiral, and builds the viewer. It's agent-run — non-deterministic + needs a coding-agent runtime — but
+every step is gated, and a step that doesn't fire **fails closed** at the next gate.
 
-**Skills involved:** [`comic-author`](skills/comic-author/SKILL.md) (orchestrator) → comic-intent-parser →
+**2) Phase 2/3 only (deterministic, no agent — the CI-tested slice),** once `comic.json` exists:
+```bash
+python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run    # zero credit: prints bake prompts
+python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --finalize   # bake + rebuild the viewer
+open examples/<name>/outputs/index.html
+```
+
+> **One command, but agent-run — not a shell CLI.** The end-to-end entry is a *slash-command agent workflow*
+> (`/movie-pipeline`, like ARIS's `/research-pipeline`), not a `foo.py "idea"` binary: it needs a coding-agent
+> runtime and pauses at the two human gates. The deterministic, no-agent part is Phase 2/3 (`run_comic.py`).
+> **image_gen throttling:** a rate-limited bake stops cleanly with `fresh_run_required` — after cooldown launch a
+> **fresh** run for the remaining panels, do **not** resume cached state. Args + caps (4/panel · 6/run,
+> assembly): [`docs/spiral-runtime.md`](docs/spiral-runtime.md).
+
+**Skills involved:** [`movie-pipeline`](skills/movie-pipeline/SKILL.md) (end-to-end) → [`comic-author`](skills/comic-author/SKILL.md) (Phase-1 orchestrator) → comic-intent-parser →
 comic-style-bible-lock → comic-outline-creator → comic-storyboard-creator → comic-asset-ref-generator /
 comic-asset-review-loop → comic-blueprint-author → comic-panel-prompt-builder → comic-json-compiler →
 [`comic-director`](skills/comic-director/SKILL.md) (the spiral). Copy the author-node shapes from

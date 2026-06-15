@@ -8,7 +8,11 @@ description: Phase 1 ORCHESTRATOR of a movie/comic — turn a fuzzy story idea i
 The **left third of Figure 1**, as an **agent-run workflow**: a fuzzy idea → a `comic.json` + its locked asset
 library, so [`comic-director`](../comic-director/SKILL.md) (Phase 2/3) bakes + adversarially verifies it. This
 skill is **thin** — it owns the ORDER, the BARRIERS, and the HAND-OFF; each step's real procedure lives in its
-own detailed skill. The contract boundary to Phase 2/3 is **`comic.json` + the assets it references**
+own detailed skill.
+
+> **End-to-end in one slash-command?** [`movie-pipeline`](../movie-pipeline/SKILL.md) is the single entry that
+> drives THIS skill (Phase 1) → the `p0_proof` gate → `comic-director` (Phase 2/3 bake) → viewer. comic-author is
+> the Phase-1 half it calls; use it directly when you only want to author + lock the `comic.json`. The contract boundary to Phase 2/3 is **`comic.json` + the assets it references**
 (content-SVG blueprints, identity refs, `ART_BIBLE.md`).
 
 > **How you "run" this — it is an AGENT workflow, not a shell CLI.** You point your coding agent (Claude,
