@@ -5,7 +5,8 @@
 # ARIS-Movie-Director
 
 > Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — no forgotten facts, no frame signing off on itself.<br>
-> *🎞️ Image-based today, **video next**.*
+> *🎞️ Image-based today, **video next**.*<br>
+> *🤖 Agentic by design — planning · gating · cross-model review on the **agent**; rendering on the **diffusion model**.*
 
 **📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quick Start](#quick-start) · [🔄 Workflows](#workflows) · [📝 Make your own](skills/movie-pipeline/SKILL.md) · [🧩 Layout](#layout) · [💬 Community](#community) · [📖 Cite](#citation) · [🤝 Contributing](CONTRIBUTING.md)
 
@@ -15,8 +16,6 @@
 image-based movie (the reference run is a **19-scene / 24-frame** story), not a single image. The concrete job is
 `fuzzy story → authored comic.json → audited panels → single-file viewer`.
 
-*It's **agentic by design** — the multimodal intelligence (planning, gating, cross-model review, memory) lives in the **agent**, so the diffusion / image model is left to do one thing well: **render** the pixels.*
-
 **The hard part is faithfulness over time.** Generated visual stories can look coherent while quietly changing
 the facts — a chart rounds a number, a label mutates, a character's face drifts — and the run still ships,
 because the same system that drew the frame is the one saying it looks fine. Across a long horizon, two failure
@@ -24,14 +23,6 @@ modes dominate:
 
 - 🧠 **Long-range forgetting** — over many frames, identity, established facts, and earlier decisions drift.
 - 🗣️ **Linear, self-approved streaming** — each frame is committed by the model that drew it, so mistakes compound unchecked.
-
-**ARIS-Movie-Director treats every frame as an auditable artifact:** author a deterministic `comic.json` first
-(lock the `expected_literals` + identity refs *before* any pixels), let a generative model bake the look, then
-require **independent cross-model blind-transcription + a deterministic token-diff** before a panel is kept.
-*Looks right ≠ passes* — a beautiful frame with a wrong literal is rejected. It answers the two failure modes
-with two ideas from the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series:
-- 🧠→ a **[research-wiki](examples/comic_m3_audit/wiki/)** — persistent, inspectable memory (locked refs · `expected_literals` · every decision & failure as a node) that anchors late frames to early truth.
-- 🗣️→ **multi-agent debate** — independent cross-model reviewers blind-read every frame and a deterministic diff decides **KEEP / RETRY**, so **no frame signs off on itself**. Every attempt / decision lands in that wiki trace.
 
 **🔬 Method at a glance.** Read the figure left-to-right — the [`/movie-pipeline`](skills/movie-pipeline/SKILL.md)
 agent workflow runs the full loop (*author a source of truth → bake → cross-model gate*): **(1)**
@@ -53,6 +44,14 @@ released viewer. The bottom-left failure is the whole rule: *a beautiful but wro
 > *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by the method-figure panel — **Gemini + Codex blind-transcribe + a deterministic `content_diff`, then a Claude structural sign-off** — until clean. The **exact prompt sequence that baked this image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference: [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
 
 </details>
+
+**ARIS-Movie-Director treats every frame as an auditable artifact:** author a deterministic `comic.json` first
+(lock the `expected_literals` + identity refs *before* any pixels), let a generative model bake the look, then
+require **independent cross-model blind-transcription + a deterministic token-diff** before a panel is kept.
+*Looks right ≠ passes* — a beautiful frame with a wrong literal is rejected. It answers the two failure modes
+with two ideas from the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series:
+- 🧠→ a **[research-wiki](examples/comic_m3_audit/wiki/)** — persistent, inspectable memory (locked refs · `expected_literals` · every decision & failure as a node) that anchors late frames to early truth.
+- 🗣️→ **multi-agent debate** — independent cross-model reviewers blind-read every frame and a deterministic diff decides **KEEP / RETRY**, so **no frame signs off on itself**. Every attempt / decision lands in that wiki trace.
 
 **This first release is image-based** — the movie is told in baked still frames you flip through. **Video-based generation is what comes next; this is just the beginning.**
 
