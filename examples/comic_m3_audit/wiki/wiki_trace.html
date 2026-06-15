@@ -478,7 +478,7 @@ body.aris-blog h2.aris-active-h2 {
   <ol>
 <li><a href="#the-loop-per-panel">The loop (per panel)</a>
 </li>
-<li><a href="#what-this-trace-contains--174-nodes">What this trace contains — **174 nodes**</a>
+<li><a href="#what-this-trace-contains--174-nodes">What this trace contains — **198 nodes**</a>
 </li>
 <li><a href="#the-loop-is-real-not-a-rubber-stamp--three-worked-examples-in-this-trace">The loop is real, not a rubber stamp — three worked examples in this trace</a>
 </li>
@@ -493,7 +493,7 @@ body.aris-blog h2.aris-active-h2 {
 <header class="hero">
   <div class="eyebrow">ARIS-Movie-Director</div>
   <h1>Production Wiki — the full 24-panel film, as it actually ran</h1>
-  <p class="subtitle">174 nodes · the multi-agent loop, traced</p>
+  <p class="subtitle">198 nodes · the multi-agent loop, traced</p>
   <p class="byline">By <strong>Ruofeng Yang</strong></p>
   <div class="meta">
     <span><strong>Source:</strong> <code>README.md</code></span>
@@ -515,16 +515,16 @@ body.aris-blog h2.aris-active-h2 {
                                  content_corruption is a single-vote veto; no single model self-acquits)
    → decision node (keep | retry | rollback) + a failure_mode node when rejected
    → (cross-frame) page assembly_gate</code></pre>
-<h2 id="what-this-trace-contains--174-nodes">What this trace contains — <strong>174 nodes</strong></h2>
-<table><thead><tr><th>node_type</th><th>count</th><th>what it records</th></tr></thead><tbody><tr><td><code>panel_attempt</code></td><td>33</td><td>every bake attempt (24 panels, 33 total attempts)</td></tr><tr><td><code>review</code></td><td>99</td><td>3 per attempt (<code>_cc</code> narrative ‖ <code>_gemini</code> visual ‖ <code>_codex</code> visual), each with blind <code>observed_literals</code> + 5-dim scores</td></tr><tr><td><code>decision</code></td><td>34</td><td>the keep/retry/rollback verdict per attempt + 1 human-override</td></tr><tr><td><code>failure_mode</code></td><td>8</td><td>the positive repair invariant fed back into the next bake, per rejected attempt</td></tr></tbody></table>
-<p><strong>Generation stats</strong> (derivable from the nodes): 24 panels · <strong>33 attempts</strong> · 18 first-try keeps · <strong>6 panels needed retries</strong> — <code>S10×4</code>, <code>S03×3</code>, <code>S01 / S09 / S13 / S17 ×2</code>.</p>
+<h2 id="what-this-trace-contains--174-nodes">What this trace contains — <strong>198 nodes</strong></h2>
+<table><thead><tr><th>node_type</th><th>count</th><th>what it records</th></tr></thead><tbody><tr><td><code>panel_attempt</code></td><td>37</td><td>every bake attempt (24 panels, 37 total attempts)</td></tr><tr><td><code>review</code></td><td>111</td><td>3 per attempt (<code>_cc</code> narrative ‖ <code>_gemini</code> visual ‖ <code>_codex</code> visual), each with blind <code>observed_literals</code> + 5-dim scores</td></tr><tr><td><code>decision</code></td><td>38</td><td>the keep/retry/rollback verdict per attempt + 1 human-override</td></tr><tr><td><code>failure_mode</code></td><td>12</td><td>the positive repair invariant fed back into the next bake, per rejected attempt</td></tr></tbody></table>
+<p><strong>Generation stats</strong> (derivable from the nodes): 24 panels · <strong>37 attempts</strong> · 17 first-try keeps · <strong>7 panels needed retries</strong> — <code>S01×4</code>, <code>S10×4</code>, <code>S22×3</code>, <code>S03×3</code>, <code>S09 / S13 / S17 ×2</code>.</p>
 <h2 id="the-loop-is-real-not-a-rubber-stamp--three-worked-examples-in-this-trace">The loop is real, not a rubber stamp — three worked examples in this trace</h2>
 <ol><li><strong>S10 took four attempts (the hardest literal set).</strong> Attempts <code>s10_a01/a02/a03</code> were each vetoed by  <code>content_corruption_present=true</code> from <strong>both</strong> the codex and gemini visual reviewers (garbled baked  text in the hero <code>{&quot;city&quot;:&quot;Tok|yo&quot;}</code> crack / <code>json.loads → ParseError</code> / <code>0.66</code>). The deterministic  corruption veto drove three re-bakes; <code>s10_a04</code> finally passed. See <code>review_panel_s10_a0{1,2,3}_*</code> and  <code>fail_s10_a0{1,2,3}</code>.</li><li><strong>S13 a02 was rejected</strong> because a required figure literal was <strong>not independently transcribed by BOTH</strong>  visual reviewers — faithfulness is a token-diff against authored <code>expected_literals</code>, and reviewers are  never shown the expected values (no confirmation bias). A beautiful panel with an unconfirmed number  does not pass. See <code>fail_s13_a02</code>.</li><li><strong>A cross-frame FALSE drift, caught and corrected.</strong> On page B03 (a parallel 2-up with disjoint casts:  S03 researcher-only / S04 duo-only) the assembly gate scored "duo identity across panels" = 0 twice  with <strong>identical</strong> scores — the fingerprint of a broken rubric, not a broken artifact. The bounded loop  stopped and flagged a human; the human inspected, accepted, and recorded  <code>decision_assembly_p_b03_human_override</code>. The engine was then fixed to be cast-aware. The override node  is in this trace verbatim — failures are kept as memory.</li></ol>
 <p>This is exactly the discipline the comic is <em>about</em>: an evaluator that repairs output before scoring inflates the result — so the production loop refuses to score its own bake.</p>
 <h2 id="honesty-notes">Honesty notes</h2>
 <ul><li><strong>Cross-model:</strong> the executor (Claude) never judges its own bake; visual verdicts come from a different model family (codex / gemini). No single model self-acquits.</li><li><strong>Timestamps are logical, not wall-clock.</strong> <code>Date.now()</code> is unavailable in the generation sandbox (it would break resume determinism), so <code>created_at</code> is a placeholder; node order is by attempt id, not real time. Do not read the timestamps as a real timeline.</li><li>Absolute paths / usernames are redacted (<code>image_path</code> is project-relative; verified 0 absolute paths in <code>nodes/</code>). See <code>../REDACTION.md</code>.</li></ul>
 <h2 id="files">Files</h2>
-<ul><li><code>nodes/</code> — <code>panel_attempt</code> / <code>review</code> (×3) / <code>decision</code> / <code>failure_mode</code> JSON nodes (174 total)</li><li><code>edges.jsonl</code> — the graph (<code>attempt_of</code>, <code>reviews</code>, <code>decides</code>, <code>fails</code>)</li><li><code>active_memory.md</code> — the live gate criteria + standing lessons</li><li><code>validation_report.md</code> — node counts, schema-validation result, redaction confirmation</li></ul>
+<ul><li><code>nodes/</code> — <code>panel_attempt</code> / <code>review</code> (×3) / <code>decision</code> / <code>failure_mode</code> JSON nodes (198 total)</li><li><code>edges.jsonl</code> — the graph (<code>attempt_of</code>, <code>reviews</code>, <code>decides</code>, <code>fails</code>)</li><li><code>active_memory.md</code> — the live gate criteria + standing lessons</li><li><code>validation_report.md</code> — node counts, schema-validation result, redaction confirmation</li></ul>
 
 <footer class="aris-footer">
   Generated by <a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/render-html/SKILL.md">ARIS <code>/render-html</code></a> ·

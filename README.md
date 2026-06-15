@@ -11,28 +11,31 @@
 
 [![CI](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml/badge.svg)](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml) · [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
-Generated visual stories can look coherent while quietly changing the facts — a chart rounds a number, a
-label mutates, a character's face drifts — and the run still ships, because the same system that drew the
-frame is the one saying it looks fine.
+**This is a long-horizon visual generation task:** hand a fuzzy story to an agent and produce a whole
+image-based movie (the reference run is a **19-scene / 24-frame** story), not a single image. The concrete job
+is `fuzzy story → authored comic.json → audited panels → single-file viewer`.
 
-**ARIS-Movie-Director treats every frame as an auditable artifact:**
-author a deterministic `comic.json` first (lock the `expected_literals` + identity refs *before* any pixels),
-let a generative model bake the look, then require **independent cross-model blind-transcription + a
-deterministic token-diff** before a panel is kept. *Looks right ≠ passes* — a beautiful frame whose number is
-wrong (`+6.2` expected vs `+6.25` observed) is rejected. Every attempt, retry, and decision lands in an
-inspectable **research-wiki** trace.
-
-**This is a long-horizon visual generation task** — a whole movie (19 scenes), not a single image — and across
-that horizon two failure modes appear that a lone *streaming* model can't fix by itself. Each maps to one idea
-ARIS-Movie-Director brings over from [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep):
+**The hard part is faithfulness over time.** Generated visual stories can look coherent while quietly changing
+the facts — a chart rounds a number, a label mutates, a character's face drifts — and the run still ships,
+because the same system that drew the frame is the one saying it looks fine. Across a long horizon, two failure
+modes dominate:
 
 - 🧠 **Long-range forgetting** — over many frames, identity, established facts, and earlier decisions drift. → a **research-wiki**: persistent, inspectable memory (locked refs · `expected_literals` · every decision & failure as a node) keeps late frames anchored to early truth.
 - 🗣️ **Linear, self-approved streaming** — each frame is committed by the same model that drew it, so mistakes compound unchecked. → **multi-agent debate**: independent cross-model reviewers blind-read every frame and a deterministic diff decides **KEEP / RETRY** — no frame signs off on itself.
 
-**🔬 Method at a glance.** Read the figure left-to-right — the loop the paragraph above describes
-(*author a source of truth → bake → cross-model gate*) is exactly its three stages: **(1)** authored
-`comic.json` + locked refs, **(2)** the per-panel audited spiral, **(3)** assembly + release. The bottom-left
-failure is the whole rule: *a beautiful but wrong literal still fails* (`+6.2` expected vs `+6.25` observed).
+**ARIS-Movie-Director treats every frame as an auditable artifact:** author a deterministic `comic.json` first
+(lock the `expected_literals` + identity refs *before* any pixels), let a generative model bake the look, then
+require **independent cross-model blind-transcription + a deterministic token-diff** before a panel is kept.
+*Looks right ≠ passes* — a beautiful frame with a wrong literal is rejected. Every attempt, retry, and decision
+lands in an inspectable **[research-wiki trace](examples/comic_m3_audit/wiki/)**. Its two ideas — the
+**research-wiki** and **multi-agent debate** — come from the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series.
+
+**🔬 Method at a glance.** Read the figure left-to-right — the [`/movie-pipeline`](skills/movie-pipeline/SKILL.md)
+agent workflow runs the full loop (*author a source of truth → bake → cross-model gate*): **(1)**
+[`comic-author`](skills/comic-author/SKILL.md) turns fuzzy intent into an authored `comic.json` + locked refs,
+**(2)** [`comic-director`](skills/comic-director/SKILL.md) runs the per-panel audited spiral, **(3)** the pipeline
+assembles accepted panels into the released viewer. The bottom-left failure is the whole rule: *a beautiful but
+wrong literal still fails* (`+6.2` expected vs `+6.25` observed).
 
 ![ARIS-Movie-Director — method overview](docs/method_figure.png)
 
@@ -191,16 +194,9 @@ rate-limited bake stops cleanly with `fresh_run_required` — after cooldown lau
 panels, do **not** resume cached state. Caps: **≤4 attempts/panel · ≤6 rollbacks/run · no concurrent bakes**
 ([`docs/spiral-runtime.md`](docs/spiral-runtime.md)).
 
-**Skills involved:** [`movie-pipeline`](skills/movie-pipeline/SKILL.md) (end-to-end) → [`comic-author`](skills/comic-author/SKILL.md)
-(Phase-1 orchestrator) → comic-intent-parser → comic-style-bible-lock → comic-outline-creator →
-comic-storyboard-creator → comic-asset-ref-generator / comic-asset-review-loop → comic-blueprint-author →
-comic-panel-prompt-builder → comic-json-compiler → [`comic-director`](skills/comic-director/SKILL.md) (the spiral).
-Copy the author-node shapes from [`examples/comic_min_author/`](examples/comic_min_author/).
-
-🔄 **Human-in-the-loop:** intent + outline are **hard human gates** — your agent drafts + cross-model-reviews them
-but never proceeds until you approve; a bake that won't converge flags the panel/storyboard for you, never silently
-ships. **Prereqs:** a coding agent for Phase 1; **`codex` + `gemini` CLIs + headless Chrome** for Phase 2/3
-(`python3 cli/preflight.py`).
+**Authoring template:** copy the Phase-1 author-node shapes from [`examples/comic_min_author/`](examples/comic_min_author/)
+when adding a new project. The flow diagram above is the canonical skill chain — the two human gates and the
+fail-closed gates are shown there; prereqs (codex + gemini + headless Chrome) are in [Quick Start](#quick-start).
 
 #### ▶️ See the reference movie — what Workflow 1 produces (zero setup, no API)
 ```bash
@@ -311,9 +307,6 @@ ARIS-Movie-Director is the multimodal vertical of the **ARIS** series. If you us
 
 ## 📄 License
 
-Dual-licensed (see `NOTICE`):
+**MIT** — see [`LICENSE`](LICENSE).
 
-- **Source code** — MIT (`LICENSE`)
-- **Generated example artwork** (`examples/*/panels/`, `examples/*/assets/`, `examples/*/outputs/`) —
-  CC-BY-4.0 (`LICENSE-IMAGES`). The images are **AI-generated**; see the AI-generation disclosure in
-  `LICENSE-IMAGES`, and review your image-model provider's terms before reuse.
+The example artwork is **AI-generated** — this is a disclosure, not a second license; reuse should still follow your image-model provider's terms.

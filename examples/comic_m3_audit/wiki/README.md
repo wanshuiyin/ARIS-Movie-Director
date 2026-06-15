@@ -18,16 +18,16 @@ generatePanel  — codex bakes the panel from a deterministic content blueprint 
    → (cross-frame) page assembly_gate
 ```
 
-## What this trace contains — **174 nodes**
+## What this trace contains — **198 nodes**
 
 | node_type | count | what it records |
 |---|---|---|
-| `panel_attempt` | 33 | every bake attempt (24 panels, 33 total attempts) |
-| `review` | 99 | 3 per attempt (`_cc` narrative ‖ `_gemini` visual ‖ `_codex` visual), each with blind `observed_literals` + 5-dim scores |
-| `decision` | 34 | the keep/retry/rollback verdict per attempt + 1 human-override |
-| `failure_mode` | 8 | the positive repair invariant fed back into the next bake, per rejected attempt |
+| `panel_attempt` | 37 | every bake attempt (24 panels, 37 total attempts) |
+| `review` | 111 | 3 per attempt (`_cc` narrative ‖ `_gemini` visual ‖ `_codex` visual), each with blind `observed_literals` + 5-dim scores |
+| `decision` | 38 | the keep/retry/rollback verdict per attempt + 1 human-override |
+| `failure_mode` | 12 | the positive repair invariant fed back into the next bake, per rejected attempt |
 
-**Generation stats** (derivable from the nodes): 24 panels · **33 attempts** · 18 first-try keeps · **6 panels needed retries** — `S10×4`, `S03×3`, `S01 / S09 / S13 / S17 ×2`.
+**Generation stats** (derivable from the nodes): 24 panels · **37 attempts** · 17 first-try keeps · **7 panels needed retries** — `S01×4`, `S10×4`, `S22×3`, `S03×3`, `S09 / S13 / S17 ×2`.
 
 ## The loop is real, not a rubber stamp — three worked examples in this trace
 
@@ -62,7 +62,7 @@ inflates the result — so the production loop refuses to score its own bake.
 
 ## Files
 
-- `nodes/` — `panel_attempt` / `review` (×3) / `decision` / `failure_mode` JSON nodes (174 total)
+- `nodes/` — `panel_attempt` / `review` (×3) / `decision` / `failure_mode` JSON nodes (198 total)
 - `edges.jsonl` — the graph (`attempt_of`, `reviews`, `decides`, `fails`)
 - `active_memory.md` — the live gate criteria + standing lessons
 - `validation_report.md` — node counts, schema-validation result, redaction confirmation

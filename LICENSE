@@ -19,11 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-SCOPE: The MIT license above covers the SOURCE CODE of this repository (the
-framework runtime, schemas, CLI, scripts, and documentation). The generated
-example artwork (the comic panels under examples/*/panels/ and the images
-inlined into built viewers) is licensed separately under CC-BY-4.0 — see
-LICENSE-IMAGES and NOTICE.

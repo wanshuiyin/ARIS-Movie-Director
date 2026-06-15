@@ -98,5 +98,4 @@ Do **not** commit generated artifacts (the `build_prompt.py` outputs under `wiki
 - Found a way a wrong/unsourced artifact can pass a gate? That's the highest-value report — please flag it
   (privately if you prefer) rather than open a public exploit-style issue.
 
-By contributing you agree your work is licensed under this repo's [LICENSE](LICENSE) (code) /
-[LICENSE-IMAGES](LICENSE-IMAGES) (generated imagery).
+By contributing you agree your work is licensed under this repo's [MIT License](LICENSE).
