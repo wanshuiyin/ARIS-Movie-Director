@@ -1,0 +1,43 @@
+name: CI
+
+# Deterministic gate green-check: runs ONLY the no-credit, no-Chrome, no-network gates
+# (validate_wiki, run_comic --dry-run, compile_brief, validate_blueprint, content_diff/literal-diff
+# regression tests). The metered stages (image_gen bake, Gemini/Codex review, headless-Chrome raster)
+# are NOT run in CI — they need credentials + a browser; `python3 cli/preflight.py` checks those locally.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: deterministic gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python deps (jsonschema — full validate_blueprint check)
+        run: pip install -r requirements.txt
+
+      - name: Run deterministic gate smoke test
+        run: bash tests/smoke.sh
