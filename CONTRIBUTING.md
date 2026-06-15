@@ -1,5 +1,7 @@
 # Contributing to ARIS-Movie-Director
 
+🌐 [中文](CONTRIBUTING_CN.md) · **English**
+
 Thanks for helping. This repo's whole thesis is that a generated visual story should be **auditable** — so the
 one rule that matters here is: **never let a gate lose its teeth.** A change that makes a wrong/unsourced frame
 easier to ship is a regression even if every test still passes. When in doubt, fail closed.

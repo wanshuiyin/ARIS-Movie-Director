@@ -10,7 +10,7 @@
 > *🎞️ 当下是图像版,**下一步视频版**。*<br>
 > *🤖 智能体驱动的设计 —— 规划 · 把关 · 跨模型评审都放在 **agent** 上;渲染交给 **diffusion 模型**。*
 
-**📚 跳转** — [▶ 看电影](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ 快速开始](#quick-start) · [🔄 工作流](#workflows) · [📝 做你自己的](skills/movie-pipeline/SKILL.md) · [🧩 结构](#layout) · [💬 社区](#community) · [📖 引用](#citation) · [🤝 贡献](CONTRIBUTING.md)
+**📚 跳转** — [▶ 看电影](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ 快速开始](#quick-start) · [🔄 工作流](#workflows) · [📝 做你自己的](skills/movie-pipeline/SKILL.md) · [🧩 结构](#layout) · [💬 社区](#community) · [📖 引用](#citation) · [🤝 贡献](CONTRIBUTING_CN.md)
 
 [![Join Community](https://img.shields.io/badge/💬_Join-Community-7C3AED?style=flat)](#community) · [![Cite](https://img.shields.io/badge/📖_Cite-BibTeX-2E7D32?style=flat)](#citation) · [![CI](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml/badge.svg)](https://github.com/wanshuiyin/ARIS-Movie-Director/actions/workflows/ci.yml) · [![ARIS Stars](https://img.shields.io/github/stars/wanshuiyin/Auto-claude-code-research-in-sleep?style=flat&logo=github&logoColor=white&color=gold&label=ARIS%20Stars)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/stargazers) · [![arXiv](https://img.shields.io/badge/arXiv-2605.03042-b31b1b?style=flat&logo=arxiv)](https://huggingface.co/papers/2605.03042) · [![HF Daily #1](https://img.shields.io/badge/HF%20Daily%20Papers-%231-yellow?style=flat)](https://huggingface.co/papers/2605.03042) · [![PaperWeekly](https://img.shields.io/badge/Featured%20on-PaperWeekly-red?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) · [![awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills)
 
@@ -265,7 +265,7 @@ ARIS-Movie-Director 是 **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-
 
 ## 💬 社区
 
-**欢迎新的工作流、gate、示例项目。** ARIS-Movie-Director 是 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) 系列的一部分 —— 欢迎提交 PR,加一个审计工作流、一道有牙齿的 gate、一个示例项目或一个领域适配(从 [CONTRIBUTING.md](CONTRIBUTING.md) 开始)。
+**欢迎新的工作流、gate、示例项目。** ARIS-Movie-Director 是 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) 系列的一部分 —— 欢迎提交 PR,加一个审计工作流、一道有牙齿的 gate、一个示例项目或一个领域适配(从 [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md) 开始)。
 
 加入微信群(与 ARIS 主项目共用),一起聊 Claude Code + AI 驱动的多模态生成:
 
