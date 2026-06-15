@@ -5,6 +5,12 @@ section** and no brief yet, this is the repo-local SOP your coding agent follows
 **agent procedure** (the agent reads the paper + fills the brief), not a CLI — the same shape as ARIS's
 `paper-plan`, which emits this brief after its `claims_matrix`.
 
+## Prerequisites (the bake + review stages need these on PATH)
+- **`codex` CLI**, logged in — the bake runs `codex exec --sandbox read-only` → its native `gpt-image-2`.
+- **`gemini` CLI**, logged in — the second blind-transcribe reviewer (recommended; without it the panel runs Codex-only).
+- **headless Chrome / Chromium** — the condition SVG is rasterized to PNG for the bake.
+- Python ≥ 3.9. Run **`run_spiral.py … --p0-only`** first: it's the zero-credit gate (compile + render + lint), so you confirm the brief is sound *before* spending any image credit. (`--dry-run` also needs no credit.)
+
 ## The contract
 Output ONE file conforming to [`../schemas/method_figure_brief.schema.json`](../schemas/method_figure_brief.schema.json).
 Required: `figure_id`, `figure_purpose`, `components[]`, `flows[]`. Everything is **copied VERBATIM from the

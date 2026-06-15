@@ -160,9 +160,11 @@ def load_conditions(comic, panel_ids, bake_lang):
     return out
 
 def cfg_usable(c):
-    # FAIL-CLOSED (engine 346-348): a baked figure MUST carry ascii-tokenizable expected_literals.
+    # FAIL-CLOSED: EVERY panel needs a content_svg blueprint (engine contract — null is rejected); a baked figure
+    # ALSO needs ascii-tokenizable expected_literals (engine 346-348). (was: an html panel with no svg slipped through.)
     if not c or not c.get("text_mode"): return False
-    if c["text_mode"] != "baked" or not c.get("content_svg"): return True
+    if not c.get("content_svg"): return False
+    if c["text_mode"] != "baked": return True
     exp = c.get("expected_literals")
     return isinstance(exp, list) and len(exp) > 0 and all(
         isinstance(e, str) and re.findall(r"[a-z0-9+._-]+", e.lower()) for e in exp)
@@ -206,17 +208,19 @@ def panel_verdict(cc, gem, cdx, cfg):
             for s in arr:
                 if not isinstance(s, str): continue
                 t = s.lower()
-                for x in re.findall(r"[a-z0-9+._-]+", t): cset.add(x)
+                for x in re.findall(r"[a-z0-9+._:|/-]+", t): cset.add(x)   # COARSE: keep : | / so timestamps/versions/paths stay WHOLE
                 for x in re.findall(r"[a-z0-9]+", t): fset.add(x)
-            return (cset, fset)
+            joined = re.sub(r"\s+", " ", " ".join(s.lower() for s in arr if isinstance(s, str)))
+            return (cset, fset, joined)
         gem_s, cdx_s = sets(gem.get("observed_literals")), sets(cdx.get("observed_literals"))
         reviewers_ok = gem_s is not None and cdx_s is not None
-        is_num = lambda e: bool(re.match(r"^[+-]?\d[\d.]*$", e))
+        structured = lambda e: bool(re.search(r"[0-9:]", e))   # number / timestamp / version / code → EXACT coarse token only
 
         def hit(e, S):
-            e = e.lower()
+            e = e.lower().strip()
+            if " " in e: return e in S[2]                       # multi-word phrase → ordered substring (no token reshuffle)
+            if structured(e): return e in S[0]                 # "+6.25"/"t-24:00:01" must NOT satisfy "+6.2"/"t-24:00:00"
             if e in S[0]: return True
-            if is_num(e): return False
             parts = re.findall(r"[a-z0-9]+", e)
             return len(parts) > 0 and all(p in S[1] for p in parts)
         _el = cfg.get("expected_literals")
@@ -396,25 +400,56 @@ def panel_gate(paths, pid, gen, cfg, ai, args):
     return {"cc": cc, "gem": gem, "cdx": cdx, "verdict": panel_verdict(cc, gem, cdx, cfg)}
 
 # ── persistence: wiki nodes + comic.json (reimplemented as direct file writes; engine 311-330) ──
+def add_edges(paths, edges):
+    """Append runtime edges to wiki/edges.jsonl (dedup by (src,dst,type)) so validate_wiki sees resolved
+    attempt_of / reviews / decides / failure_of provenance for what run_comic actually wrote."""
+    ep = paths["PROJ"] + "/wiki/edges.jsonl"
+    existing = set()
+    if os.path.exists(ep):
+        for line in open(ep, encoding="utf-8"):
+            line = line.strip()
+            if not line: continue
+            try:
+                e = json.loads(line); existing.add((e.get("src"), e.get("dst"), e.get("type")))
+            except Exception: pass
+    with open(ep, "a", encoding="utf-8") as f:
+        for s, d, t in edges:
+            if (s, d, t) not in existing:
+                f.write(json.dumps({"src": s, "dst": d, "type": t}, ensure_ascii=False) + "\n"); existing.add((s, d, t))
+
 def write_wiki(paths, pid, gen, gate, ai):
     os.makedirs(paths["NODES"], exist_ok=True)
     sl = pid.lower(); aTag = "a" + str(ai).zfill(2); v = gate["verdict"]["v"]
     ts = "2026-06-08T00:00:00+00:00"
+    panel_node = f"panel:{sl}_aris_comic_v1"; attempt_node = f"attempt:{sl}_{aTag}"
     def w(name, obj): json.dump(obj, open(f"{paths['NODES']}/{name}.json", "w"), ensure_ascii=False, indent=1)
-    w(f"panel_attempt_{sl}_{aTag}", {"node_id": f"attempt:{sl}_{aTag}", "node_type": "panel_attempt", "status": "under_review",
+    w(f"panel_attempt_{sl}_{aTag}", {"node_id": attempt_node, "node_type": "panel_attempt", "status": "under_review",
         "title": f"{pid} panel attempt {ai}", "created_at": ts,
-        "payload": {"source_panel_id": f"panel:{sl}_aris_comic_v1", "image_path": rel_img(paths, gen["image_path"]),
+        "payload": {"source_panel_id": panel_node, "image_path": rel_img(paths, gen["image_path"]),
                     "attempt_index": ai, "model": "codex_image_gen", "is_baked_duo": True}})
+    edges = [(attempt_node, panel_node, "attempt_of")]
     for rv, who in ((gate["cc"], "cc"), (gate["gem"], "gemini"), (gate["cdx"], "codex")):
-        w(f"review_panel_{sl}_{aTag}_{who}", {"node_id": f"review:panel_{sl}_{aTag}_{who}", "node_type": "review",
-            "status": "final", "title": f"{who} review {pid} a{ai}", "created_at": ts, "payload": rv})
-    w(f"decision_panel_{sl}_{aTag}", {"node_id": f"decision:panel_{sl}_{aTag}", "node_type": "decision", "status": "final",
+        rnode = f"review:panel_{sl}_{aTag}_{who}"
+        # schema-valid review payload: target_node_id/reviewer/gate_kind are REQUIRED (validate_wiki); keep the raw
+        # reviewer scores too. (explicit keys last so a malformed reviewer JSON can't clobber the required fields.)
+        w(f"review_panel_{sl}_{aTag}_{who}", {"node_id": rnode, "node_type": "review",
+            "status": "final", "title": f"{who} review {pid} a{ai}", "created_at": ts,
+            "payload": {**(rv if isinstance(rv, dict) else {"raw": rv}),
+                        "target_node_id": attempt_node, "reviewer": who, "gate_kind": "panel"}})
+        edges.append((rnode, attempt_node, "reviews"))
+    dnode = f"decision:panel_{sl}_{aTag}"
+    w(f"decision_panel_{sl}_{aTag}", {"node_id": dnode, "node_type": "decision", "status": "final",
         "title": f"panel_gate {pid} a{ai} → {v}", "created_at": ts,
-        "payload": {"gate_kind": "panel", "target_node_id": f"attempt:{sl}_{aTag}", "verdict": v,
+        "payload": {"gate_kind": "panel", "target_node_id": attempt_node, "verdict": v,
+                    "reviewer_families": {"cc": "anthropic", "gemini": "google", "codex": "openai"},  # cross-family provenance: the visual acquitters (gemini/codex) differ from the Claude author
                     "reasoning": gate["verdict"]["reason"][:300], "repair_instruction": gate["verdict"].get("invariant", "")}})
+    edges.append((dnode, attempt_node, "decides"))
     if v != "keep":
-        w(f"fail_{sl}_{aTag}", {"node_id": f"fail:{sl}_{aTag}", "node_type": "failure_mode", "status": "active", "created_at": ts,
+        fnode = f"fail:{sl}_{aTag}"
+        w(f"fail_{sl}_{aTag}", {"node_id": fnode, "node_type": "failure_mode", "status": "active", "created_at": ts,
             "payload": {"active": True, "affected_shot_ids": [pid], "layer": "panel_visual", "repair_pattern": gate["verdict"].get("invariant", "")}})
+        edges.append((fnode, attempt_node, "failure_of"))
+    add_edges(paths, edges)
 
 def update_comic_json(paths, comic, pid, gen, ai):
     aTag = "a" + str(ai).zfill(2)
@@ -463,6 +498,7 @@ def parse_args():
     ap.add_argument("--strike-escalate", type=int, default=2)   # a panel drifting ≥N assembly rounds → author-layer rewrite
     ap.add_argument("--finalize", action="store_true"); ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--skip-assembly", action="store_true")
+    ap.add_argument("--skip-p0-proof", action="store_true", help="bake without a clean decision:p0_proof_* node (UNAUDITED; forces the run non-shippable)")
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
     ap.add_argument("--effort", default="high"); ap.add_argument("--review-effort", default="xhigh")
     ap.add_argument("--min-bytes", type=int, default=500000)
@@ -479,7 +515,7 @@ def main():
 
     missing = [p for p in panel_ids if not cfg_usable(cfg_map.get(p))]
     if missing:
-        sys.exit(f"FAIL-CLOSED: unusable cfg for {missing} (missing text_mode, or a baked figure with no ASCII-tokenizable expected_literals) — refusing to run an ungated gate")
+        sys.exit(f"FAIL-CLOSED: unusable cfg for {missing} (missing text_mode, missing content_svg blueprint, or a baked figure with no ASCII-tokenizable expected_literals) — refusing to run an ungated gate")
 
     if args.dry_run:
         log(f"dry-run: {len(panel_ids)} panels, all cfg-usable. Printing bake prompts (NO image_gen):")
@@ -489,6 +525,31 @@ def main():
             print(f"  refs: content_svg={cfg_map[pid]['content_svg']}  identity_ref={cfg_map[pid].get('identity_ref') or '(canonical duo)'}")
             print(f"  expected_literals={cfg_map[pid]['expected_literals']}")
         return
+
+    # P0-PROOF PREFLIGHT — no metered image credit before the zero-credit proof gate cleared: require a clean
+    # decision:p0_proof_* node in the wiki, OR an explicit --skip-p0-proof ack (which forces the run non-shippable).
+    def _p0_clean():
+        nd = paths["NODES"]
+        if not os.path.isdir(nd): return False
+        for fn in os.listdir(nd):
+            if not fn.endswith(".json") or "p0" not in fn.lower(): continue
+            try: d = json.load(open(os.path.join(nd, fn), encoding="utf-8"))
+            except Exception: continue
+            pl = d.get("payload") or {}
+            if d.get("node_type") == "decision" and str(d.get("status", "")).lower() == "final" \
+               and str(d.get("node_id", "")).startswith("decision:p0_proof") \
+               and str(pl.get("gate_kind", "")).lower() == "p0_proof" \
+               and str(pl.get("verdict", "")).lower() in ("pass", "clean", "approve", "keep", "ship", "proceed"):
+                return True
+        return False
+    p0_skipped = False
+    if not _p0_clean():
+        if not args.skip_p0_proof:
+            sys.exit("FAIL-CLOSED: no clean decision:p0_proof_* node in the wiki — run the zero-credit p0_proof gate "
+                     "(comic-cross-layer-gate <comic> --gate p0_proof) BEFORE spending image credit, "
+                     "or pass --skip-p0-proof to bake UNAUDITED (forces the run non-shippable).")
+        p0_skipped = True
+        log("⚠ --skip-p0-proof: baking WITHOUT a p0_proof gate node → run is UNAUDITED and will be marked non-shippable")
 
     kept, flagged, total_by, pending = [], [], {}, {}
     throttled, escalated = False, None
@@ -574,10 +635,14 @@ def main():
                 if not throttled and not any_fixed: flagged.append(f"{args.page}:assembly")  # throttle breaks before human-flag (engine 461-462)
                 break
 
+    assembly_skipped = args.skip_assembly and len(kept) >= 2   # multi-panel page with assembly_gate skipped = UNCERTIFIED
+    if assembly_skipped:
+        flagged.append(f"{args.page}:assembly-skipped")
+        log(f"  ⚑ assembly_gate SKIPPED on a {len(kept)}-panel page → cross-panel drift never checked; page NOT shippable (diagnostic run only)")
     any_needs_human = any(k["needs_human"] for k in kept) or len(flagged) > 0
-    shippable = (not escalated) and (not throttled) and (not any_needs_human) and (asm["verdict"]["v"] == "accept" if asm else len(kept) >= 1)
-    # STAGED ACCEPTANCE (KEEP≠final): panel_gate KEEP = panel_accepted; page_accepted only when assembly accepts.
-    page_accepted = (asm["verdict"]["v"] == "accept") if asm else len(kept) >= 1
+    shippable = (not escalated) and (not throttled) and (not any_needs_human) and (not p0_skipped) and (asm["verdict"]["v"] == "accept" if asm else len(kept) >= 1)
+    # STAGED ACCEPTANCE (KEEP≠final): panel_gate KEEP = panel_accepted; page_accepted only when assembly accepts (skipped ⇒ never).
+    page_accepted = False if assembly_skipped else ((asm["verdict"]["v"] == "accept") if asm else len(kept) >= 1)
     for k in kept:
         k["acceptance_stage"] = "page_accepted" if (page_accepted and not k["needs_human"] and k["pid"] not in flagged) else "panel_accepted"
 
@@ -586,7 +651,7 @@ def main():
         sh(["python3", paths["BUILD"], paths["PROJ"]], 120)
 
     report = {"page": args.page, "panel_ids": panel_ids, "kept": kept, "flagged_for_human": flagged,
-              "needs_human": any_needs_human, "shippable": shippable, "throttled": throttled, "escalated": escalated,
+              "needs_human": any_needs_human, "shippable": shippable, "assembly_skipped": assembly_skipped, "p0_skipped": p0_skipped, "throttled": throttled, "escalated": escalated,
               "assembly": (asm["verdict"] if asm else None), "rewrite_storyboard": rewrite_storyboard,
               "attempts_per_panel": total_by, "finalize": bool(args.finalize and shippable)}
     print("\n" + json.dumps(report, ensure_ascii=False, indent=2))

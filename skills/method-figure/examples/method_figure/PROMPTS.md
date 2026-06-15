@@ -9,9 +9,15 @@ character was rendered by the model from the text below.
 **How it was run.** Each bake is one call to **codex (`gpt-5.5`, `model_reasoning_effort: xhigh`) with
 `sandbox: read-only`** — the read-only sandbox is deliberate: it removes codex's ability to "helpfully"
 write an SVG/script, forcing it to use its native `gpt-image-2` image-generation tool. Between bakes, a
-**3-model panel (Codex ‖ Gemini ‖ Claude)** critiques the rendered pixels; the consolidated fix-list
-becomes the next bake. It converged in **4 rounds**; v4 was unanimously APPROVED and shipped.
-The round-by-round verdicts are in `trace.jsonl` next to this file.
+a **cross-model panel** critiques the rendered pixels; the consolidated fix-list becomes the next bake. It
+converged in **4 rounds**; v4 was approved and shipped. The round-by-round verdicts are in `trace.jsonl`.
+
+> **Process note — the skill has since evolved (kept honest).** This figure was baked under an earlier
+> *3-model* critique (Codex ‖ Gemini ‖ Claude all reading the pixels), which the round-by-round prompts below
+> still name verbatim. The **current** `run_spiral.py` panel is **Gemini + Codex blind-transcribe → a
+> deterministic `content_diff`** (the automated acquittal), with **Claude doing a separate *structural*
+> sign-off afterward** — Claude is no longer one of the blind-transcribe panelists. The historical prompts are
+> preserved as-is (not rewritten) so this stays a truthful record of how the shipped figure was actually made.
 
 Two reference images were attached to every bake (read-only):
 - `docs/figassets/aris_identity_sheet.png` — the **exact** chibi cast (don't invent robots/mascots).

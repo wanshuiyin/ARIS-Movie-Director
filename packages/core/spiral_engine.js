@@ -109,12 +109,16 @@ function panelVerdict(cc, gem, cdx, cfg = {}) {
     // must be read by BOTH reviewers independently (no union — a single over-helpful/hallucinating reviewer can't satisfy it).
     const sets = arr => { if (!Array.isArray(arr)) return null; const c = new Set(), f = new Set()
       for (const s of arr) { if (typeof s !== 'string') continue; const t = s.toLowerCase()
-        ;(t.match(/[a-z0-9+._-]+/g) || []).forEach(x => c.add(x)); (t.match(/[a-z0-9]+/g) || []).forEach(x => f.add(x)) }
-      return { c, f } }
+        ;(t.match(/[a-z0-9+._:|/-]+/g) || []).forEach(x => c.add(x)); (t.match(/[a-z0-9]+/g) || []).forEach(x => f.add(x)) }  // COARSE keeps :|/ → timestamps/versions stay whole
+      const joined = arr.filter(s => typeof s === 'string').join(' ').toLowerCase().replace(/\s+/g, ' ')
+      return { c, f, joined } }
     const gemS = sets(gem?.observed_literals), cdxS = sets(cdx?.observed_literals)
     const reviewersOk = !!gemS && !!cdxS                                              // both reviewers returned a usable array
-    const isNum = e => /^[+-]?\d[\d.]*$/.test(e)
-    const hit = (e, S) => { e = e.toLowerCase(); if (S.c.has(e)) return true; if (isNum(e)) return false
+    const structured = e => /[0-9:]/.test(e)                                          // number/timestamp/version/code → EXACT coarse token only (no subtoken fallback)
+    const hit = (e, S) => { e = e.toLowerCase().trim()
+      if (e.includes(' ')) return S.joined.includes(e)                                // multi-word phrase → ordered substring
+      if (structured(e)) return S.c.has(e)                                            // "+6.25"/"t-24:00:01" must NOT satisfy "+6.2"/"t-24:00:00"
+      if (S.c.has(e)) return true
       const parts = e.match(/[a-z0-9]+/g) || []; return parts.length > 0 && parts.every(p => S.f.has(p)) }
     const exp = Array.isArray(cfg.expected_literals) ? cfg.expected_literals.filter(e => typeof e === 'string') : []
     const missing = reviewersOk ? exp.filter(e => !(hit(e, gemS) && hit(e, cdxS))) : exp   // BOTH reviewers must have read it
@@ -323,11 +327,12 @@ function writeWiki(pid, gen, gate, ai) {
   const sl = pid.toLowerCase()
   const v = gate.verdict.v
   return agent([
-    `Write ARIS comic wiki active-memory nodes for panel ${pid} attempt ${ai} into ${NODES}/ (one JSON file each; mirror the video clip nodes). created_at "2026-06-08T00:00:00+00:00".`,
-    `1) panel_attempt → ${NODES}/panel_attempt_${sl}_${aTag}.json: {node_id:"attempt:${sl}_${aTag}",node_type:"panel_attempt",status:"under_review",title:"${pid} panel attempt ${ai}",payload:{source_panel_id:"panel:${sl}_aris_comic_v1",image_path:${JSON.stringify(relImg(gen.image_path))},attempt_index:${ai},model:"codex_image_gen",is_baked_duo:true}}`,
-    `2) review → review_panel_${sl}_${aTag}_{cc,gemini,codex}.json: one per reviewer, node_type:"review", payload holds that reviewer's scores from: CC=${JSON.stringify(gate.cc).slice(0, 300)} GEM=${JSON.stringify(gate.gem).slice(0, 300)} CDX=${JSON.stringify(gate.cdx).slice(0, 300)}`,
-    `3) decision → decision_panel_${sl}_${aTag}.json: {node_id:"decision:panel_${sl}_${aTag}",node_type:"decision",status:"final",title:"panel_gate ${pid} a${ai} → ${v}",payload:{gate_kind:"panel",target_node_id:"attempt:${sl}_${aTag}",verdict:"${v}",reasoning:${JSON.stringify(gate.verdict.reason.slice(0, 300))},repair_instruction:${JSON.stringify(gate.verdict.invariant || '')}}}`,
-    v !== 'keep' ? `4) failure_mode → fail_${sl}_${aTag}.json: {node_id:"fail:${sl}_${aTag}",node_type:"failure_mode",payload:{active:true,affected_shot_ids:["${pid}"],layer:"panel_visual",repair_pattern:${JSON.stringify(gate.verdict.invariant || '')}}}` : '(no failure_mode on keep)',
+    `Write ARIS comic wiki active-memory nodes for panel ${pid} attempt ${ai} into ${NODES}/ (one JSON file each). EVERY node file MUST carry all 6 top-level fields: node_id, node_type, title, status, created_at:"2026-06-08T00:00:00+00:00", payload — validate_wiki REJECTS a node missing any of them.`,
+    `1) panel_attempt → ${NODES}/panel_attempt_${sl}_${aTag}.json: {node_id:"attempt:${sl}_${aTag}",node_type:"panel_attempt",status:"under_review",title:"${pid} panel attempt ${ai}",created_at:"2026-06-08T00:00:00+00:00",payload:{source_panel_id:"panel:${sl}_aris_comic_v1",image_path:${JSON.stringify(relImg(gen.image_path))},attempt_index:${ai},model:"codex_image_gen",is_baked_duo:true}}`,
+    `2) review → review_panel_${sl}_${aTag}_{cc,gemini,codex}.json: ONE full node per reviewer who∈{cc,gemini,codex}: {node_id:"review:panel_${sl}_${aTag}_<who>", node_type:"review", status:"final", title:"<who> review ${pid} a${ai}", created_at:"2026-06-08T00:00:00+00:00", payload:{target_node_id:"attempt:${sl}_${aTag}", reviewer:"<who>", gate_kind:"panel", scores:<that reviewer's JSON>}} — node_id/title/created_at top-level AND target_node_id/reviewer/gate_kind in payload are ALL REQUIRED by validate_wiki. scores from: CC=${JSON.stringify(gate.cc).slice(0, 300)} GEM=${JSON.stringify(gate.gem).slice(0, 300)} CDX=${JSON.stringify(gate.cdx).slice(0, 300)}`,
+    `3) decision → decision_panel_${sl}_${aTag}.json: {node_id:"decision:panel_${sl}_${aTag}",node_type:"decision",status:"final",title:"panel_gate ${pid} a${ai} → ${v}",created_at:"2026-06-08T00:00:00+00:00",payload:{gate_kind:"panel",target_node_id:"attempt:${sl}_${aTag}",verdict:"${v}",reviewer_families:{cc:"anthropic",gemini:"google",codex:"openai"},reasoning:${JSON.stringify(gate.verdict.reason.slice(0, 300))},repair_instruction:${JSON.stringify(gate.verdict.invariant || '')}}}`,
+    v !== 'keep' ? `4) failure_mode → fail_${sl}_${aTag}.json: {node_id:"fail:${sl}_${aTag}",node_type:"failure_mode",status:"active",title:"failure ${pid} a${ai}",created_at:"2026-06-08T00:00:00+00:00",payload:{active:true,affected_shot_ids:["${pid}"],layer:"panel_visual",repair_pattern:${JSON.stringify(gate.verdict.invariant || '')}}}` : '(no failure_mode on keep)',
+    `5) APPEND provenance edges to ${NODES}/../edges.jsonl (one JSON object per line; dedup by src+dst+type): {"src":"attempt:${sl}_${aTag}","dst":"panel:${sl}_aris_comic_v1","type":"attempt_of"}; for EACH reviewer who∈{cc,gemini,codex} {"src":"review:panel_${sl}_${aTag}_<who>","dst":"attempt:${sl}_${aTag}","type":"reviews"}; {"src":"decision:panel_${sl}_${aTag}","dst":"attempt:${sl}_${aTag}","type":"decides"}${v !== 'keep' ? `; {"src":"fail:${sl}_${aTag}","dst":"attempt:${sl}_${aTag}","type":"failure_of"}` : ''}.`,
     `Return WIKI_SCHEMA {wrote_nodes:[ids], failure_mode_id}.`,
   ].join('\n'), { label: `wiki:${pid}#${ai}`, phase: 'Panels', schema: WIKI_SCHEMA })
 }
@@ -348,10 +353,17 @@ const rewriteStoryboard = []       // KEEP≠final: panels assembly bounced back
 // FAIL-CLOSED: if comic.json couldn't be loaded, every cfg would be empty → mode defaults + the faithfulness token-check goes
 // vacuous (a bad panel could keep). Refuse to run rather than run an ungated gate.
 const asciiTok = e => typeof e === 'string' && (e.toLowerCase().match(/[a-z0-9+._-]+/g) || []).length > 0
-const cfgUsable = c => !!c && !!c.text_mode && (c.text_mode !== 'baked' || !c.content_svg
+const cfgUsable = c => !!c && !!c.text_mode && !!c.content_svg   // EVERY panel needs a content_svg blueprint (was: html w/ no svg slipped through)
+  && (c.text_mode !== 'baked'
   || (Array.isArray(c.expected_literals) && c.expected_literals.length > 0 && c.expected_literals.every(asciiTok)))  // a baked figure MUST carry ASCII-tokenizable expected_literals
 const missingCfg = PANEL_IDS.filter(p => !cfgUsable(CONFIG[p]))
-if (missingCfg.length) { escalated = { pid: missingCfg[0], why: `unusable cfg for [${missingCfg.join(',')}] (missing text_mode, or a baked figure with no ASCII-tokenizable expected_literals) — refusing to run an ungated gate` } }
+if (missingCfg.length) { escalated = { pid: missingCfg[0], why: `unusable cfg for [${missingCfg.join(',')}] (missing text_mode, missing content_svg blueprint, or a baked figure with no ASCII-tokenizable expected_literals) — refusing to run an ungated gate` } }
+// P0-PROOF PREFLIGHT (parity with run_comic.py): the orchestrator MUST pass p0ProofClean:true (it ran the zero-credit
+// p0_proof gate) before any metered bake; skipP0Proof bakes UNAUDITED and forces the run non-shippable.
+const p0Skipped = ARGS.p0ProofClean !== true   // STRICT boolean: only literal true clears P0 (a "false"/"0"/non-bool truthy must NOT pass)
+if (p0Skipped && ARGS.skipP0Proof !== true) {
+  escalated = escalated || { pid: PANEL_IDS[0] || null, why: 'no p0_proof clearance — run the zero-credit p0_proof gate and pass p0ProofClean:true, or skipP0Proof:true to bake UNAUDITED (forces non-shippable)' }
+}
 for (let i = 0; i < PANEL_IDS.length && !throttled && !escalated; i++) {
   const pid = PANEL_IDS[i]
   const cfg = CONFIG[pid] || {}
@@ -482,7 +494,7 @@ if (!escalated && kept.length >= 2) {
 // and (if assembled) assembly accepted. A gate-FAILING best-so-far panel (needs_human) can no longer ride
 // assembly-accept + finalize:true into downstream consumers.
 const anyNeedsHuman = kept.some(k => k.needs_human) || flagged.length > 0
-const shippable = !escalated && !throttled && !anyNeedsHuman && (asm ? asm.verdict.v === 'accept' : kept.length >= 1)
+const shippable = !escalated && !throttled && !anyNeedsHuman && !p0Skipped && (asm ? asm.verdict.v === 'accept' : kept.length >= 1)
 // STAGED ACCEPTANCE (KEEP≠final): a panel_gate KEEP is only `panel_accepted`; it becomes `page_accepted` ONLY
 // when the page assembly accepts (or there was no cross-panel concern — a single kept panel).
 const pageAccepted = asm ? asm.verdict.v === 'accept' : kept.length >= 1
@@ -494,6 +506,7 @@ return {
   flagged_for_human: flagged,
   needs_human: anyNeedsHuman,
   shippable,
+  p0_skipped: p0Skipped,
   throttled,
   escalated,
   assembly: asm ? asm.verdict : null,

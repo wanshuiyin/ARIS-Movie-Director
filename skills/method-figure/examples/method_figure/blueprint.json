@@ -1,13 +1,12 @@
 {
   "version": "method-figure/blueprint/v1",
   "figure_id": "aris_movie_director_method",
-  "title": {
-    "main": "ARIS-Movie-Director",
-    "sub": "Audited narrative-comic generation"
+  "compiled_from_brief": {
+    "type": "aris_movie_director_method"
   },
   "canvas": {
-    "width": 1960,
-    "height": 1000,
+    "width": 1495,
+    "height": 1318,
     "background": "#FFFFFF"
   },
   "render_policy": {
@@ -15,11 +14,392 @@
     "target_profile": "readme",
     "max_rounds": 4
   },
+  "nodes": [
+    {
+      "id": "researcher",
+      "label_exact": "researcher",
+      "shape": "character",
+      "must_render": true,
+      "source": "brief:components/researcher",
+      "expected_tokens": [
+        "hands",
+        "night",
+        "over",
+        "researcher",
+        "the"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "hands over the night",
+      "semantic_role": "human author",
+      "asset_ref": "cast",
+      "pos": {
+        "x": 212,
+        "y": 223
+      },
+      "size": {
+        "w": 185,
+        "h": 66
+      }
+    },
+    {
+      "id": "brief",
+      "label_exact": "story brief",
+      "shape": "document",
+      "must_render": true,
+      "source": "brief:components/brief",
+      "expected_tokens": [
+        "24h",
+        "brief",
+        "deadline",
+        "story"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "24h deadline",
+      "semantic_role": "input document",
+      "pos": {
+        "x": 212,
+        "y": 335
+      },
+      "size": {
+        "w": 185,
+        "h": 66
+      }
+    },
+    {
+      "id": "outline",
+      "label_exact": "outline",
+      "shape": "document",
+      "must_render": true,
+      "source": "brief:components/outline",
+      "expected_tokens": [
+        "beats",
+        "outline",
+        "story"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "story beats",
+      "semantic_role": "authored layer",
+      "group": "p1",
+      "accent": "blue_accent",
+      "pos": {
+        "x": 540,
+        "y": 275
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    },
+    {
+      "id": "storyboard",
+      "label_exact": "storyboard",
+      "shape": "process",
+      "must_render": true,
+      "source": "brief:components/storyboard",
+      "expected_tokens": [
+        "dialogue",
+        "literals",
+        "scene",
+        "storyboard"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "scene + dialogue + literals",
+      "semantic_role": "authored layer",
+      "group": "p1",
+      "accent": "blue_accent",
+      "pos": {
+        "x": 540,
+        "y": 399
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    },
+    {
+      "id": "comicjson",
+      "label_exact": "comic.json",
+      "shape": "document",
+      "must_render": true,
+      "source": "brief:components/comicjson",
+      "expected_tokens": [
+        "comic.json",
+        "of",
+        "single",
+        "source",
+        "truth"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "single source of truth",
+      "semantic_role": "contract artifact",
+      "group": "p1",
+      "accent": "blue_accent",
+      "pos": {
+        "x": 540,
+        "y": 534
+      },
+      "size": {
+        "w": 250,
+        "h": 100
+      }
+    },
+    {
+      "id": "blueprint",
+      "label_exact": "content-SVG",
+      "shape": "document",
+      "must_render": true,
+      "source": "brief:components/blueprint",
+      "expected_tokens": [
+        "SVG",
+        "blueprint",
+        "content-SVG",
+        "exact"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "exact SVG blueprint",
+      "semantic_role": "deterministic condition",
+      "group": "p2",
+      "accent": "peach_accent",
+      "pos": {
+        "x": 900,
+        "y": 275
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    },
+    {
+      "id": "bake",
+      "label_exact": "image_gen BAKE",
+      "shape": "process",
+      "must_render": true,
+      "source": "brief:components/bake",
+      "expected_tokens": [
+        "BAKE",
+        "blueprint",
+        "identity",
+        "image_gen"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "blueprint + identity",
+      "semantic_role": "generator",
+      "group": "p2",
+      "accent": "peach_accent",
+      "pos": {
+        "x": 900,
+        "y": 410
+      },
+      "size": {
+        "w": 250,
+        "h": 100
+      }
+    },
+    {
+      "id": "gate",
+      "label_exact": "panel_gate",
+      "shape": "character",
+      "must_render": true,
+      "source": "brief:components/gate",
+      "expected_tokens": [
+        "CC",
+        "Codex",
+        "Gemini",
+        "panel_gate"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "CC | Gemini | Codex",
+      "semantic_role": "cross-model review",
+      "group": "p2",
+      "accent": "peach_accent",
+      "asset_ref": "cast",
+      "pos": {
+        "x": 900,
+        "y": 556
+      },
+      "size": {
+        "w": 250,
+        "h": 100
+      }
+    },
+    {
+      "id": "verdict",
+      "label_exact": "verdict",
+      "shape": "diamond",
+      "must_render": true,
+      "source": "brief:components/verdict",
+      "expected_tokens": [
+        "diff",
+        "literal",
+        "verdict"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "literal diff",
+      "semantic_role": "decision",
+      "group": "p2",
+      "accent": "peach_accent",
+      "pos": {
+        "x": 900,
+        "y": 691
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    },
+    {
+      "id": "keep",
+      "label_exact": "KEEP",
+      "shape": "process",
+      "must_render": true,
+      "source": "brief:components/keep",
+      "expected_tokens": [
+        "KEEP",
+        "accepted",
+        "panel"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "panel accepted",
+      "semantic_role": "accept state",
+      "group": "p2",
+      "accent": "peach_accent",
+      "pos": {
+        "x": 900,
+        "y": 815
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    },
+    {
+      "id": "wiki",
+      "label_exact": "research-wiki",
+      "shape": "datastore",
+      "must_render": true,
+      "source": "brief:components/wiki",
+      "expected_tokens": [
+        "failures",
+        "logged",
+        "research-wiki"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "failures logged",
+      "semantic_role": "memory",
+      "group": "p2",
+      "accent": "peach_accent",
+      "pos": {
+        "x": 900,
+        "y": 939
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    },
+    {
+      "id": "assembly",
+      "label_exact": "page assembly_gate",
+      "shape": "gate",
+      "must_render": true,
+      "source": "brief:components/assembly",
+      "expected_tokens": [
+        "assembly_gate",
+        "check",
+        "coherence",
+        "drift",
+        "page"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "coherence + drift check",
+      "semantic_role": "page review",
+      "group": "p3",
+      "accent": "green_accent",
+      "pos": {
+        "x": 1240,
+        "y": 275
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    },
+    {
+      "id": "viewer",
+      "label_exact": "release",
+      "shape": "output",
+      "must_render": true,
+      "source": "brief:components/viewer",
+      "expected_tokens": [
+        "HTML",
+        "PNG",
+        "panels",
+        "release"
+      ],
+      "forbidden_tokens": [
+        "self-judge",
+        "LLM-as-a-judge"
+      ],
+      "desc_exact": "PNG panels + HTML",
+      "semantic_role": "output",
+      "group": "p3",
+      "accent": "green_accent",
+      "pos": {
+        "x": 1240,
+        "y": 399
+      },
+      "size": {
+        "w": 210,
+        "h": 78
+      }
+    }
+  ],
+  "title": {
+    "main": "ARIS-Movie-Director",
+    "sub": "A baked panel that looks right can still be wrong; only a blind cross-model literal-diff passes it."
+  },
   "assets": [
     {
       "id": "cast",
       "path": "identity_sheet.png",
       "role": "identity_sheet",
+      "source": "brief:identity_refs/cast",
       "lock_traits": [
         "researcher: black hair, glasses, black tee",
         "executor: brown hair, blue hoodie, no beard",
@@ -32,348 +412,77 @@
       "id": "p1",
       "label_exact": "1 · Authored Source of Truth",
       "bounds": {
-        "x": 250,
-        "y": 150,
-        "w": 320,
-        "h": 560
+        "x": 385,
+        "y": 190,
+        "w": 310,
+        "h": 454
       },
-      "tone": "blue"
+      "tone": "blue",
+      "order": 0,
+      "source": "brief:phases/p1"
     },
     {
       "id": "p2",
       "label_exact": "2 · The Audited Spiral  (per panel)",
       "bounds": {
-        "x": 620,
-        "y": 150,
-        "w": 740,
-        "h": 700
+        "x": 745,
+        "y": 190,
+        "w": 310,
+        "h": 848
       },
-      "tone": "peach"
+      "tone": "peach",
+      "order": 1,
+      "source": "brief:phases/p2"
     },
     {
       "id": "p3",
       "label_exact": "3 · Assembly + Release",
       "bounds": {
-        "x": 1470,
-        "y": 150,
-        "w": 430,
-        "h": 560
+        "x": 1105,
+        "y": 190,
+        "w": 270,
+        "h": 308
       },
-      "tone": "green"
-    }
-  ],
-  "nodes": [
-    {
-      "id": "researcher",
-      "label_exact": "researcher",
-      "pos": {
-        "x": 130,
-        "y": 420
-      },
-      "desc_exact": "hands over the night",
-      "size": {
-        "w": 150,
-        "h": 200
-      },
-      "shape": "character",
-      "visual_hint": "the ARIS researcher chibi handing over a 'story brief' document, exhausted, T-24h",
-      "asset_ref": "cast",
-      "expected_tokens": [
-        "hands",
-        "night",
-        "over",
-        "researcher",
-        "the"
-      ]
-    },
-    {
-      "id": "brief",
-      "label_exact": "story brief",
-      "pos": {
-        "x": 130,
-        "y": 600
-      },
-      "desc_exact": "24h deadline",
-      "size": {
-        "w": 130,
-        "h": 60
-      },
-      "shape": "document",
-      "accent": "muted",
-      "expected_tokens": [
-        "24h",
-        "brief",
-        "deadline",
-        "story"
-      ]
-    },
-    {
-      "id": "outline",
-      "label_exact": "outline",
-      "pos": {
-        "x": 410,
-        "y": 250
-      },
-      "desc_exact": "story beats",
-      "group": "p1",
-      "size": {
-        "w": 200,
-        "h": 70
-      },
-      "shape": "document",
-      "accent": "blue_accent",
-      "expected_tokens": [
-        "beats",
-        "outline",
-        "story"
-      ]
-    },
-    {
-      "id": "storyboard",
-      "label_exact": "storyboard",
-      "pos": {
-        "x": 410,
-        "y": 370
-      },
-      "desc_exact": "scene + dialogue + literals",
-      "group": "p1",
-      "size": {
-        "w": 200,
-        "h": 70
-      },
-      "shape": "document",
-      "accent": "blue_accent",
-      "expected_tokens": [
-        "dialogue",
-        "literals",
-        "scene",
-        "storyboard"
-      ]
-    },
-    {
-      "id": "comicjson",
-      "label_exact": "comic.json",
-      "pos": {
-        "x": 410,
-        "y": 560
-      },
-      "desc_exact": "single source of truth",
-      "group": "p1",
-      "size": {
-        "w": 240,
-        "h": 86
-      },
-      "shape": "datastore",
-      "accent": "blue_accent",
-      "expected_tokens": [
-        "comic.json",
-        "of",
-        "single",
-        "source",
-        "truth"
-      ]
-    },
-    {
-      "id": "blueprint",
-      "label_exact": "content-SVG",
-      "pos": {
-        "x": 760,
-        "y": 300
-      },
-      "desc_exact": "exact SVG blueprint",
-      "group": "p2",
-      "size": {
-        "w": 200,
-        "h": 74
-      },
-      "shape": "document",
-      "accent": "peach_accent",
-      "visual_hint": "a precise wireframe blueprint sheet",
-      "expected_tokens": [
-        "SVG",
-        "blueprint",
-        "content-SVG",
-        "exact"
-      ]
-    },
-    {
-      "id": "bake",
-      "label_exact": "image_gen BAKE",
-      "pos": {
-        "x": 1020,
-        "y": 300
-      },
-      "desc_exact": "blueprint + identity",
-      "group": "p2",
-      "size": {
-        "w": 230,
-        "h": 86
-      },
-      "shape": "process",
-      "accent": "peach_accent",
-      "visual_hint": "a pixel-art comic panel being baked",
-      "expected_tokens": [
-        "BAKE",
-        "blueprint",
-        "identity",
-        "image_gen"
-      ]
-    },
-    {
-      "id": "gate",
-      "label_exact": "panel_gate",
-      "pos": {
-        "x": 1020,
-        "y": 520
-      },
-      "desc_exact": "CC | Gemini | Codex",
-      "group": "p2",
-      "size": {
-        "w": 340,
-        "h": 175
-      },
-      "shape": "gate",
-      "accent": "red",
-      "visual_hint": "an audit desk: the blue EXECUTOR holds the baked PNG, the green REVIEWER inspects a token-diff with a magnifier; three reviewer chips CC / Gemini / Codex",
-      "asset_ref": "cast",
-      "expected_tokens": [
-        "CC",
-        "Codex",
-        "Gemini",
-        "panel_gate"
-      ]
-    },
-    {
-      "id": "verdict",
-      "label_exact": "verdict",
-      "pos": {
-        "x": 1020,
-        "y": 680
-      },
-      "desc_exact": "literal diff",
-      "group": "p2",
-      "size": {
-        "w": 220,
-        "h": 64
-      },
-      "shape": "diamond",
-      "accent": "peach_accent",
-      "expected_tokens": [
-        "diff",
-        "literal",
-        "verdict"
-      ]
-    },
-    {
-      "id": "keep",
-      "label_exact": "KEEP",
-      "pos": {
-        "x": 1280,
-        "y": 680
-      },
-      "desc_exact": "panel accepted",
-      "group": "p2",
-      "size": {
-        "w": 110,
-        "h": 56
-      },
-      "shape": "process",
-      "accent": "green_accent",
-      "expected_tokens": [
-        "KEEP",
-        "accepted",
-        "panel"
-      ]
-    },
-    {
-      "id": "wiki",
-      "label_exact": "research-wiki",
-      "pos": {
-        "x": 760,
-        "y": 600
-      },
-      "desc_exact": "failures logged",
-      "group": "p2",
-      "size": {
-        "w": 200,
-        "h": 110
-      },
-      "shape": "datastore",
-      "accent": "peach_accent",
-      "visual_hint": "a memory cylinder logging every attempt",
-      "expected_tokens": [
-        "failures",
-        "logged",
-        "research-wiki"
-      ]
-    },
-    {
-      "id": "assembly",
-      "label_exact": "page assembly_gate",
-      "pos": {
-        "x": 1705,
-        "y": 300
-      },
-      "desc_exact": "coherence + drift check",
-      "group": "p3",
-      "size": {
-        "w": 240,
-        "h": 86
-      },
-      "shape": "gate",
-      "accent": "green_accent",
-      "expected_tokens": [
-        "assembly_gate",
-        "check",
-        "coherence",
-        "drift",
-        "page"
-      ]
-    },
-    {
-      "id": "viewer",
-      "label_exact": "release",
-      "pos": {
-        "x": 1705,
-        "y": 540
-      },
-      "desc_exact": "PNG panels + HTML",
-      "group": "p3",
-      "size": {
-        "w": 240,
-        "h": 120
-      },
-      "shape": "output",
-      "accent": "green_accent",
-      "visual_hint": "a finished pixel-art comic page thumbnail in a browser frame",
-      "expected_tokens": [
-        "HTML",
-        "PNG",
-        "panels",
-        "release"
-      ]
+      "tone": "green",
+      "order": 2,
+      "source": "brief:phases/p3"
     }
   ],
   "edges": [
     {
+      "from": "researcher",
+      "to": "brief",
+      "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/researcher->brief"
+    },
+    {
       "from": "brief",
       "to": "outline",
-      "kind": "flow"
+      "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/brief->outline"
     },
     {
       "from": "outline",
       "to": "comicjson",
-      "kind": "flow"
+      "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/outline->comicjson"
     },
     {
       "from": "storyboard",
       "to": "comicjson",
-      "kind": "flow"
+      "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/storyboard->comicjson"
     },
     {
       "from": "comicjson",
       "to": "blueprint",
       "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/comicjson->blueprint",
       "label_exact": "source",
       "expected_tokens": [
         "source"
@@ -383,6 +492,8 @@
       "from": "blueprint",
       "to": "bake",
       "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/blueprint->bake",
       "label_exact": "render",
       "expected_tokens": [
         "render"
@@ -391,17 +502,23 @@
     {
       "from": "bake",
       "to": "gate",
-      "kind": "flow"
+      "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/bake->gate"
     },
     {
       "from": "gate",
       "to": "verdict",
-      "kind": "flow"
+      "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/gate->verdict"
     },
     {
       "from": "verdict",
       "to": "keep",
       "kind": "keep",
+      "must_render": true,
+      "source": "brief:flows/verdict->keep",
       "label_exact": "keep",
       "expected_tokens": [
         "keep"
@@ -411,16 +528,22 @@
       "from": "verdict",
       "to": "bake",
       "kind": "retry",
+      "must_render": true,
+      "source": "brief:flows/verdict->bake",
       "label_exact": "RETRY (max 4)",
       "expected_tokens": [
+        "4",
         "RETRY",
         "max"
-      ]
+      ],
+      "direction": "back"
     },
     {
       "from": "gate",
       "to": "wiki",
-      "kind": "flow",
+      "kind": "write",
+      "must_render": true,
+      "source": "brief:flows/gate->wiki",
       "label_exact": "write",
       "expected_tokens": [
         "write"
@@ -429,22 +552,29 @@
     {
       "from": "keep",
       "to": "assembly",
-      "kind": "flow"
+      "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/keep->assembly"
     },
     {
       "from": "assembly",
       "to": "bake",
       "kind": "repair",
+      "must_render": true,
+      "source": "brief:flows/assembly->bake",
       "label_exact": "repair drift",
       "expected_tokens": [
         "drift",
         "repair"
-      ]
+      ],
+      "direction": "back"
     },
     {
       "from": "assembly",
       "to": "viewer",
       "kind": "flow",
+      "must_render": true,
+      "source": "brief:flows/assembly->viewer",
       "label_exact": "accept",
       "expected_tokens": [
         "accept"
@@ -456,31 +586,45 @@
       "id": "punchline",
       "title_exact": "Looks right != pass",
       "lines_exact": [
-        "a beautiful baked panel",
-        "expected +6.2 / observed +6.25"
+        "A baked panel that looks right can still be wrong; only a blind cross-model literal-diff passes it.",
+        "result: +6.2"
+      ],
+      "accent": "red",
+      "source": "brief:headline_claim+headline_number",
+      "expected_tokens": [
+        "+6.2",
+        "Looks",
+        "baked",
+        "be",
+        "blind",
+        "can",
+        "cross-model",
+        "it.",
+        "literal-diff",
+        "looks",
+        "only",
+        "panel",
+        "pass",
+        "passes",
+        "result",
+        "right",
+        "still",
+        "that",
+        "wrong"
       ],
       "pos": {
-        "x": 1020,
-        "y": 860
+        "x": 747,
+        "y": 1123
       },
       "size": {
         "w": 420,
         "h": 150
-      },
-      "accent": "red",
-      "expected_tokens": [
-        "+6.2",
-        "+6.25",
-        "Looks",
-        "baked",
-        "beautiful",
-        "expected",
-        "observed",
-        "panel",
-        "pass",
-        "right"
-      ]
+      }
     }
+  ],
+  "forbidden_tokens": [
+    "self-judge",
+    "LLM-as-a-judge"
   ],
   "style": {
     "theme": "academic_flat",
@@ -497,6 +641,12 @@
       "green_fill": "#DEF5E6",
       "green_stroke": "#9BD9B0",
       "green_accent": "#0E9F6E",
+      "violet_fill": "#EDE9FE",
+      "violet_stroke": "#C4B5FD",
+      "violet_accent": "#7C3AED",
+      "amber_fill": "#FEF3C7",
+      "amber_stroke": "#FCD34D",
+      "amber_accent": "#D97706",
       "red": "#DC2626",
       "node_fill": "#FFFFFF",
       "node_stroke": "#CBD2DC"
@@ -507,10 +657,17 @@
     }
   },
   "rail": {
-    "label_exact": "max 4 retries/panel | max 6 repairs/run | human backstop"
+    "label_exact": "max 4 rounds | blind cross-model diff | human backstop",
+    "source": "framework:rail_constant"
   },
   "acceptance": {
     "min_core_score": 4,
+    "required_transcribers": [
+      "gemini",
+      "codex"
+    ],
+    "codex_policy": "required_not_sole",
+    "claude_structural_signoff_required": true,
     "required_approvers": [
       "gemini",
       "claude"

@@ -4,13 +4,15 @@
 Reviewers BLIND-transcribe what they see (observed_tokens / observed_edges / anomalies) WITHOUT being shown
 the expected labels; this script diffs that against the blueprint's LOCKED text. Empty diff == content-accurate.
 
-It checks THREE things (each can fail acceptance):
+HARD vetoes (any one fails acceptance):
   - missing_tokens : a locked token (from label_exact / desc_exact / lines_exact / rail / expected_tokens)
                      that was NOT read by EVERY visual reviewer.  (catches dropped / garbled text)
-  - unaccounted_tokens : a token EVERY visual reviewer read that is NOT in the blueprint.  (catches
-                     hallucinated / invented text deterministically, instead of trusting the VLM's subjective
-                     anomalies list)  — capped to avoid noise; informational+veto.
+  - unaccounted_numeric : a NUMBER/code token EVERY visual reviewer read that the blueprint never declared.
+                     (a figure must not state a number the brief never authored — the unsourced-number veto)
+  - forbidden_present : a DELETE-list term (a competing/wrong name) that ANY reviewer read anywhere.
+  - wrong_edges : an expected arrow that EVERY reviewer saw REVERSED (and none forward) = wrong direction.
   - anomalies : the Negative-Space-Audit items any reviewer flagged (floating/pasted labels, artifacts).
+Informational (flagged, not a veto): word-level unaccounted_tokens (a legit paraphrase must not false-veto).
 
 Usage:  python3 content_diff.py blueprint.json review1.json review2.json [review3.json ...]
 Prints a JSON report; exits non-zero if not content_accurate.
@@ -68,13 +70,42 @@ def main():
     # unaccounted: a token read by EVERY visual reviewer that the blueprint never declared (hallucinated text)
     common_observed = set.intersection(*obs_sets) if obs_sets else set()
     unaccounted = sorted(t for t in common_observed if t not in expected)
+    # a hallucinated NUMBER/code token (read by both, authored by none) is a HARD veto — a figure must not state
+    # a number the brief never authored (the analogue of the comic's expected_literals contract).
+    unaccounted_numeric = sorted(t for t in unaccounted if keep_numeric(t))
+    # forbidden DELETE-list (a competing/wrong name): veto if ANY reviewer read it anywhere (union — stricter).
+    forbidden = tokenize(bp.get("forbidden_tokens", []))
+    obs_union = set().union(*obs_sets) if obs_sets else set()
+    forbidden_present = sorted(t for t in forbidden if t in obs_union)
+    # edge topology: an expected arrow that EVERY reviewer saw REVERSED (and none forward) = wrong direction → veto.
+    # conservative: exact normalized-label match only fires on a clear both-reviewer reversal, so a transcription gap
+    # can't false-veto; a merely missing arrow stays informational (reviewers don't always transcribe every edge).
+    nlabel = lambda s: re.sub(r"\s+", " ", str(s or "").strip().lower())
+    id2label = {n.get("id"): nlabel(n.get("label_exact", n.get("label", ""))) for n in bp.get("nodes", [])}
+    exp_edges = set()
+    for e in bp.get("edges", []):
+        s, d = id2label.get(e.get("from", e.get("src"))), id2label.get(e.get("to", e.get("dst")))
+        if s and d: exp_edges.add((s, d))
+    def obs_edge_set(r):
+        out = set()
+        for e in (r.get("observed_edges") or []):
+            if isinstance(e, dict):
+                f, t = nlabel(e.get("from_label", "")), nlabel(e.get("to_label", ""))
+                if f and t: out.add((f, t))
+        return out
+    oe = [obs_edge_set(r) for r in visual]
+    wrong_edges = sorted(f"{a} -> {b} (seen reversed)" for (a, b) in exp_edges
+                         if oe and all((b, a) in s for s in oe) and not any((a, b) in s for s in oe))
     # anomalies (Negative-Space Audit) — union across all reviewers
     anomalies = sorted({str(a).strip().lower() for r in reviews for a in (r.get("anomalies") or []) if a})
 
-    accurate = not (missing or anomalies)   # unaccounted is informational-veto: flag, but small drift (1-2) may be fine
-    report = {"missing_tokens": missing, "unaccounted_tokens": unaccounted, "anomalies": anomalies,
+    # HARD vetoes; word-level unaccounted stays informational (a legit paraphrase must not false-veto).
+    accurate = not (missing or anomalies or forbidden_present or unaccounted_numeric or wrong_edges)
+    report = {"missing_tokens": missing, "unaccounted_tokens": unaccounted,
+              "unaccounted_numeric": unaccounted_numeric, "forbidden_present": forbidden_present,
+              "wrong_edges": wrong_edges, "anomalies": anomalies,
               "visual_reviewers": len(visual), "content_accurate": accurate,
-              "note": "missing/anomalies are hard vetoes; review unaccounted_tokens for hallucinated text"}
+              "note": "HARD vetoes: missing / anomalies / forbidden_present / unaccounted_numeric / wrong_edges; word-level unaccounted is informational"}
     print(json.dumps(report, ensure_ascii=False, indent=2))
     sys.exit(0 if accurate else 1)
 

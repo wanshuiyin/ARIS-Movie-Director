@@ -46,6 +46,9 @@ PAYLOAD_REQUIRED = {
     "motif_ledger":  ["source_storyboard_id", "columns", "rows", "invariants", "mirror_locks"],
     "continuity_constraint": ["family", "constraint_text", "applies_to_panel_ids", "source_node_id", "active"],
 }
+AUTHOR_TYPES = {"intent_spec", "style_anchor", "outline_spec", "asset", "storyboard_spec", "panel_spec",
+                "blueprint", "prompt_bundle", "motif_ledger", "continuity_constraint"}  # Phase-1 author layer
+
 EDGE_TYPES = {  # wiki/edges.jsonl vocabulary (src/dst/type)
     "attempt_of", "reviews", "decides", "failure_of", "rollback_of", "supersedes",          # runtime
     "derived_from", "plans_asset", "uses_asset", "uses_style_anchor", "uses_blueprint",      # author layer
@@ -68,7 +71,10 @@ def abs_path_leaks(obj, path="payload"):
 
 
 def main():
-    proj = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT
+    _argv = sys.argv[1:]
+    strict_author = "--strict-author-gates" in _argv   # opt-in: a locked author node must carry gate evidence
+    _pos = [a for a in _argv if not a.startswith("--")]
+    proj = Path(_pos[0]).resolve() if _pos else ROOT
     nodes_dir = proj / "wiki" / "nodes"
     if not SCHEMA.is_file():
         sys.exit(f"[validate_wiki] FATAL: schema missing: {SCHEMA}")
@@ -90,7 +96,7 @@ def main():
     for t in set(PAYLOAD_REQUIRED) - nt_enum:
         errs.append(f"schema↔enforcer drift: PAYLOAD_REQUIRED has '{t}' not in schema node_type enum")
 
-    n_nodes, node_ids = 0, set()
+    n_nodes, node_ids, author_locked = 0, set(), []
     for f in sorted(nodes_dir.glob("*.json")):
         n_nodes += 1
         try:
@@ -112,6 +118,8 @@ def main():
         st = d.get("status")
         if st is not None and st not in st_enum:
             errs.append(f"{f.name}: status '{st}' not in schema enum")
+        if strict_author and nt in AUTHOR_TYPES and st == "locked" and isinstance(nid, str):
+            author_locked.append((f.name, nid))
         payload = d.get("payload") or {}
         for pk in PAYLOAD_REQUIRED.get(nt, []):
             if pk not in payload:
@@ -135,6 +143,7 @@ def main():
             errs.append(f"comic.json: unreadable for edge-endpoint resolution ({e})")
 
     n_edges = 0
+    gate_targets = set()   # dst of decides/reviews edges — evidence a node went through a gate
     edges = proj / "wiki" / "edges.jsonl"
     if edges.is_file():
         for i, line in enumerate(edges.read_text(encoding="utf-8").splitlines(), 1):
@@ -151,10 +160,18 @@ def main():
                 continue
             if e["type"] not in EDGE_TYPES:
                 errs.append(f"edges.jsonl:{i}: edge type '{e['type']}' not in {sorted(EDGE_TYPES)}")
+            if e.get("type") in ("decides", "reviews"):
+                gate_targets.add(e.get("dst"))
             for end in ("src", "dst"):
                 if e[end] not in valid_endpoints:
                     errs.append(f"edges.jsonl:{i}: {end} '{e[end]}' has no matching node or comic.json panel anchor")
 
+    if strict_author:
+        for fname, nid in author_locked:
+            if nid not in gate_targets:
+                errs.append(f"{fname}: locked author node '{nid}' has no decides/reviews edge — "
+                            f"locked without gate evidence (--strict-author-gates)")
+        print(f"[validate_wiki] --strict-author-gates: audited {len(author_locked)} locked author node(s) for gate evidence")
     print(f"[validate_wiki] {proj.name}: {n_nodes} nodes, {n_edges} edges, schema={SCHEMA.name}")
     if errs:
         print(f"[validate_wiki] FAIL ({len(errs)} issue(s)):")

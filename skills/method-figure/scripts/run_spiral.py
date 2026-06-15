@@ -140,13 +140,20 @@ def resolve_input(a):
         sys.exit("[run_spiral] pass at most one of --from-brief / --from-blueprint")
     raw = json.load(open(a.blueprint, encoding="utf-8"))
     is_bp = raw.get("version") == "method-figure/blueprint/v1"
-    is_brief = ("components" in raw and "flows" in raw)
+    is_brief_sv = raw.get("schema_version") == "method-figure/brief/v1"     # the AUTHORITATIVE brief signal
+    is_brief_shape = ("components" in raw and "flows" in raw)               # legacy shape (no schema_version)
+    is_brief = is_brief_sv or is_brief_shape
     if is_bp and is_brief and not (a.from_brief or a.from_blueprint):
         sys.exit("[run_spiral] input looks like BOTH a blueprint (has version) and a brief (has components+flows) "
                  "— pass --from-blueprint or --from-brief to disambiguate (fail-closed, no guessing).")
     if a.from_blueprint or (is_bp and not a.from_brief):
         return a.blueprint, a.identity
-    if a.from_brief or (is_brief and not is_bp):
+    # auto-detect a brief ONLY via schema_version; a components+flows JSON with NO schema_version must be opted in
+    # explicitly (--from-brief), so a random non-method-figure JSON can't be silently compiled + baked.
+    if is_brief_shape and not is_brief_sv and not is_bp and not a.from_brief:
+        sys.exit("[run_spiral] input has components+flows but no `schema_version: method-figure/brief/v1` — "
+                 "pass --from-brief to compile it as a brief (fail-closed; refusing to guess).")
+    if a.from_brief or (is_brief_sv and not is_bp):
         sys.path.insert(0, HERE)
         import compile_brief as cb
         blueprint, trace, errors = cb.compile_brief(raw, strict=True)
@@ -238,6 +245,12 @@ def main():
         print("\n===== BAKE PROMPT (round 1) =====\n" + bake_prompt(bp, cond_png, a.identity, [], []))
         return
 
+    # FAIL-CLOSED: a blueprint that declares identity asset(s) must NOT bake without its identity sheet — otherwise
+    # the character figure bakes unconstrained. (--p0-only enforces the same check; enforce it on the real bake too.)
+    if bp.get("assets") and not a.identity:
+        sys.exit("[run_spiral] blueprint declares identity asset(s) but no identity sheet resolved "
+                 "(--identity / brief.identity_refs[].path) — refusing to bake a character figure without its identity ref.")
+
     invariants, last_fixes = [], []
     images = [cond_png] + ([a.identity] if a.identity else [])
     for rd in range(1, rounds + 1):
@@ -296,12 +309,17 @@ def main():
         last_fixes = sorted(set((rg or {}).get("blockers", []) + codex_block +
                                 [f"render the missing token exactly: {t}" for t in diff.get("missing_tokens", [])[:12]] +
                                 [f"remove the anomaly: {x}" for x in diff.get("anomalies", [])[:8]] +
+                                [f"DELETE the forbidden term (must not appear anywhere): {t}" for t in diff.get("forbidden_present", [])[:8]] +
+                                [f"REMOVE the unsourced number (not authored in the brief): {t}" for t in diff.get("unaccounted_numeric", [])[:8]] +
+                                [f"fix the arrow direction — {t}" for t in diff.get("wrong_edges", [])[:8]] +
                                 ([f"fix anatomy: give {c.get('char','a character')} exactly two hands ({c.get('defect')})" for c in anatomy_chars[:4]] if anatomy_defect else [])))
         invariants = sorted(set(invariants + (rg or {}).get("positive_invariants", []) + (rc or {}).get("positive_invariants", []))) [:12]
         rec = {"round": rd, "blueprint_sha": sha(a.blueprint), "condition_sha": sha(cond_png), "generated_sha": sha(png),
                "reviewers": {"gemini": gv, "codex": cv}, "core_scores_ok": core_ok,
                "hard_diff": {"missing_tokens": diff.get("missing_tokens", []), "anomalies": diff.get("anomalies", []),
-                             "unaccounted_tokens": diff.get("unaccounted_tokens", [])},
+                             "unaccounted_tokens": diff.get("unaccounted_tokens", []),
+                             "unaccounted_numeric": diff.get("unaccounted_numeric", []),
+                             "forbidden_present": diff.get("forbidden_present", []), "wrong_edges": diff.get("wrong_edges", [])},
                "fixes": last_fixes, "decision": "accept_candidate" if panel_clean else ("retry" if rd < rounds else "escalate")}
         open(trace, "a").write(json.dumps(rec, ensure_ascii=False) + "\n")
         log(f"round {rd}: gemini={gv} codex={cv} core_ok={core_ok} diff_clean={diff.get('content_accurate')} anatomy_ok={not anatomy_defect} → {rec['decision']}")

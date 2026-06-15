@@ -166,9 +166,64 @@ def auto_layout(brief, nodes, groups):
     return canvas, topo
 
 
+COMP_PRIORITY = {"core", "primary", "secondary", "background"}
+FLOW_KIND = {"flow", "keep", "retry", "repair", "write", "audit", "human"}
+FLOW_DIR = {"forward", "back"}
+TOPOLOGY = {"linear_flow", "feedback_loop", "hierarchical_stack", "left_to_right_phases", "free"}
+TARGET_PROFILE = {"readme", "paper", "slide"}
+
+def brief_schema_errors(brief):
+    """Explicit, stdlib-only brief-schema check (do NOT depend on optional jsonschema): required fields +
+    enum values + figure_id pattern. 'FATAL:' = a field compile_brief would crash on; the rest are schema
+    violations that --strict turns into a refusal. Closes the 'invalid kind/priority/profile silently bakes' hole."""
+    e = []
+    if not isinstance(brief, dict): return ["FATAL: brief is not a JSON object"]
+    fid = brief.get("figure_id")
+    if not fid: e.append("FATAL: missing required 'figure_id'")
+    elif not re.match(r"^[A-Za-z0-9_-]+$", str(fid)): e.append(f"schema: figure_id '{fid}' must match ^[A-Za-z0-9_-]+$")
+    if not brief.get("figure_purpose"): e.append("schema: missing required 'figure_purpose'")
+    comps = brief.get("components")
+    if not isinstance(comps, list) or not comps:
+        e.append("FATAL: 'components' must be a non-empty array")
+    else:
+        for i, c in enumerate(comps):
+            if not isinstance(c, dict) or not c.get("id") or not c.get("label"):
+                e.append(f"FATAL: components[{i}] missing required 'id'/'label'"); continue
+            if not c.get("one_line"): e.append(f"schema: components[{i}] ('{c.get('id')}') missing required 'one_line'")
+            vp = c.get("visual_priority")
+            if vp is not None and vp not in COMP_PRIORITY: e.append(f"schema: components[{i}].visual_priority '{vp}' not in {sorted(COMP_PRIORITY)}")
+    flows = brief.get("flows")
+    if not isinstance(flows, list):
+        e.append("FATAL: 'flows' must be an array")
+    else:
+        for i, fl in enumerate(flows):
+            if not isinstance(fl, dict) or not fl.get("from") or not fl.get("to") or not fl.get("kind"):
+                e.append(f"FATAL: flows[{i}] missing required 'from'/'to'/'kind'"); continue
+            if fl["kind"] not in FLOW_KIND: e.append(f"schema: flows[{i}].kind '{fl['kind']}' not in {sorted(FLOW_KIND)}")
+            d = fl.get("direction")
+            if d is not None and d not in FLOW_DIR: e.append(f"schema: flows[{i}].direction '{d}' not in {sorted(FLOW_DIR)}")
+    for i, ph in enumerate(brief.get("phases", []) or []):
+        if not isinstance(ph, dict) or not ph.get("id") or not ph.get("label"):
+            e.append(f"FATAL: phases[{i}] missing required 'id'/'label'")
+    for i, c in enumerate(brief.get("callouts", []) or []):
+        if not isinstance(c, dict) or not c.get("title") or "lines" not in c:
+            e.append(f"FATAL: callouts[{i}] missing required 'title'/'lines'")
+    for i, r in enumerate(brief.get("identity_refs", []) or []):
+        if not isinstance(r, dict) or not r.get("id") or not r.get("path"):
+            e.append(f"FATAL: identity_refs[{i}] missing required 'id'/'path'")
+    tc = brief.get("topology_constraint")
+    if tc is not None and tc not in TOPOLOGY: e.append(f"schema: topology_constraint '{tc}' not in {sorted(TOPOLOGY)}")
+    tp = brief.get("target_profile")
+    if tp is not None and tp not in TARGET_PROFILE: e.append(f"schema: target_profile '{tp}' not in {sorted(TARGET_PROFILE)}")
+    return e
+
 def compile_brief(brief, *, strict=True):
     """Pure brief->(blueprint, trace_errors) compile. Returns (blueprint_dict, traceability_dict,
     errors_list). Caller decides whether to fail on errors (strict)."""
+    errors = brief_schema_errors(brief)
+    if any(x.startswith("FATAL") for x in errors):   # can't safely build — hand the schema errors back for the caller to fail on
+        return ({"version": "method-figure/blueprint/v1", "nodes": []},
+                {"nodes": {}, "edges": {}, "groups": {}, "callouts": {}, "assets": {}, "symbols": {}}, errors)
     fid = brief["figure_id"]
     forbidden = brief.get("forbidden_tokens", []) or []
     profile = brief.get("target_profile", "paper")           # pass EXPLICITLY (don't fall to 'readme')
@@ -321,7 +376,8 @@ def compile_brief(brief, *, strict=True):
         blueprint["forbidden_tokens"] = list(forbidden)
     blueprint["style"] = DEFAULT_STYLE
     blueprint["rail"] = {"label_exact": f"max {blueprint['render_policy']['max_rounds']} rounds | "
-                                        "blind cross-model diff | human backstop"}
+                                        "blind cross-model diff | human backstop",
+                         "source": "framework:rail_constant"}   # framework boilerplate, NOT a paper claim (keeps traceability honest)
     blueprint["acceptance"] = {
         "min_core_score": 4,
         "required_transcribers": ["gemini", "codex"],   # the AUTOMATED panel (match run_spiral.py)
@@ -332,7 +388,7 @@ def compile_brief(brief, *, strict=True):
         "max_repeated_failure": 2,
     }
 
-    errors = validate_traceability(blueprint, brief)
+    errors += validate_traceability(blueprint, brief)   # keep the schema-enum errors collected above
     return blueprint, trace, errors
 
 
@@ -354,6 +410,13 @@ def validate_traceability(blueprint, brief):
     for c in blueprint.get("callouts", []):
         if not c.get("source"):
             errs.append(f"callout '{c.get('id')}' has no source")
+    # callout anchor (if present) must resolve to a real node/group/callout id (a dangling anchor is a fail-open ref)
+    _anchor_ids = ({n.get("id") for n in blueprint.get("nodes", [])} |
+                   {g.get("id") for g in blueprint.get("groups", [])} |
+                   {c.get("id") for c in blueprint.get("callouts", [])})
+    for c in blueprint.get("callouts", []):
+        if c.get("anchor") and c["anchor"] not in _anchor_ids:
+            errs.append(f"callout '{c.get('id')}' anchor '{c['anchor']}' does not resolve to a node/group/callout id")
     for a in blueprint.get("assets", []):
         if not a.get("source"):
             errs.append(f"asset '{a.get('id')}' has no source")
