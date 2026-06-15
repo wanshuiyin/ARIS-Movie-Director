@@ -4,7 +4,8 @@
 
 # ARIS-Movie-Director
 
-> Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — image-based today, **video next**.
+> Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬<br>
+> — image-based today, **video next**.
 
 **📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quick Start](#quick-start) · [🔄 Workflows](#workflows) · [📝 Make your own](skills/movie-pipeline/SKILL.md) · [🧩 Layout](#layout) · [💬 Community](#community) · [📖 Cite](#citation) · [🤝 Contributing](CONTRIBUTING.md)
 
@@ -12,7 +13,9 @@
 
 Generated visual stories can look coherent while quietly changing the facts — a chart rounds a number, a
 label mutates, a character's face drifts — and the run still ships, because the same system that drew the
-frame is the one saying it looks fine. **ARIS-Movie-Director treats every frame as an auditable artifact:**
+frame is the one saying it looks fine.
+
+**ARIS-Movie-Director treats every frame as an auditable artifact:**
 author a deterministic `comic.json` first (lock the `expected_literals` + identity refs *before* any pixels),
 let a generative model bake the look, then require **independent cross-model blind-transcription + a
 deterministic token-diff** before a panel is kept. *Looks right ≠ passes* — a beautiful frame whose number is
