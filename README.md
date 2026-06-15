@@ -4,8 +4,8 @@
 
 # ARIS-Movie-Director
 
-> Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬<br>
-> — image-based today, **video next**.
+> Hand a fuzzy story to your agent, wake up to a **cross-model-audited movie** 🎬 — no forgotten facts, no frame signing off on itself.<br>
+> Image-based today, **video next**.
 
 **📚 Jump to** — [▶ Watch the movie](https://wanshuiyin.github.io/ARIS-Movie-Director/comic/) · [⚡ Quick Start](#quick-start) · [🔄 Workflows](#workflows) · [📝 Make your own](skills/movie-pipeline/SKILL.md) · [🧩 Layout](#layout) · [💬 Community](#community) · [📖 Cite](#citation) · [🤝 Contributing](CONTRIBUTING.md)
 
@@ -81,7 +81,9 @@ The framework knows nothing about any particular story — a project plugs in vi
 
 ---
 
-## Quick Start
+<a id="quick-start"></a>
+
+## ⚡ Quick Start
 
 ```bash
 # 1 · get the repo + Python deps  (everything but jsonschema is stdlib)
@@ -106,13 +108,15 @@ There is **no bundled installer** — the `skills/` are *followed by your coding
 
 ---
 
-## Workflows
+<a id="workflows"></a>
+
+## 🔄 Workflows
 
 Two cross-model-audited workflows. Each is **one slash-command agent workflow** (the ARIS `/research-pipeline`
 paradigm — an agent runs it, pausing at the human gates), with a **deterministic CLI core** you can also run
 standalone (the part CI tests).
 
-### Workflow 1 · Movie pipeline — `/movie-pipeline` (fuzzy idea → audited movie)
+### 🎬 Workflow 1 · Movie pipeline — `/movie-pipeline` (fuzzy idea → audited movie)
 Hand your agent a fuzzy story, approve two story gates, wake up to a baked, cross-model-audited movie + a clickable viewer:
 ```text
 > /movie-pipeline "a short film about an autonomous research run"
@@ -198,7 +202,7 @@ but never proceeds until you approve; a bake that won't converge flags the panel
 ships. **Prereqs:** a coding agent for Phase 1; **`codex` + `gemini` CLIs + headless Chrome** for Phase 2/3
 (`python3 cli/preflight.py`).
 
-#### See the reference movie — what Workflow 1 produces (zero setup, no API)
+#### ▶️ See the reference movie — what Workflow 1 produces (zero setup, no API)
 ```bash
 python3 cli/validate_wiki.py examples/comic_m3_audit             # verify the shipped trace → PASS (198 nodes, 26 edges)
 python3 packages/viewer/build_comic.py examples/comic_m3_audit  # (re)build the single-file viewer from comic.json + panels
@@ -206,7 +210,7 @@ open  examples/comic_m3_audit/outputs/index.html
 ```
 …or just open the hosted one: **<https://wanshuiyin.github.io/ARIS-Movie-Director/comic/>** — all **19 scenes / 24 frames** of the cross-model-audited reference run.
 
-### Workflow 2 · Method figure — `/method-figure` (a brief → Figure-1)
+### 🖼️ Workflow 2 · Method figure — `/method-figure` (a brief → Figure-1)
 One **slash-command**, [`/method-figure`](skills/method-figure/SKILL.md) — give it a `method_figure_brief.json`
 (the same brief `paper-plan` emits after its claims_matrix) and it runs the whole audited spiral to a signed-off
 figure (Step-0 compile → render condition → `gpt-image-2` bake → Gemini + Codex blind panel + `content_diff` →
@@ -259,7 +263,7 @@ sign-off**. Needs the **`codex` + `gemini` CLIs** + headless Chrome (`python3 cl
 > --identity sheet.png --out-dir … --from-blueprint` runs the legacy path. The worked 4-round convergence (the
 > exact prompts) is in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
-### Why the two gates differ (both correct, by design)
+### 🛡️ Why the two gates differ (both correct, by design)
 The **movie** `panel_gate` is a **3-reviewer** panel (CC *narrative* ‖ Gemini *visual* ‖ Codex *visual*) — a story
 panel must land its beat AND be visually on-model. The **method-figure** panel is **Gemini + Codex
 blind-transcribe + the deterministic `content_diff`**, with **Claude** the post-pass structural sign-off — a
@@ -268,7 +272,9 @@ figure has no "beat", so the bar is exact labels + clean layout, not narrative. 
 > The gate is the point: a beautiful panel/figure with a wrong number does **not** pass. Faithfulness is a
 > token-diff over reviewers who are never shown the expected values.
 
-## Layout
+<a id="layout"></a>
+
+## 🧩 Layout
 
 - **packages/** — the framework runtime (core spiral, gates, conditioning, viewer)
 - **protocols/** — the cross-model review / governance contracts (framework-owned)
@@ -278,7 +284,9 @@ figure has no "beat", so the bar is exact labels + clean layout, not narrative. 
 - **examples/comic_m3_audit/** — the reference movie: `comic.json` IR, `gen/` blueprint scripts,
   `panels/` baked art, `wiki/` the 198-node generation trace, `outputs/` the built viewer
 
-## Community
+<a id="community"></a>
+
+## 💬 Community
 
 **New workflows, gates, and example projects welcome.** ARIS-Movie-Director is part of the [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) series — PRs that add an audited workflow, a gate with teeth, an example project, or a domain adaptation are welcome (start at [CONTRIBUTING.md](CONTRIBUTING.md)).
 
@@ -286,7 +294,9 @@ Join the WeChat group (shared with the ARIS main project) for discussion on Clau
 
 <img src="docs/wechat_group.jpg" alt="WeChat Group QR Code" width="300">
 
-## Citation
+<a id="citation"></a>
+
+## 📖 Citation
 
 ARIS-Movie-Director is the multimodal vertical of the **ARIS** series. If you use it in your research, please cite the ARIS paper:
 
@@ -299,7 +309,7 @@ ARIS-Movie-Director is the multimodal vertical of the **ARIS** series. If you us
 }
 ```
 
-## License
+## 📄 License
 
 Dual-licensed (see `NOTICE`):
 
