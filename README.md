@@ -109,18 +109,40 @@ layer consumes the prior LOCKED node, so a skipped step fails closed at the next
 - ✅ **Compile** — schema-valid `comic.json`; the zero-credit `p0_proof` gate runs BEFORE any image credit
 - 🔥 **Spiral bake** — render → `codex image_gen` → 3-reviewer `panel_gate` → keep / retry / cross-frame rollback → assembly → viewer
 
-<details><summary>📐 flow — Phase-1 agent workflow → Phase-2/3 spiral</summary>
+<details><summary>📐 flow — the skill chain (trace it top-to-bottom)</summary>
 
 ```text
-fuzzy idea
-  └─ Phase 1 · comic-author AGENT WORKFLOW (your agent follows the skills)
-       intent ─(you approve)─ style ─ outline ─(you approve)─ storyboard ─ assets(locked) ─ blueprints ─ prompts ─ comic.json
-                 each step = a detailed skill + its --gate (agent procedure: fan out cross-model reviewers → fuse → flip status)
-  └─ comic.json + locked assets + the author wiki trace
-  └─ Phase 2/3 · spiral engine   (run_comic.py  OR  spiral_engine.js via a workflow runtime)
-       content_svg ─ bake (codex image_gen) ─ panel_gate (CC narrative ‖ Gemini visual ‖ Codex visual ─
-                     deterministic token-diff over the blind transcriptions · single-vote veto) ─ keep/retry
-                     ─ page assembly_gate ─ project to comic.json ─ single-file HTML viewer
+/movie-pipeline "fuzzy idea"            one slash-command · agent-run, NOT a shell binary
+   │
+   ▼   comic-author drives these Phase-1 skills IN ORDER (they are not separate slash-commands):
+   comic-intent-parser
+     → ⟨HUMAN APPROVE — intent⟩
+     → comic-style-bible-lock
+     → comic-outline-creator
+     → ⟨HUMAN APPROVE — outline⟩
+     → comic-storyboard-creator
+     → comic-asset-ref-generator → comic-asset-review-loop          (准×3 unanimity → assets LOCKED)
+     → comic-blueprint-author → comic-panel-prompt-builder → comic-json-compiler
+   ├──────────────── Phase 1 · comic-author — author the source of truth ────────────────┤
+   │
+   │   → comic.json + locked assets + the author wiki trace
+   ▼
+   comic-cross-layer-gate --gate p0_proof     ├─ P0 · ZERO-CREDIT proof — must pass before any image credit ─┤
+   │
+   ▼   comic-director — the audited spiral     (run_comic.py  |  packages/core/spiral_engine.js)
+   per panel:  content_svg → codex image_gen → panel_gate
+                  reviewers: CC narrative ‖ Gemini visual ‖ Codex visual
+                  → blind transcriptions → deterministic token-diff vs expected_literals
+               verdict ─ KEEP → page pool
+                       ├ RETRY ≤4   (re-bake the SAME panel + repair note)
+                       └ rollback ≤6 (re-bake NAMED prior panels — cross-frame drift)
+   page assembly_gate → project accepted panels to comic.json → build_comic.py → outputs/index.html
+   ├──────────────── Phase 2/3 · comic-director — audited spiral + viewer ────────────────┤
+
+   📚 research-wiki — reads the locked source nodes before each layer; writes every attempt / review /
+                      decision / failure after each gate & bake (the inspectable audit trace).
+   🔄 human-in-loop — intent + outline are HARD stops; a failed p0 / panel / assembly gate stops or
+                      escalates; a non-convergent panel is flagged for you, never silently shipped.
 ```
 </details>
 
@@ -167,31 +189,58 @@ open  examples/comic_m3_audit/outputs/index.html
 ```
 …or just open the hosted one: **https://wanshuiyin.github.io/ARIS-Movie-Director/comic/** — all **19 scenes / 24 frames**.
 
-**C · Make a method figure — input: a brief → output: `figure.png`**
-Feed ONE ARIS-format artifact — a `method_figure_brief.json` (the same brief `paper-plan` emits after its
-claims_matrix) — and one command runs the whole spiral (Step-0 compile → render condition → `gpt-image-2` bake →
-Gemini+Codex blind panel + `content_diff` → retry until clean → Claude structural sign-off):
+**C · Make a method figure — a brief → `figure.png`**
+One **slash-command**, [`/method-figure`](skills/method-figure/SKILL.md) — give it a `method_figure_brief.json`
+(the same brief `paper-plan` emits after its claims_matrix) and it runs the whole audited spiral to a signed-off
+figure (Step-0 compile → render condition → `gpt-image-2` bake → Gemini + Codex blind panel + `content_diff` →
+retry until clean → **Claude structural sign-off**):
+
+```text
+> /method-figure path/to/method_figure_brief.json
+```
+
+The **deterministic core** (from a brief, no agent runtime) is one command — `run_spiral.py`:
 ```bash
 # OUR example brief bakes ARIS's own Figure 1 — swap in your own method_figure_brief.json
 python3 skills/method-figure/scripts/run_spiral.py \
     skills/method-figure/examples/method_figure/method_figure_brief.json \
     --out-dir figures/method_figure/demo
-#  -> figures/method_figure/demo/figure.png   (the PANEL-CLEAN candidate, awaiting your structural sign-off)
+#  → figures/method_figure/demo/figure.png   (the PANEL-CLEAN candidate, awaiting your structural sign-off)
 #     (+ blueprint.json + traceability.json + trace.jsonl of every round)
-#  first run? use --p0-only (zero image credits: validate+compile+render+lint). NOTE: --dry-run still writes these files.
+#  first run? add --p0-only (zero image credits: validate + compile + render + lint). NOTE: --dry-run still writes these files.
 ```
-The brief is auto-compiled into the content-locked `blueprint.json` (**Step-0 is a deterministic step inside the
-skill** — you never hand-write a blueprint or place coordinates), the identity sheet is resolved from the brief's
-`identity_refs[].path` (no separate `--identity` to manage), and every node is traceability-checked back to a
-brief field (an un-traceable node fails closed). Needs the **`codex` and `gemini` CLIs** on PATH and headless Chrome.
 
-> **Only have a paper, no brief yet?** Point your coding agent — e.g. the
-> **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project** — at your paper to
-> emit the `method_figure_brief.json` first (claims/numbers verbatim) — the exact SOP + prompt is
-> [`paper_to_brief.md`](skills/method-figure/references/paper_to_brief.md), then run the command above.
-> **Power-user:** already have a hand-tuned blueprint? `run_spiral.py blueprint.json --identity sheet.png
-> --out-dir … --from-blueprint` runs the legacy path. The worked 4-round convergence (the exact prompts) is in
-> [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
+<details><summary>📐 flow — /method-figure (brief → audited render → sign-off)</summary>
+
+```text
+(upstream — only if you have a paper; NOT part of /method-figure):
+   paper_to_brief.md  →  method_figure_brief.json      agent-authored; claims / numbers copied VERBATIM
+        │
+        ▼
+/method-figure  <method_figure_brief.json | blueprint.json>        the skill = pure render + verify
+   run_spiral.py — the deterministic core (starts from a brief):
+     compile_brief.py (Step-0) → blueprint.json + traceability.json     every node traces to a brief field — else FAIL-CLOSED
+       → validate_blueprint.py → render_condition.py                    labeled condition SVG → PNG
+       → codex exec --sandbox read-only → gpt-image-2 bake
+       → Gemini blind-transcribe ‖ Codex blind-transcribe → content_diff.py     deterministic vetoes
+       → RETRY ≤4 (re-assert the locked labels) → Claude STRUCTURAL sign-off
+   → figure.png   (+ blueprint.json + traceability.json + trace.jsonl of every round)
+   ├──────────────── method-figure · audited render / verify spiral ────────────────┤
+```
+</details>
+
+Step-0 is deterministic **inside the skill** — you never hand-write a blueprint or place coordinates; the identity
+sheet resolves from the brief's `identity_refs[].path` (no separate `--identity`); every node is
+traceability-checked back to a brief field (un-traceable → fail-closed). **No model self-acquits** — the bake is
+ratified by Gemini + Codex blind reads + a deterministic `content_diff`, then a separate **Claude structural
+sign-off**. Needs the **`codex` + `gemini` CLIs** + headless Chrome (`python3 cli/preflight.py`).
+
+> **Only have a paper, no brief yet?** Author the brief FIRST — point your coding agent (e.g. the
+> **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) main project**) at your paper via
+> [`paper_to_brief.md`](skills/method-figure/references/paper_to_brief.md) (claims/numbers verbatim) — then
+> `/method-figure` it. **Power-user:** already have a hand-tuned blueprint? `run_spiral.py blueprint.json
+> --identity sheet.png --out-dir … --from-blueprint` runs the legacy path. The worked 4-round convergence (the
+> exact prompts) is in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
 ## How it works
 
