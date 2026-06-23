@@ -6,11 +6,16 @@ can see *how detailed an image-generation condition has to be* — this skill's 
 it exhaustively, don't hand-paste."** Nothing in that figure was overlaid by hand; every box, arrow, and
 character was rendered by the model from the text below.
 
-**How it was run.** Each bake is one call to **codex (`gpt-5.5`, `model_reasoning_effort: xhigh`) with
-`sandbox: read-only`** — the read-only sandbox is deliberate: it removes codex's ability to "helpfully"
-write an SVG/script, forcing it to use its native `gpt-image-2` image-generation tool. Between bakes, a
-a **cross-model panel** critiques the rendered pixels; the consolidated fix-list becomes the next bake. It
-converged in **4 rounds**; v4 was approved and shipped. The round-by-round verdicts are in `trace.jsonl`.
+**How it was run.** Each bake is one call to **codex (`gpt-5.5`, `model_reasoning_effort: xhigh`)** producing
+the native `gpt-image-2` image. In the **current** doctrine the real bake is the **agent `mcp__codex__codex`
+sidecar** (`--bake-mode=agent`, `sandbox: workspace-write` so it WRITEs the explicit `out_path`); `codex exec`
+is **retired** for real bakes. What keeps the bake honest is **not** any `sandbox` setting but a **fail-closed
+verifier** (`pickup_image.py --out-existing`: native PNG sig + dims + `mtime` check, HARD-VETO on any
+struct/zlib/SVG/matplotlib fallback marker). Between bakes a **cross-model panel** critiques the rendered pixels;
+the consolidated fix-list becomes the next bake. It converged in **4 rounds**; v4 was approved and shipped. The
+round-by-round verdicts are in `trace.jsonl`. *(The verbatim round-by-round prompts below still say
+`sandbox: read-only` — that was the earlier exec-path mechanism; they are preserved as-is as a truthful record,
+not rewritten.)*
 
 > **Process note — the skill has since evolved (kept honest).** This figure was baked under an earlier
 > *3-model* critique (Codex ‖ Gemini ‖ Claude all reading the pixels), which the round-by-round prompts below
@@ -322,7 +327,10 @@ Be decisive and tight.
 1. **Detail is the product.** The round-1 condition is ~4.3k chars and names every box, sub-line, arrow
    color/direction, and the exact character placement. image_gen renders figure text *legibly* when you
    condition it this hard — it garbles when you're vague.
-2. **`sandbox: read-only` forces the image tool.** Without it codex tends to "help" by writing an SVG.
+2. **The agent seam + a fail-closed verifier keep the bake native.** The real bake is the agent
+   `mcp__codex__codex` sidecar (`--bake-mode=agent`, `sandbox: workspace-write`); `codex exec` is retired.
+   Codex can still "help" by writing an SVG/struct fallback, so the load-bearing safeguard is the fail-closed
+   verifier (`pickup_image.py` HARD-VETO on fallback markers), **not** any sandbox setting.
 3. **Condition, never paste.** Every literal in the figure was rendered by the model from text above; we
    pasted nothing on top.
 4. **Lock exact labels or a prettier round will rewrite them** (the v3 drift → v4 lock). This is exactly

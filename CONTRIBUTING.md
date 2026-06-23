@@ -63,6 +63,11 @@ it green. The metered stages are deliberately out of CI (they need credentials +
    - the trace is **inspectable**, not bit-for-bit "reproducible" (image generation isn't deterministic).
    - mark framework-constant text (e.g. a blueprint `rail`) with a `framework:*` source, not a `brief:*` one.
    - don't claim novelty the field already has (see the README "Related work" note).
+   - `--strict-author-gates` is an **opt-in production check**, not a default: by design `validate_wiki.py`
+     permits bare-locked author nodes for dev/experimentation (CI asserts the fixture passes WITHOUT the flag,
+     see `tests/test_gates.py`). A project shipping to release/review **should** run `validate_wiki.py
+     --strict-author-gates` in its own checklist and gate every author lock with a `decides`/`reviews` edge —
+     but do not claim the default smoke/CI enforces it (it does not).
 
 ## Adding an example project
 

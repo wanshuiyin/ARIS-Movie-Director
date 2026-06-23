@@ -6,7 +6,9 @@ section** and no brief yet, this is the repo-local SOP your coding agent follows
 `paper-plan`, which emits this brief after its `claims_matrix`.
 
 ## Prerequisites (the bake + review stages need these on PATH)
-- **`codex` CLI**, logged in — the bake runs `codex exec --sandbox read-only` → its native `gpt-image-2`.
+- **`codex` CLI**, logged in — the real bake is the agent `mcp__codex__codex` sidecar (`--bake-mode=agent`,
+  `sandbox: workspace-write`, `config: {model_reasoning_effort: xhigh}`) → its native `gpt-image-2`; a fail-closed
+  verifier (not any sandbox setting) keeps it honest. (`codex exec` is retired for real bakes.)
 - **`gemini` CLI**, logged in — the second blind-transcribe reviewer (recommended; without it the panel runs Codex-only).
 - **headless Chrome / Chromium** — the condition SVG is rasterized to PNG for the bake.
 - Python ≥ 3.9. Run **`run_spiral.py … --p0-only`** first: it's the zero-credit gate (compile + render + lint), so you confirm the brief is sound *before* spending any image credit. (`--dry-run` also needs no credit.)

@@ -2,9 +2,12 @@
 
 `packages/core/spiral_engine.js` is a **workflow script**, not a bare CLI. It begins with
 `export const meta = {…}` and calls `agent()` / `phase()` / `parallel()` — those primitives only exist
-inside an **agent/workflow runtime** (e.g. Claude Code's **Workflow tool**), which is what supplies the
-per-panel `codex image_gen` bake and the `codex` / `gemini` cross-model gate calls. So you don't run it
-with `node`; you launch it through that runtime.
+inside an **agent/workflow runtime** (e.g. Claude Code's **Workflow tool**), which is what drives the
+deterministic core (blueprint render + the `codex` / `gemini` cross-model gate calls). The JS engine does
+**not** itself bake: its in-engine `codex image_gen` path is **retired** (`generatePanel` HARD-FAILS it
+with `exec-bake-retired`), and the **real** per-panel bake is the **agent `mcp__codex__codex` sidecar**
+serviced via the Python SOP (`run_comic.py --bake-mode=agent`, which emits `.bakereq.json` / awaits
+`.bakestatus.json`). So you don't run it with `node`; you launch it through that runtime.
 
 ## Launch (the concrete call)
 In Claude Code, the simplest trigger is natural language — *"generate panels S01,S02 for
@@ -20,9 +23,12 @@ Workflow({
 })
 ```
 
-Per panel it: render the `condition.content_svg` blueprint → `codex image_gen` bake (blueprint + identity
-ref) → `panel_gate` (CC ‖ Gemini ‖ Codex → deterministic verdict) → write wiki nodes → keep / retry
-(≤4/panel) → page `assembly_gate` → project the kept panels into `comic.json`. Then build the viewer:
+Per panel the deterministic core (driven by the Workflow engine) does: render the `condition.content_svg`
+blueprint → **agent `mcp__codex__codex` sidecar bake** (blueprint + identity ref) via the Python SOP
+(`run_comic.py --bake-mode=agent` emits `.bakereq.json` / awaits `.bakestatus.json`), verified by
+`pickup_image.py --out-existing` — **not** an in-engine `codex image_gen` bake → `panel_gate`
+(CC ‖ Gemini ‖ Codex → deterministic verdict) → write wiki nodes → keep / retry (≤4/panel) → page
+`assembly_gate` → project the kept panels into `comic.json`. Then build the viewer:
 `python3 packages/viewer/build_comic.py examples/mycomic`.
 
 ## args
@@ -41,9 +47,15 @@ ref) → `panel_gate` (CC ‖ Gemini ‖ Codex → deterministic verdict) → wr
 
 ## Runtime behavior you should know
 - **Caps:** ≤4 attempts per panel, ≤6 rollbacks per run, then it flags for a human (no infinite loops).
-- **One bake at a time.** `codex image_gen` writes to a global dir and the engine picks the mtime-newest
-  PNG — running two bakes concurrently lets them grab each other's images. This is operator discipline
-  (no code lock yet).
+- **One bake at a time.** In agent mode the bake writes to an **explicit per-panel `out_path`** and is
+  verified there (`pickup_image.py --out-existing`) — there is **no `/tmp` lock**, because the agent wrapper
+  serializes the `mcp__codex__codex` calls one bake at a time. The remaining race surface is per-project: two
+  runs on the same project/page collide on the per-panel `.bakereq.json`/`.bakestatus.json` sidecars + the
+  shared `out_path`, so keep **one runner per project/page** (operator discipline).
+  - **LEGACY (exec-only, retired for real bakes):** the old `--bake-mode=exec` path had `codex image_gen` write
+    to a **global dir** while the engine picked the **mtime-newest PNG**, so two concurrent bakes could grab
+    each other's images and there was **no code lock**. This global-dir / newest-PNG hazard applies ONLY to the
+    retired exec path, not to the agent-sidecar reality above.
 - **image_gen throttling:** if a bake is rate-limited mid-run the engine stops cleanly and returns
   `escalated.fresh_run_required = true`. After the cooldown, launch a **fresh** run for the remaining
   panels — do **not** `resumeFromRunId`, which replays the cached throttle and instantly "throttles" again.

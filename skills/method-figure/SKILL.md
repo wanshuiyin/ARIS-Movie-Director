@@ -1,6 +1,6 @@
 ---
 name: method-figure
-description: "Generate a publication-grade method / architecture / pipeline / workflow figure (a paper or README 'Figure 1') as an AUDITABLE object, not a one-shot prompt. A deterministic JSON blueprint LOCKS the content; an image model (gpt-image-2, driven by Codex GPT-5.5 xhigh, sandbox read-only) bakes the aesthetic from a labeled-condition render + the project's real identity refs; a cross-model panel (Gemini + Codex) blind-transcribes the result and a script hard-diffs it against the blueprint; the loop regenerates until Gemini approves, Codex does not veto, and the diff is empty — then the calling agent (Claude) gives the structural sign-off. NOT for statistical plots (use a plotting tool) or photo scenes."
+description: "Generate a publication-grade method / architecture / pipeline / workflow figure (a paper or README 'Figure 1') as an AUDITABLE object, not a one-shot prompt. A deterministic JSON blueprint LOCKS the content; an image model (gpt-image-2, baked by the agent via mcp__codex__codex — Codex GPT-5.5 xhigh, sandbox workspace-write) bakes the aesthetic from a labeled-condition render + the project's real identity refs; a cross-model panel (Gemini + Codex) blind-transcribes the result and a script hard-diffs it against the blueprint; the loop regenerates until Gemini approves, Codex does not veto, and the diff is empty — then the calling agent (Claude) gives the structural sign-off. NOT for statistical plots (use a plotting tool) or photo scenes."
 argument-hint: [method_figure_brief.json | blueprint.json]
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, mcp__codex__codex, mcp__codex__codex-reply, mcp__gemini-cli__ask-gemini, mcp__gemini__chat
 ---
@@ -22,7 +22,7 @@ blind-transcribe-then-hard-diff loop turns (a) into a reliable result and catche
                               ▼
                         ② CONDITION (white-bg labeled SVG → PNG) + identity sheet (real chibi, optional)  ── render_condition.py --png
                               ▼
-                        ③ BAKE  — codex exec --sandbox read-only (gpt-5.5-xhigh) → gpt-image-2  ── pickup_image.py (lock+marker+sha+dims+log, fail-closed)
+                        ③ BAKE  — agent: mcp__codex__codex(prompt+abs ref paths+out_path, workspace-write, gpt-5.5, config{xhigh}) → gpt-image-2 native PNG  ── pickup_image.py --out-existing (sig+size+dims, mtime-bound, HARD-VETO struct/zlib/PIL/SVG, fail-closed)
                               ▼
                         ④ PANEL — Gemini ‖ Codex BLIND-transcribe → content_diff.py (observed ⊖ blueprint) → Claude structural sign-off
                               ▼
@@ -35,12 +35,26 @@ blind-transcribe-then-hard-diff loop turns (a) into a reliable result and catche
 ```
 
 ## Constants
-- **GENERATOR** = Codex `gpt-5.5`, `model_reasoning_effort: xhigh`, **`sandbox: "read-only"`** → the native
-  `image_generation` tool (gpt-image-2). read-only is what FORCES the image tool (else Codex pivots to writing
-  an SVG renderer). `run_spiral.py` drives this via **`codex exec --sandbox read-only`** (no agent runtime
-  needed); an interactive agent may equivalently call **`mcp__codex__codex`** with `sandbox:"read-only"` — same
-  model + tool. Output lands in `~/.codex/generated_images`; pick it up with `pickup_image.py` (verifies a real
-  native PNG, fail-closed).
+- **GENERATOR** = Codex `gpt-5.5`, `config: {model_reasoning_effort: xhigh, include_image_gen_tool: true}` → the native `image_generation`
+  tool (gpt-image-2). **CRITICAL**: image_gen is produced ONLY via **`mcp__codex__codex`** (the agent tool), NOT
+  `codex exec`. `codex exec` / over-specified / forbid-list prompts make Codex hand-draw a code fallback
+  (struct+zlib PNG or SVG/matplotlib) — visually indistinguishable for trivial shapes, useless for a real
+  method-figure. The working invocation is **`mcp__codex__codex`** with a **dead-simple** prompt +
+  `sandbox: "workspace-write"` (it must WRITE the out_path) + `model: "gpt-5.5"` +
+  `config: {model_reasoning_effort: "xhigh", include_image_gen_tool: true}` (the schema has NO top-level effort
+  param; `config{xhigh}` shorthand below ALWAYS expands to **both** these keys — without `include_image_gen_tool`
+  codex won't fire its native image tool, it falls back to descriptive text / an SVG renderer) + `cwd: <project>`.
+  Reference images are passed by **absolute file path inside the prompt** (the schema has NO `-i`); the output
+  path is a **deterministic abs path** in the prompt. Pick it up with **`pickup_image.py --out-existing`**
+  (verifies the EXPLICIT out_path: PNG sig + size + dims, `mtime >= request.created_at`) which **HARD-VETOES**
+  struct/zlib/PIL/`<svg>`/matplotlib markers in the agent transcript (fail-closed; there is **no** 'native sig
+  wins' override). **Honesty caveat:** as of Jun 2026 native headless persistence is unreliable, so this
+  fail-closed verifier — not any `sandbox` setting — is the first guard against a non-native bake. But the
+  HARD-VETO is a **BEST-EFFORT denylist** against the *known* codex-exec hand-draw fallback (struct/zlib/PIL/
+  SVG/matplotlib markers), **NOT a complete security boundary** — a novel fallback that emits a sig-valid PNG
+  without those markers can slip past it. The **load-bearing faithfulness gate is the cross-model blind-transcribe
+  panel + the deterministic `content_diff`** (the pixels are what reviewers transcribe), with this denylist as a
+  cheap upstream filter.
 - **PANEL** (automated blind-transcribe) = `mcp__gemini-cli__ask-gemini` (`auto-gemini-3`) + `mcp__codex__codex`
   (gpt-5.5 xhigh) + the deterministic `content_diff`. **Claude (this agent) is the post-pass STRUCTURAL sign-off,
   not a blind transcriber** — the loop converges on Gemini-approve + Codex-no-veto + empty-diff, then Claude signs off.
@@ -51,10 +65,18 @@ blind-transcribe-then-hard-diff loop turns (a) into a reliable result and catche
   (`hybrid`/`overlay` — lock structure + vector-overlay the labels for paper zero-tolerance text — are on the
   v1 roadmap; do NOT use a vector overlay as an ad-hoc patch on a finished bake, it reads as pasted.)
 - **OUTPUT_DIR** = `figures/method_figure/<figure_id>/` (figure.png, blueprint.json, condition.svg, trace.jsonl).
-- **NATIVE-IMAGE FAIL-CLOSED** — accept a bake ONLY if a real PNG appeared after the marker, sha/size/dims
-  check out, and the codex log shows no shell/python/SVG fallback (`pickup_image.py --log`).
-- **SERIALIZE BAKES** — never run two image generations at once; the global generated-images dir + the
-  newest-after-marker pickup will cross-pollinate.
+- **NATIVE-IMAGE FAIL-CLOSED** — accept a bake ONLY if a real native PNG exists at the **explicit out_path**,
+  sha/size/dims check out and `mtime >= request.created_at`, and the agent transcript shows **no** struct/zlib/
+  PIL/`<svg>`/matplotlib fallback (`pickup_image.py --out-existing`, HARD-VETO — a clean sig never overrides a
+  fallback marker). This veto is a **BEST-EFFORT denylist** against the *known* codex-exec hand-draw fallback,
+  **NOT a complete security boundary** (a novel marker-free fallback could evade it). The load-bearing
+  faithfulness gate remains the **cross-model blind-transcribe panel + the deterministic `content_diff`**; the
+  denylist is a cheap upstream filter that matters because native headless persistence is currently unreliable.
+- **SERIALIZE BAKES** — never run two image generations at once. The default `--bake-mode=agent` writes each
+  native PNG to its **explicit per-round `out_path`** (no shared dir), so concurrent agent bakes still risk a
+  request/status sidecar race — keep one runner per figure. (The global `~/.codex/generated_images` dir +
+  newest-after-marker pickup that could cross-pollinate concurrent bakes is a hazard of the **LEGACY
+  `--bake-mode=exec` path ONLY**, which is retired for real bakes.)
 
 ## Input contract / ARIS hand-off (who decides WHAT, who only renders)
 This skill is **pure render + verify**. Ownership:
@@ -88,8 +110,9 @@ Feed ONE `method_figure_brief.json`; the whole loop is one command:
 ```bash
 python3 scripts/run_spiral.py your_method_figure_brief.json --out-dir figures/method_figure/<id>
 #  auto-detects a brief → Step-0 compile_brief.py → blueprint.json + traceability.json (deterministic, fail-closed)
-#  → validates → renders condition(+png) → [bake (codex exec --sandbox read-only → gpt-image-2, serialized under
-#  a lock) → pickup+verify (fail-closed) → Gemini + Codex blind-transcribe → content_diff → blockers] × rounds
+#  → validates → renders condition(+png) → [bake (agent: mcp__codex__codex --bake-mode=agent, workspace-write,
+#  gpt-5.5 config{xhigh} → gpt-image-2 native PNG via the .bakereq.json sidecar) → pickup_image.py --out-existing
+#  verify (fail-closed, HARD-VETO over the status file's mcp_output) → Gemini + Codex blind-transcribe → content_diff → blockers] × rounds
 #  → on PANEL-CLEAN writes figure.png + blueprint.json + traceability.json + trace.jsonl.
 #  input auto-detect: brief (components+flows) vs blueprint (version) vs ambiguous → fail-closed (--from-brief/--from-blueprint)
 #  --identity is OPTIONAL (resolved from the brief's identity_refs[0].path);  --dry-run prints the round-1 bake
@@ -104,6 +127,32 @@ deterministic `content_diff` empty, core scores (incl. `character_identity` when
 ≥ threshold, and no anomalies/blockers — then STOPS and hands to the calling agent (Claude) for the final
 **structural** sign-off (the generator family never self-acquits). The manual steps below are exactly what
 `run_spiral.py` automates (run them to debug one stage).
+
+## Who runs `--bake-mode=agent` (the agent-wrapper SOP) — REQUIRED for the default mode to function
+The bake is a **synchronous sidecar handshake** and the **skill agent** is its fulfiller (without it, every bake
+polls to `--bake-timeout` and escalates with `failure_kind="other"` — fail-closed, not a hang, never a false throttle):
+1. Launch the orchestrator in the **BACKGROUND**:
+   `python3 scripts/run_spiral.py your_brief.json --out-dir figures/method_figure/<id> --bake-mode agent`.
+2. **Loop** until it prints PANEL-CLEAN / escalates / exits:
+   - watch `<out-dir>/` for a new `*.bakereq.json` (the orchestrator writes `round<N>.png.bakereq.json`);
+   - read it; call `mcp__codex__codex` with **exactly** its
+     `{prompt: <prompt_text>, model:"gpt-5.5", config:{include_image_gen_tool:true, model_reasoning_effort:"xhigh"}, sandbox:"workspace-write", cwd:<cwd>}`
+     (codex writes the native PNG to the sidecar's `out_path`). The `config` MUST carry **both**
+     `include_image_gen_tool:true` AND `model_reasoning_effort:"xhigh"`: without `include_image_gen_tool` Codex will
+     **not** fire its native `gpt-image-2` tool (it falls back to a struct/zlib/SVG hand-draw), and `xhigh` is the
+     required reasoning tier;
+   - then read `request_id` from the `*.bakereq.json` and write `<out>.bakestatus.json` carrying **the status, a
+     bounded raw `mcp_output`, AND that `request_id` VERBATIM** — `mcp_output` so the HARD-VETO can scan it (the core
+     feeds this file to `pickup --transcript`; an `ok` status with no raw output makes the veto INERT), and
+     `request_id` because `pickup_image.py --out-existing --request-id` **fail-closes the bake if the status
+     `request_id` is missing or mismatched** (write it on BOTH ok and fail):
+     `{"status":"ok","mcp_output":"<raw>","request_id":"<verbatim from bakereq>"}`, or
+     `{"status":"fail","failure_kind":"throttle","mcp_output":"<raw>","request_id":"<verbatim from bakereq>"}` on a
+     429 / `MODEL_CAPACITY_EXHAUSTED` / overloaded error (else
+     `{"status":"fail","failure_kind":"other","mcp_output":"<raw>","mcp_error":"<raw>","request_id":"<verbatim from bakereq>"}`).
+3. The core proceeds to verify ONLY on `status:"ok"`, via `pickup_image.py --out-existing` (sig + dims + size >
+   500000 + `mtime >= created_at`, HARD-VETO over `mcp_output`, and `--request-id` fail-close if the status
+   `request_id` is absent/mismatched). `--bake-mode=exec` is the legacy/CI non-image path and RAISES if it reaches a real bake.
 
 ## Workflow (what run_spiral.py automates — or run by hand)
 
@@ -122,12 +171,17 @@ python3 scripts/render_condition.py blueprint.json --out condition.svg --png con
 Prepare `identity_sheet.png` from the project's REAL characters if the figure has any (never invent robots).
 The condition PNG + the identity sheet are the two image references.
 
-### ③ BAKE (round N) — serialized
-Record a marker timestamp, then call `mcp__codex__codex` (sandbox **read-only**, effort xhigh) with the
-prompt from `references/prompt_templates.md §A` — it RE-ASSERTS every `*_exact` label + the round-N blockers
-+ the carried `positive_invariants`, with `condition.png` + `identity_sheet.png` as read-only references. Then:
+### ③ BAKE (round N) — agent seam
+Call `mcp__codex__codex` (sandbox **workspace-write** — it must WRITE the out_path; `model: gpt-5.5`,
+`config: {model_reasoning_effort: xhigh, include_image_gen_tool: true}`, `cwd: <project>`) with the prompt from
+`references/prompt_templates.md §A` — it RE-ASSERTS every `*_exact` label + the round-N blockers + the carried
+`positive_invariants`, with `condition.png` + `identity_sheet.png` referenced by **absolute path inside the
+prompt** (the schema has no `-i`) and the **exact out_path** to save the native PNG. Write the bake status to
+`round<N>.png.bakestatus.json` carrying the raw `mcp_output` (so the HARD-VETO can scan it) **AND the
+`request_id` copied VERBATIM from `round<N>.png.bakereq.json`** (pickup `--request-id` fail-closes if it's
+missing/mismatched), then verify the explicit out_path (no marker/glob):
 ```bash
-python3 scripts/pickup_image.py --marker <epoch> --out figures/method_figure/<id>/round<N>.png --log codex_bake.log --aspect <W/H>
+python3 scripts/pickup_image.py --out-existing --out figures/method_figure/<id>/round<N>.png --min-bytes 500000 --aspect <W/H> --created-at <epoch> --request-id <uuid4 hex from round<N>.png.bakereq.json> --transcript figures/method_figure/<id>/round<N>.png.bakestatus.json
 ```
 
 ### ④ PANEL — blind transcribe, then hard diff
@@ -159,7 +213,8 @@ accepted_round, verdicts}`. Failures are kept — the fixes that were needed are
 ## Hard do / don't (earned lessons)
 - **DO** lock content in the blueprint and RE-ASSERT every `*_exact` label in every regeneration — image
   models drift content every round; the blueprint is the anchor.
-- **DO** force the native image tool (read-only sandbox) and fail-closed if no real PNG (`pickup_image.py --log`).
+- **DO** bake via the agent (`mcp__codex__codex`, workspace-write) and fail-closed if no real native PNG at the
+  explicit out_path (`pickup_image.py --out-existing`, HARD-VETO struct/zlib/PIL/`<svg>`/matplotlib in the status file's `mcp_output`).
 - **DO** use the project's real identity refs; anchor each character to the identity sheet. For a character
   figure, every reviewer ENUMERATES each chibi's visible hands — a wrong count / 3rd / floating / merged limb
   is a single-reviewer veto (the literal-diff is blind to anatomy).

@@ -24,9 +24,15 @@ The contract boundary is **`comic.json` + the assets it references** (content-SV
 Full IR spec: [`../../docs/comic-json.md`](../../docs/comic-json.md) /
 [`../../schemas/comic.schema.json`](../../schemas/comic.schema.json).
 
-## Run it (one command — `scripts/run_comic.py`)
-A standalone, pure-stdlib **faithful port** of `packages/core/spiral_engine.js`'s movie branch — it shells
-the `codex` + `gemini` CLIs directly, so it runs WITHOUT the agent/workflow runtime.
+## Run it (`scripts/run_comic.py` — agent-driven bake, CLI gates)
+A pure-stdlib **faithful port** of `packages/core/spiral_engine.js`'s movie branch. The cross-model **gates**
+(Gemini + Codex vision) still shell the `gemini` / `codex` CLIs directly. The **BAKE** is performed by the
+skill **agent** via the **`mcp__codex__codex`** MCP tool through `--bake-mode=agent` (the default): the core
+emits a deterministic bake-request sidecar (prompt + absolute ref paths + exact out_path), the agent calls
+`mcp__codex__codex` (`sandbox: workspace-write`, `model: gpt-5.5`, `config: {model_reasoning_effort: xhigh, include_image_gen_tool: true}`,
+`cwd: <project>`), and the core verifies the explicit out_path. (`codex exec` is RETIRED for real bakes — it
+forced a hand-drawn SVG/struct+zlib fallback; `--bake-mode=exec` RAISES if it ever reaches a real bake. See
+`docs/spiral-runtime.md`.)
 ```bash
 python3 skills/comic-director/scripts/run_comic.py \
     --project examples/comic_m3_audit --page P02_b08 --panels S12,S13,S14,S15 \
@@ -43,13 +49,71 @@ It prints a JSON run-report (`kept`, `flagged_for_human`, `needs_human`, `shippa
 `escalated`, `assembly`, `attempts_per_panel`). Engine semantics it ports (caps 4/panel + 6/run, the
 deterministic verdict, anatomy single-vote veto, throttle → fresh-run): [`../../docs/spiral-runtime.md`](../../docs/spiral-runtime.md).
 
+## Bake seam contract (agent ↔ core) — `--bake-mode=agent`
+The bake is a **synchronous sidecar handshake** (contract-v2 §1–§4). The core never returns/exits early on a
+bake; only the bake **primitive** moved off `codex exec` onto `mcp__codex__codex`:
+- **(A) core writes** `<out>.bakereq.json` =
+  `{prompt_text, content_png, identity_ref, out_path, model:"gpt-5.5", config:{model_reasoning_effort:"xhigh", include_image_gen_tool:true}, sandbox:"workspace-write", cwd, created_at, min_bytes:500000, aspect, request_id:"<uuid4 hex>"}`
+  (`prompt_text` ALREADY contains the absolute ref + out paths — the schema has **no** `-i`; `config` carries
+  **both** `model_reasoning_effort:"xhigh"` AND `include_image_gen_tool:true` — without the latter codex won't fire
+  its native image tool; `request_id` is a per-bake uuid4-hex nonce the core mints — see (D)+(E)), pre-deleting any
+  stale `out_path` + status.
+- **(B) the agent calls** `mcp__codex__codex` with EXACTLY those params.
+- **(C) codex writes** a native PNG to `out_path`.
+- **(D) the agent writes** `<out>.bakestatus.json` =
+  `{status:"ok"|"fail", failure_kind:"throttle"|"other", mcp_output:"<bounded raw codex tool output>", mcp_error, request_id:"<verbatim from bakereq>"}`.
+  **`mcp_output` is MANDATORY on BOTH ok and fail** — the core feeds this status file to `pickup --transcript`,
+  and the HARD-VETO scans it for `import struct`/`zlib.compress`/`<svg>`/`matplotlib`/… markers. **An `ok`
+  status with no raw output makes the HARD-VETO inert** (a hand-drawn struct+zlib/SVG that still emits a
+  ≥500KB sig-valid PNG would slip through) — so always embed the bounded raw tool result.
+  **`request_id` is EQUALLY MANDATORY on BOTH ok and fail** — copy it VERBATIM from `<out>.bakereq.json` into
+  the bakestatus; `pickup_image.py --out-existing --request-id` **fail-closes the bake** if the status
+  `request_id` is missing or ≠ the bakereq nonce (a stale/foreign status at the same path can't be silently honored).
+- **(E) the core verifies** via `pickup_image.py --out-existing` on the EXPLICIT `out_path` (PNG sig + IHDR dims
+  + size > 500000 + aspect band + `mtime >= created_at`), **HARD-VETOES** the markers in the transcript
+  (= the status file's `mcp_output`), and (via `--request-id`) **fail-closes** if the status file's `request_id`
+  is absent or ≠ the bakereq nonce — but all ONLY after it has read `status:"ok"`. Empty/timeout/any-non-ok =
+  fail-closed (no pickup). NO fallback to `codex exec`/PIL/SVG; effort is ALWAYS `xhigh`; sandbox ALWAYS
+  `workspace-write`.
+
+### Who runs `--bake-mode=agent` (the agent-wrapper SOP) — REQUIRED for the default mode to function
+The comic-director **skill agent** is the bake fulfiller. Concretely:
+1. Launch the orchestrator in the **BACKGROUND**:
+   `python3 skills/comic-director/scripts/run_comic.py --project … --page … --panels … --bake-mode agent`
+   (it blocks on each bake by polling `<out>.bakestatus.json`).
+2. **Loop** until the orchestrator prints its final run-report JSON / exits:
+   - watch the project's `panels/` dir for a new `*.bakereq.json`;
+   - read it; call `mcp__codex__codex` with **exactly** its
+     `{prompt: <prompt_text>, model:"gpt-5.5", config:{include_image_gen_tool:true, model_reasoning_effort:"xhigh"}, sandbox:"workspace-write", cwd:<cwd>}`
+     (codex writes the native PNG to the sidecar's `out_path`). The `config` MUST carry **both**
+     `include_image_gen_tool:true` AND `model_reasoning_effort:"xhigh"`: without `include_image_gen_tool` Codex will
+     **not** fire its native image tool (it falls back to descriptive text / an SVG renderer), and `xhigh` is the
+     required reasoning tier;
+   - then read `request_id` from `<out>.bakereq.json` and write `<out>.bakestatus.json` carrying **the status, a
+     bounded raw `mcp_output`, AND that `request_id` VERBATIM** — `mcp_output` so the core's HARD-VETO can scan it,
+     and `request_id` because `pickup_image.py --out-existing --request-id` **fail-closes the bake if the status
+     `request_id` is missing or mismatched** (it must be written on BOTH ok and fail):
+     `{"status":"ok","mcp_output":"<raw>","request_id":"<verbatim from bakereq>"}` on success, or
+     `{"status":"fail","failure_kind":"throttle","mcp_output":"<raw>","request_id":"<verbatim from bakereq>"}` on a
+     429 / `MODEL_CAPACITY_EXHAUSTED` / overloaded error (otherwise
+     `{"status":"fail","failure_kind":"other","mcp_output":"<raw>","mcp_error":"<raw>","request_id":"<verbatim from bakereq>"}`).
+3. Stop when the orchestrator exits. (Without this wrapper, every bake polls to `--bake-timeout` and returns
+   `generation_failed` with `failure_kind="other"` — fail-closed, not a hang, and never a false `throttle`.)
+> `--bake-mode=exec` is the legacy/CI **non-image** path and RAISES if it ever reaches a real bake — never use
+> it to produce a panel.
+
 ## Hard do / don't
 - **Do** author `comic.json` first with [`comic-author`](../comic-author/SKILL.md); copy
   `examples/comic_m3_audit/comic.json` as the shape.
 - **Do** `--dry-run` first; confirm every baked figure-panel carries ascii-tokenizable `expected_literals`
   (else the fail-closed gate refuses to run).
-- **Don't** run two bakes at once (codex image_gen writes to a global dir; `/tmp/aris_imagegen.lock`
-  serializes, but one runner per project).
+- **Don't** run two bakes at once. The default `--bake-mode=agent` writes each native PNG to its **explicit
+  per-panel `out_path`** and has **no `/tmp/aris_imagegen.lock`** (that code lock is GONE in agent mode — the
+  agent wrapper itself serializes the `mcp__codex__codex` calls). The real race surface: concurrent runs on the
+  **same project/page** collide on the per-panel `.bakereq.json`/`.bakestatus.json` sidecars + the shared
+  `out_path` — so keep **ONE runner per project/page**. (The global generated-images dir that could
+  cross-pollinate concurrent bakes is a hazard of the **LEGACY `--bake-mode=exec` path ONLY**, retired for real
+  bakes.)
 - **Don't** resume after an image_gen throttle — launch a FRESH run for the remaining panels.
 - **Don't** treat a `needs_human`/flagged panel as shippable.
 

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""run_comic.py — standalone subprocess port of the COMIC branch of packages/core/spiral_engine.js.
+"""run_comic.py — stdlib subprocess port of the COMIC branch of packages/core/spiral_engine.js.
 
 FAITHFUL PORT NOTICE
-  This is a pure stdlib + subprocess port of spiral_engine.js so a comic can be generated WITHOUT the
-  agent/workflow runtime: it shells the `codex` and `gemini` CLIs directly (the runtime's agent() calls
-  become subprocess calls). `panel_verdict()` and `assembly_verdict()` are ported LINE-FOR-LINE from the
-  engine — the gate is the contract; do not paraphrase it. Mirrors skills/method-figure/scripts/run_spiral.py
-  (shared sh/_Fail/extract_json/sha/log + the /tmp/aris_imagegen.lock pattern) and reuses pickup_image.py.
+  Stdlib + subprocess port of spiral_engine.js. Two distinct seams: the GATES shell the `codex` and `gemini`
+  CLIs directly (the runtime's reviewer agent() calls become subprocess calls), but the BAKE is the agent's
+  `mcp__codex__codex` sidecar — generate_panel emits a bake request and polls <out>.bakestatus.json that the
+  agent wrapper writes (exec self-baking hand-draws a non-native fallback, so the exec path RAISES before any
+  bake). `panel_verdict()` and `assembly_verdict()` are ported LINE-FOR-LINE from the engine — the gate is the
+  contract; do not paraphrase it. Mirrors skills/method-figure/scripts/run_spiral.py (shared
+  sh/_Fail/extract_json/sha/log + the same agent-MCP sidecar bake seam) and reuses pickup_image.py.
 
-  Per panel: render condition.content_svg -> blueprint PNG -> codex image_gen bake (blueprint + identity ref)
-  -> 3 cross-model reviewers (CC narrative ‖ Gemini visual ‖ Codex visual) -> deterministic panel_verdict
+  Per panel: render condition.content_svg -> blueprint PNG -> agent mcp__codex__codex sidecar bake (blueprint
+  + identity ref) -> 3 cross-model reviewers (CC narrative ‖ Gemini visual ‖ Codex visual) -> deterministic panel_verdict
   -> write wiki nodes -> on KEEP update comic.json image_path/active_attempt_id -> page assembly_gate
   (cross-frame repair) -> optional viewer build. Caps: 4 bakes/panel + 6 assembly rollbacks.
 
@@ -17,23 +19,37 @@ Usage:
   python3 run_comic.py --project examples/comic_m3_audit --page P02_b08 --panels S12,S13,S14,S15
   [--bake-lang zh] [--max-total 4] [--max-rollbacks 6] [--finalize] [--dry-run] [--skip-assembly]
 
-The generator family (Codex image_gen) can NOT self-acquit: faithfulness is the deterministic token-diff over
-Gemini+Codex blind transcriptions. The calling agent (Claude) gives the final structural sign-off; this
-orchestrator prints a run-report JSON and never claims that acquittal for itself.
+The generator family (the agent mcp__codex__codex sidecar bake) can NOT self-acquit: faithfulness is the
+deterministic token-diff over Gemini+Codex blind transcriptions. The calling agent (Claude) gives the final
+structural sign-off; this orchestrator prints a run-report JSON and never claims that acquittal for itself.
 """
 import argparse, hashlib, json, os, re, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LOCK = "/tmp/aris_imagegen.lock"
 ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 PATH_RE = re.compile(r"^/[A-Za-z0-9._/-]+$")
 REL_SVG_RE = re.compile(r"^[\w][\w./-]*\.svg$")
 REL_PNG_RE = re.compile(r"^[\w][\w./-]*\.png$")
-THROTTLE_RE = re.compile(r"rate.?limit|429|quota|too many requests|overloaded|unavailable|server_?error|50[23]|capacity|MODEL_CAPACITY_EXHAUSTED", re.I)
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+# contract-v2 §0a: import the SHARED bake primitives from pickup_image.py (the single source of truth — NEVER
+# re-define them here; an inlined copy re-introduces the cross-engine drift this rewire exists to kill). The
+# pickup path is the same rsplit recipe derive_paths() uses for paths["PICKUP"].
+sys.path.insert(0, HERE.rsplit("/skills/", 1)[0] + "/skills/method-figure/scripts")
+from pickup_image import build_bake_prompt, emit_bake_request, await_bake_status, _status_path  # noqa: E402
 
 # ── shared infra (copied verbatim from run_spiral.py) ──
 def log(msg): print(f"[run_comic {time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
+# B-NONCE: forward the per-bake nonce to the pickup verifier via --request-id so it can reject a stale/foreign bake
+# correlated to the WRONG request. The shared pickup_image.py is the single source of truth (contract-v2 §0a) and is
+# OWNED BY ANOTHER TASK — we must not edit it. Its emit_bake_request RETURNS a uuid4-hex request_id (stamped into the
+# bakereq payload) and its --out-existing verifier fail-closes when the bakestatus request_id ≠ --request-id. The
+# shipped pickup genuinely supports --request-id, so we forward it UNCONDITIONALLY (mirroring run_spiral.py line 333):
+# (1) capture the returned id, falling back to the request's own marker (the created_at epoch used by --created-at)
+# only if a future/older emit ever returns falsy, and (2) always append --request-id to the pickup subprocess. A
+# prior one-shot `--help` probe gated the flag and could be poisoned by a single transient sh() failure (it cached
+# False and silently DROPPED the nonce for the whole run) — removed; the flag is part of the contract pickup ships.
 
 class _Fail:
     def __init__(self, msg): self.returncode = 1; self.stdout = ""; self.stderr = msg
@@ -48,27 +64,6 @@ def sh(cmd, timeout, **kw):
 
 def sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16] if os.path.exists(path) else ""
-
-def bake_run(cmd, timeout):
-    """Run the codex image bake in its OWN process group and kill the WHOLE group on timeout — the engine's
-    `pkill -P` watchdog, so a runaway image_gen child can't keep writing into the global dir and pollute the
-    next panel's pickup. (sh()/subprocess.run timeout would orphan the children.)"""
-    import signal
-    try:
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
-    except Exception as e:
-        return _Fail(f"bake spawn error: {e}")
-    try:
-        out, _ = p.communicate(timeout=timeout)
-        r = _Fail(""); r.returncode = p.returncode; r.stdout = out or ""; r.stderr = ""; return r
-    except subprocess.TimeoutExpired:
-        try: os.killpg(os.getpgid(p.pid), signal.SIGKILL)
-        except Exception:
-            try: p.kill()
-            except Exception: pass
-        try: out, _ = p.communicate(timeout=10)
-        except Exception: out = ""
-        return _Fail(f"bake timeout after {timeout}s (process group killed)\n{out or ''}")
 
 # clamp every reviewer score to a finite 0..5 (the engine's SCORE schema bound). The pure-subprocess port has
 # NO schema validation, so a stray 50 could KEEP and a numeric string could crash min(); out-of-range/non-numeric
@@ -274,23 +269,7 @@ def bake_prompt_body(cfg, bake_lang, invariants):
     ]
     return "\n".join(x for x in lines if x)
 
-def acquire_lock():
-    for _ in range(600):
-        try:
-            os.mkdir(LOCK); return True
-        except FileExistsError:
-            try:
-                if os.path.isdir(LOCK) and time.time() - os.path.getmtime(LOCK) > 900: os.rmdir(LOCK)
-            except OSError: pass
-            time.sleep(2)
-    return False
-
-def release_lock(held):
-    if held:
-        try: os.rmdir(LOCK)
-        except OSError: pass
-
-def generate_panel(paths, pid, cfg, ai, invariants, args, bakelog):
+def generate_panel(paths, pid, cfg, ai, invariants, args, bakelog):  # bakelog: exec-legacy / unused on the live agent seam
     aTag = "a" + str(ai).zfill(2)
     out = f"{paths['PANELS']}/{pid}_panel_{aTag}.png"
     cdir = f"{paths['PANELS']}/_content_refs"
@@ -302,35 +281,77 @@ def generate_panel(paths, pid, cfg, ai, invariants, args, bakelog):
     if id_rel and (not REL_PNG_RE.match(id_rel) or ".." in id_rel):
         return {"status": "generation_failed", "image_path": "", "gen_failed_reason": f"unsafe identity_ref: {id_rel!r}"}
     id_ref_abs = f"{paths['PROJ']}/{id_rel}" if id_rel else paths["CANON"]
+    # FAIL-CLOSED (mirror run_spiral.py's `if a.identity and not os.path.exists(a.identity): sys.exit(2)`): when an
+    # identity ref is CONFIGURED (id_rel set), the resolved file MUST exist on disk before it is embedded (as a
+    # literal path) in the bake prompt — a missing/typoed identity_ref would otherwise silently desync the agent's
+    # write target from our pickup probe AND waste a metered bake. Skip BEFORE emitting the bakereq via the file's
+    # existing generation_failed path. (The implicit CANON fallback is NOT existence-gated here, matching run_spiral,
+    # which only existence-checks the explicit --identity, never its defaults.)
+    if id_rel and not os.path.exists(id_ref_abs):
+        return {"status": "generation_failed", "image_path": "", "failure_kind": "other",
+                "gen_failed_reason": f"identity_ref not found on disk: {id_ref_abs}"}
     os.makedirs(cdir, exist_ok=True)
     # STEP 1 — render the content blueprint SVG -> persistent PNG (deterministic; no lock needed)
     rc = sh([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
              "--window-size=1280,720", f"--screenshot={cpng}", f"file://{paths['PROJ']}/{svg_rel}"], 45)
     if not os.path.exists(cpng) or os.path.getsize(cpng) < 1000:
         return {"status": "generation_failed", "image_path": "", "gen_failed_reason": f"content_svg render failed (need headless Chrome): {getattr(rc,'stderr','')[:200]}"}
-    # STEP 2 — assemble prompt = ART_BIBLE + body, then BAKE (codex image_gen, 2 refs) under the global lock
+    # STEP 2 — assemble prompt = ART_BIBLE + body, then BAKE via the AGENT (mcp__codex__codex) over the sidecar
+    # seam. R4: the exec path NEVER bakes (codex exec hand-draws a non-native fallback) — it RAISES. R3: in agent
+    # mode the core does NOT hold /tmp/aris_imagegen.lock (the agent wrapper is the sole serializer; the
+    # foreground core blocking on the agent that must service the sidecar would deadlock).
+    if args.bake_mode != "agent":
+        raise RuntimeError("exec bake retired — it hand-draws a non-native fallback; use --bake-mode=agent")
     bible = open(paths["BIBLE"], encoding="utf-8").read() if os.path.exists(paths["BIBLE"]) else ""
-    full_prompt = (f"Paste these style rules first:\n{bible}\n\nThen render this panel:\n" if bible else "") + bake_prompt_body(cfg, args.bake_lang, invariants)
-    held = acquire_lock()
-    if not held:
-        return {"status": "generation_failed", "image_path": "", "failure_kind": "other", "gen_failed_reason": "image-gen lock contended >20min"}
-    try:
-        marker = time.time()
-        r = bake_run(["codex", "exec", full_prompt, "-i", cpng, "-i", id_ref_abs,
-                      "--sandbox", "workspace-write", "-c", f"model_reasoning_effort={args.effort}", "--skip-git-repo-check"],
-                     args.bake_timeout)
-        open(bakelog, "w").write((getattr(r, "stdout", "") or "") + "\n---STDERR---\n" + (getattr(r, "stderr", "") or ""))
-        pk = sh(["python3", paths["PICKUP"], "--marker", str(marker), "--out", out,
-                 "--min-bytes", str(args.min_bytes), "--log", bakelog, "--aspect", str(1280 / 720)], 60)
-    finally:
-        release_lock(held)
+    body = (f"Paste these style rules first:\n{bible}\n\nThen render this panel:\n" if bible else "") + bake_prompt_body(cfg, args.bake_lang, invariants)
+    # paths+out_path are LITERAL in prompt_text (the mcp__codex__codex schema has no -i image param)
+    prompt_text = build_bake_prompt(body, content_png_abs=cpng, identity_ref_abs=id_ref_abs, out_path_abs=out)
+    created_at = time.time()
+    # A: include_image_gen_tool MUST sit in the config payload next to model_reasoning_effort — without it the agent
+    # wrapper will not hand the native image tool to codex (repo contract) and the bake never fires.
+    request_id = emit_bake_request(out, {"prompt_text": prompt_text, "out_path": out, "content_png": cpng,
+                            "identity_ref": id_ref_abs, "model": "gpt-5.5",
+                            "config": {"model_reasoning_effort": "xhigh", "include_image_gen_tool": True},
+                            "sandbox": "workspace-write",
+                            "cwd": paths["PROJ"], "created_at": created_at, "min_bytes": args.min_bytes,
+                            "aspect": 1280 / 720})
+    # B: capture the request_id RETURNED by emit_bake_request (a uuid4 hex it stamps into the bakereq + returns) and
+    # forward it to the pickup verifier below. Fall back to the request's own marker (created_at) only if it's falsy.
+    if not request_id: request_id = str(created_at)
+    status = await_bake_status(out, args.bake_timeout)   # polls <out>.bakestatus.json (agent wrapper writes it); {} on timeout
+    # C (BLOCKER-defense): harden against a non-dict status (None/list/str from a future wrapper or a corrupt
+    # status file) so every status.get(...) below is total — a non-dict here would crash the whole panel loop.
+    if not isinstance(status, dict): status = {}
+    # FAIL-CLOSED: ONLY status=="ok" may proceed to verify. Empty/timeout/missing-wrapper/any-non-ok => no pickup,
+    # no chance of accepting a stale/foreign PNG already at out_path. A timeout is "other", NOT "throttle"
+    # (only an explicit wrapper failure_kind=="throttle" is a throttle — consistent with run_spiral.py).
+    if status.get("status") != "ok":
+        kind = "throttle" if status.get("failure_kind") == "throttle" else "other"
+        reason = "agent bake timed out (no <out>.bakestatus.json — is the agent wrapper running?)" if not status \
+                 else f"agent bake not ok [{kind}]: {str(status.get('mcp_error') or status.get('status'))[:200]}"
+        return {"status": "generation_failed", "image_path": "", "failure_kind": kind, "gen_failed_reason": reason}
+    # HARD-VETO PRECONDITION (contract-v2 §4): status==ok ALONE is not enough — the HARD-VETO scans mcp_output
+    # (the full codex transcript, where a hand-draw leaves struct/zlib/PIL/SVG traces) for non-native fallbacks.
+    # An ok status with a missing/empty mcp_output would make the veto INERT (nothing to scan) and could wave a
+    # foreign/hand-drawn PNG through. Fail-closed exactly like a bake failure BEFORE the pickup call. NB: a bare
+    # str() coercion lets a JSON null slip past (str(None)=="None" is truthy) — require a real non-empty str.
+    m = status.get("mcp_output")
+    if not isinstance(m, str) or not m.strip():
+        return {"status": "generation_failed", "image_path": "", "failure_kind": "other",
+                "gen_failed_reason": "agent status ok but mcp_output missing/empty/non-string — HARD-VETO inert, fail-closed"}
+    # verify the EXPLICIT out_path; HARD-VETO scans the transcript (the status file's raw mcp_output, contract-v2 §4)
+    # B: forward the per-bake nonce UNCONDITIONALLY (mirror run_spiral.py line 333) so the verifier can reject a bake
+    # correlated to the WRONG request. The shipped pickup supports --request-id (contract-v2 §0a); no probe is needed
+    # (a probe could be poisoned by a transient sh() failure and silently drop the nonce for the entire run).
+    pk = sh(["python3", paths["PICKUP"], "--out-existing", "--out", out,
+             "--min-bytes", str(args.min_bytes), "--aspect", str(1280 / 720),
+             "--created-at", str(created_at), "--request-id", str(request_id),
+             "--transcript", _status_path(out)], 60)
     if pk.returncode == 0 and os.path.exists(out) and os.path.getsize(out) > args.min_bytes:
         pj = extract_json(pk.stdout) or {}
         return {"status": "panel_ready", "image_path": out, "bytes": os.path.getsize(out),
                 "image_sha256": pj.get("sha256") or sha(out), "text_mode": cfg.get("text_mode")}
-    blog_txt = open(bakelog, encoding="utf-8").read() if os.path.exists(bakelog) else ""
-    kind = "throttle" if THROTTLE_RE.search(blog_txt) else "other"
-    return {"status": "generation_failed", "image_path": "", "failure_kind": kind,
+    return {"status": "generation_failed", "image_path": "", "failure_kind": "other",
             "gen_failed_reason": f"no native image (pickup rc={pk.returncode}): {(pk.stderr or '')[:200]}"}
 
 def is_throttle(gen, reason=""):
@@ -502,6 +523,8 @@ def parse_args():
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
     ap.add_argument("--effort", default="high"); ap.add_argument("--review-effort", default="xhigh")
     ap.add_argument("--min-bytes", type=int, default=500000)
+    ap.add_argument("--bake-mode", choices=["agent", "exec"], default="agent",
+                    help="agent = real bake via the mcp__codex__codex sidecar seam (default); exec = legacy/CI non-image path that RAISES if it reaches a real bake (exec hand-draws a non-native fallback)")
     return ap.parse_args()
 
 def main():
@@ -528,6 +551,8 @@ def main():
 
     # P0-PROOF PREFLIGHT — no metered image credit before the zero-credit proof gate cleared: require a clean
     # decision:p0_proof_* node in the wiki, OR an explicit --skip-p0-proof ack (which forces the run non-shippable).
+    # The agent bake seam is SYNCHRONOUS and main() never re-enters, so _p0_clean()/p0_skipped is evaluated EXACTLY
+    # ONCE per run and stays valid across every panel + assembly bake — no --p0-proof-clean resume flag is needed.
     def _p0_clean():
         nd = paths["NODES"]
         if not os.path.isdir(nd): return False
@@ -536,10 +561,23 @@ def main():
             try: d = json.load(open(os.path.join(nd, fn), encoding="utf-8"))
             except Exception: continue
             pl = d.get("payload") or {}
-            if d.get("node_type") == "decision" and str(d.get("status", "")).lower() == "final" \
+            node_status = str(d.get("status", "")).lower()
+            pl_status = str(pl.get("status", "")).lower()
+            verdict = str(pl.get("verdict", "")).lower()
+            # D (verdict drift): comic-cross-layer-gate's p0_proof advance emits verdict "advance" and FLIPS the
+            # node status to "locked" (SKILL.md "FLIP target status → locked (advance)"; verified node-level, the
+            # repo's universal locked-signal). The old check demanded status=="final" + a verdict set without
+            # "advance"/"locked" → it rejected EVERY real pass and blocked ALL production baking. Accept:
+            #   • verdict ∈ the original clean set PLUS "advance"/"locked"
+            #   • OR a "locked" status — the gate's own advance signal — at the node level (where the gate flips it)
+            #     OR in the payload (the instruction's literal wording; covers emitters that mirror it there).
+            status_ok = node_status in ("final", "locked") or pl_status == "locked"
+            verdict_ok = verdict in ("pass", "clean", "approve", "keep", "ship", "proceed", "advance", "locked") \
+                         or pl_status == "locked"
+            if d.get("node_type") == "decision" and status_ok \
                and str(d.get("node_id", "")).startswith("decision:p0_proof") \
                and str(pl.get("gate_kind", "")).lower() == "p0_proof" \
-               and str(pl.get("verdict", "")).lower() in ("pass", "clean", "approve", "keep", "ship", "proceed"):
+               and verdict_ok:
                 return True
         return False
     p0_skipped = False

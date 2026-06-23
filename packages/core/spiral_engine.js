@@ -1,6 +1,6 @@
 export const meta = {
   name: 'aris-comic-spiral-engine',
-  description: 'ARIS COMIC per-panel spiral (fork of the video spiral_engine, §16.9 shape preserved). Per panel: generatePanel (codex image_gen -i seed -i duo_canonical, ART_BIBLE-constrained, NO text, leave safe-zone) → panel_gate (CC narrative ‖ Gemini visual-CLI ‖ Codex visual-CLI → deterministic JS verdict, scored against ART_BIBLE) → WRITE wiki (panel_attempt/review/decision/failure_mode) → keep/retry/rollback (force-regen with failure_mode positive-invariant; attempt-path bypass; caps 4/panel, 6/run) → page assembly_gate. Swapped vs video: generator (Seedance i2v → codex image_gen), rubric (motion dims → static/identity/style dims), output (mp4 → PNG + comic.json projection). NOT batch.',
+  description: 'ARIS COMIC per-panel spiral (fork of the video spiral_engine, §16.9 shape preserved). Per panel: generatePanel (PREPARES the bake — render content blueprint → PNG + assemble the ART_BIBLE-constrained prompt + emit the bake contract: blueprint + duo refs by absolute path, NO text, leave safe-zone; the in-engine exec bake is RETIRED and hard-fails, so the ACTUAL agent mcp__codex__codex sidecar bake is fulfilled OUT-OF-PROCESS by the Python SOP `run_comic.py --bake-mode=agent` and verified by `pickup_image.py --out-existing`) → panel_gate (CC narrative ‖ Gemini visual-CLI ‖ Codex visual-CLI → deterministic JS verdict, scored against ART_BIBLE) → WRITE wiki (panel_attempt/review/decision/failure_mode) → keep/retry/rollback (force-regen with failure_mode positive-invariant; attempt-path bypass; caps 4/panel, 6/run) → page assembly_gate. Swapped vs video: generator (Seedance i2v → agent mcp__codex__codex image bake, fulfilled out-of-process via the Python SOP), rubric (motion dims → static/identity/style dims), output (mp4 → PNG + comic.json projection). NOT batch.',
   phases: [
     { title: 'Panels', detail: 'per panel: generate → panel_gate (3 cross-model) → wiki → keep/retry/rollback' },
     { title: 'Assembly', detail: 'page-level assembly_gate: cross-panel identity/style + reading order + safe-zones' },
@@ -179,7 +179,7 @@ const ASM_VIS_SCHEMA = { type: 'object', properties: { cross_panel_identity: SCO
 
 // ── generation: CONTENT-CONDITIONED BAKE (the deterministic-SVG → codex narrative-figure technique) ──
 // Per panel the engine reads comic.json .condition {content_svg, world, scene, chibi_action} + .bubbles, renders the
-// content_svg → a deterministic PNG blueprint, then bakes ONE comic panel with codex image_gen using EXACTLY TWO refs
+// content_svg → a deterministic PNG blueprint, then bakes ONE comic panel via the agent mcp__codex__codex sidecar using EXACTLY TWO refs
 // (the blueprint #1 + the canonical duo #2 — a 3rd ref dilutes identity). The blueprint is the CONTENT AUTHORITY: its
 // numbers/labels/code are ground truth and must survive verbatim (verified in STEP 4 = the gate's faithfulness contract).
 const BAKE_LANG = ARGS.bakeLang || 'zh'   // which bubble language to bake (image bakes one); zh proven clean
@@ -192,6 +192,72 @@ function loadConditions() {
     `For each pid return an object with: text_mode (the panel's .text_mode), content_svg (.condition.content_svg, a project-relative path or null), world (.condition.world), scene (.condition.scene), identity_ref (.condition.identity_ref, a project-relative .png path or null), identity_desc (.condition.identity_desc or ""), characters (.condition.characters or ""), chibi_executor (.condition.chibi_action.executor or ""), chibi_reviewer (.condition.chibi_action.reviewer or ""), bubbles_all (an ARRAY with one string per .bubbles entry, each formatted "<speaker> says: <text.${BAKE_LANG}>" — empty array if the panel has no bubbles), expected_literals (copy the panel's .condition.expected_literals array verbatim, or []).`,
     `Return COND_SCHEMA: {panels: {"S12": {...}, ...}}. READ ONLY — do not generate or render anything.`,
   ].join('\n'), { label: 'load-conditions', phase: 'Panels', schema: COND_SCHEMA })
+}
+
+// ── contract-v2 §0a (JS port — out-of-sandbox engine-side mirror of pickup_image.py): buildBakePrompt +
+// verifyExistingPng. The three engines do NOT share ONE implementation: the two Python engines REUSE the single
+// source of truth (pickup_image.py) by importing it; this JS engine instead MIRRORS its bake-prompt + verifier +
+// VETO list under a test-locked byte-parity guard (tests/test_gates.py), which re-derives the JS VETO_PATS regex
+// sources straight from this file and asserts they are BYTE-IDENTICAL to pickup_image._VETO_PATS (14 entries, same
+// order; drift = a fallback slipping through one engine but not the other — the guard, not a shared module, is what
+// keeps the mirror honest). buildBakePrompt embeds the absolute ref + out paths LITERALLY (the mcp__codex__codex
+// schema has no -i). The in-sandbox engine has NO fs and NEVER bakes in-process (the in-process exec bake is
+// RETIRED — see the retired BAKE bash below) — these helpers serve the out-of-sandbox host / the Python SOP verifier.
+function buildBakePrompt(body, contentPngAbs, idRefAbs, outAbs) {
+  const lines = [
+    'Use your native image generation tool to produce ONE PNG. Generate an image — do not write or edit any code or files; only generate the single image.',
+    body,
+    `Reference image 1 (absolute path): ${contentPngAbs}`,
+  ]
+  if (idRefAbs) lines.push(`Reference image 2 (absolute path): ${idRefAbs}`)
+  lines.push(`Save the final native PNG to this exact path: ${outAbs}`)
+  return lines.filter(Boolean).join('\n')
+}
+// VETO_PATS + verifyExistingPng are NOT a hard security boundary — they are a BEST-EFFORT DENYLIST against the ONE
+// KNOWN failure mode: codex's hand-drawn (struct/zlib/PIL/<svg>/matplotlib) fallback when it can't run its native
+// image tool. They catch that specific non-native artifact (and a stale/undersized/non-PNG out_path); they do NOT,
+// and cannot, certify that the panel is FAITHFUL — a determined adversary or an unknown fallback path could still
+// dodge these patterns. The load-bearing FAITHFULNESS gate is the cross-model panel (CC narrative ‖ Gemini visual
+// ‖ Codex visual → deterministic JS verdict, with the blind token-diff for baked figures); this denylist is only a
+// cheap upstream filter so an obvious non-native fallback never even reaches that panel.
+const VETO_PATS = [/\bimport\s+struct\b/, /\bstruct\.pack\b/, /\bimport\s+zlib\b/, /\bzlib\.compress\b/,
+  /\bfrom\s+pil\b/, /\bimport\s+pil\b/, /<svg/, /\bmatplotlib\b/, /\bdef\s+main\s*\(/,
+  /\brsvg-convert\b/, /\bcairosvg\b/, /\bwritefile\b/, /\bfrom\s+struct\s+import\b/, /\bfrom\s+zlib\s+import\b/]
+function verifyExistingPng(outPath, minBytes = 500000, aspect = null, createdAt = null, transcript = null) {
+  let fs, crypto
+  try { fs = require('fs'); crypto = require('crypto') } catch { return { ok: false, reason: 'no fs (sandbox) — verification is delegated to the Python SOP verifier (pickup_image.py)' } }
+  // mirror pickup_image.py: a missing/empty transcript makes the HARD-VETO INERT → fail-closed (a hand-drawn
+  // fallback PNG with a clean sig+dims+size must NOT be accepted merely because no transcript was scanned).
+  if (!transcript || !fs.existsSync(transcript) || !fs.readFileSync(transcript, 'latin1').trim()) {
+    return { ok: false, reason: 'empty/missing transcript — HARD-VETO inert, fail-closed' }
+  }
+  // mirror pickup_image.py: if the transcript is a JSON status dict (the agent's <png>.bakestatus.json carries
+  // status + raw mcp_output), require mcp_output to be a NON-EMPTY string — an ok status whose mcp_output is
+  // missing/empty/non-string makes the HARD-VETO scan vacuous (nothing to denylist), so fail-closed. A NON-JSON
+  // transcript (a plain log) skips this so the regex-denylist path still applies on its own.
+  let _txObj = null
+  try { _txObj = JSON.parse(fs.readFileSync(transcript, 'latin1')) } catch { _txObj = null }
+  if (_txObj && typeof _txObj === 'object' && !Array.isArray(_txObj) && 'status' in _txObj) {
+    const _m = _txObj.mcp_output
+    if (typeof _m !== 'string' || !_m.trim()) {
+      return { ok: false, reason: 'bakestatus mcp_output missing/empty/non-string — HARD-VETO inert, fail-closed' }
+    }
+  }
+  {
+    const low = fs.readFileSync(transcript, 'latin1').toLowerCase()
+    const hits = VETO_PATS.filter(p => p.test(low)).map(p => p.source)
+    if (hits.length) return { ok: false, reason: `non-native fallback markers (HARD-VETO): ${hits}` }
+  }
+  if (!fs.existsSync(outPath)) return { ok: false, reason: 'out_path does not exist (agent bake never wrote it — fail-closed)' }
+  const buf = fs.readFileSync(outPath)
+  if (buf.length <= minBytes) return { ok: false, reason: `out_path too small (${buf.length} <= ${minBytes}) — likely non-native fallback` }
+  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  if (!buf.slice(0, 8).equals(sig) || buf.slice(12, 16).toString('latin1') !== 'IHDR') return { ok: false, reason: 'out_path is not a valid PNG (bad signature/IHDR)' }
+  const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20)
+  if (aspect) { const ar = w / h; if (!(0.6 * aspect <= ar && ar <= 1.6 * aspect)) return { ok: false, reason: `out_path aspect ${ar.toFixed(3)} off blueprint ${aspect.toFixed(3)}` } }
+  if (createdAt != null && fs.statSync(outPath).mtimeMs / 1000 < createdAt - 1) return { ok: false, reason: 'out_path older than the bake request (stale prior bake) — fail-closed' }
+  const sha = crypto.createHash('sha256').update(buf).digest('hex')
+  return { ok: true, path: outPath, sha256: sha, bytes: buf.length, width: w, height: h }
 }
 
 function generatePanel(pid, cfg = {}, ctx = {}) {
@@ -252,23 +318,23 @@ function generatePanel(pid, cfg = {}, ctx = {}) {
     `( "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 --window-size=1280,720 --screenshot="${cpng}" "file://${PROJ}/${svgRel}" >/dev/null 2>&1 ) & P=$!; ( sleep 30; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null`,
     `[ -s "${cpng}" ] && echo "CONTENT_PNG_OK $(stat -f%z ${cpng})" || { echo "CONTENT_PNG_FAIL"; exit 0; }`,
     '```',
-    `STEP 2 — assemble the bake prompt = ART_BIBLE rules + the panel body below, then BAKE (codex image_gen; EXACTLY 2 refs: blueprint #1 + canonical duo #2). image_gen may be RATE-LIMITED — on error DO NOT fall back to PIL/SVG, report generation_failed:`,
+    `STEP 2 — assemble the bake prompt (ART_BIBLE rules + the panel body below) into a file. The in-engine codex-exec bake is RETIRED (it hand-draws a non-native fallback), so this bash HARD-FAILS with exec-bake-retired; the REAL bake is the agent mcp__codex__codex sidecar (run_comic.py --bake-mode=agent): buildBakePrompt body + EXACTLY 2 refs (blueprint #1 + canonical duo #2) by absolute path + exact out_path, sandbox workspace-write. NEVER fall back to PIL/SVG/codex-exec:`,
     '```bash',
     `cat > /tmp/bake_${pid}_${aTag}.txt <<'${BAKE_DELIM}'`,
     promptBody,
     `${BAKE_DELIM}`,
     `( printf 'Paste these style rules first:\\n%s\\n\\nThen render this panel:\\n' "$(cat "${BIBLE}")"; cat /tmp/bake_${pid}_${aTag}.txt ) > /tmp/bakefull_${pid}_${aTag}.txt`,
-    // CONCURRENT-BAKE LOCK (audit A4): codex image_gen writes to the GLOBAL ~/.codex/generated_images dir and
-    // we pick the mtime-newest PNG — two bakes running at once would grab each other's images. An atomic mkdir
-    // lock serializes the generate+pickup critical section across any concurrent bakes on this machine; a stale
-    // lock (>15 min, i.e. a crashed bake) is stolen so it can never deadlock. A single workflow bakes serially,
-    // so its own bakes never contend — this only fences SEPARATE concurrent runs (the documented footgun).
-    `LOCK=/tmp/aris_imagegen.lock; HELD=0; for i in $(seq 1 600); do if mkdir "$LOCK" 2>/dev/null; then HELD=1; trap 'rmdir "$LOCK" 2>/dev/null' EXIT; break; fi; find "$LOCK" -maxdepth 0 -mmin +15 2>/dev/null | grep -q . && rmdir "$LOCK" 2>/dev/null; sleep 2; done`,
+    // CONCURRENT-BAKE LOCK — RETIRED-EXEC-PATH rationale only (kept for context): the OLD codex-exec bake wrote to
+    // the GLOBAL ~/.codex/generated_images dir and picked the mtime-newest PNG, so concurrent bakes could grab each
+    // other's images and needed an mkdir lock. The AGENT seam does NOT use that dir or newest-pickup — each bake
+    // writes its OWN explicit out_path and run_comic.py's agent wrapper serializes the mcp__codex__codex calls, so
+    // the core holds NO machine-wide lock (R3 — HELD=1 below makes the old lock a no-op).
+    `HELD=1`,   // R3: agent mode does NOT hold /tmp/aris_imagegen.lock — the agent wrapper is the sole bake serializer; the core blocking on the agent that must service the sidecar would deadlock. (The bake itself is retired from this bash block — see the BAKE line below, which exit 0's.)
     `if [ "$HELD" != 1 ]; then echo "GEN_FAIL size=0 FAILKIND=other lock_contended"; exit 0; fi`,   // never run unlocked: if we never acquired, abort the bake (transient → retried) rather than risk grabbing another run's image / removing a lock we don't own
     `M=/tmp/cm_${pid}_${aTag}; touch "$M"`,
-    `codex exec "$(cat /tmp/bakefull_${pid}_${aTag}.txt)" -i "${cpng}" -i "${idRefAbs}" --sandbox workspace-write -c model_reasoning_effort=high --skip-git-repo-check < /dev/null > /tmp/cm_${pid}_${aTag}.log 2>&1 & P=$!`,   // NOTE: no setsid (absent on macOS) — kill the child + its descendants directly
-    `( sleep 480; pkill -9 -P $P 2>/dev/null; kill -9 $P 2>/dev/null ) & WD=$!; wait $P 2>/dev/null; kill $WD 2>/dev/null; pkill -9 -P $P 2>/dev/null`,   // watchdog kills codex's children then codex → no orphan image_gen polluting the next panel
-    `NEW=$(find ~/.codex/generated_images -name '*.png' -newer "$M" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1); SZ=$(stat -f%z "$NEW" 2>/dev/null || echo 0)`,   // NEWEST BY MTIME (not lexicographic sort — that picked the wrong file in multi-image runs)
+    `echo "BAKE retired from codex exec — the agent fulfills it via mcp__codex__codex over the .bakereq.json sidecar (buildBakePrompt body + abs ref paths + exact out_path; model=gpt-5.5; config={model_reasoning_effort:xhigh}; sandbox=workspace-write; cwd=PROJ; the status file MUST carry raw mcp_output for the HARD-VETO). The native PNG is written to ${out} and verified by pickup_image.py --out-existing (sig+IHDR+size>=500000+mtime>=created_at, HARD-VETO struct/zlib/PIL/<svg>/matplotlib in the transcript). DO NOT call codex exec for a bake — it hand-draws a non-native fallback." >&2; echo "GEN_FAIL size=0 FAILKIND=other exec-bake-retired"; exit 0`,   // R4: in-engine exec bake retired (hand-draws a non-native fallback). HARD-FAIL here, BEFORE probing ${out}, so a stale prior PNG at ${out} can NEVER be accepted. Real bake = the Python SOP (run_comic.py --bake-mode=agent).
+    `: # R4: exec bake retired — no codex child to watchdog ($P is gone; a bare 'wait' here would block ~480s on the watchdog subshell). The real bake (agent seam via mcp__codex__codex) is watchdogged by run_comic.py's await_bake_status(--bake-timeout).`,
+    `NEW=""; SZ=0`,   // R4: exec bake retired (see the BAKE line above, which exit 0's before reaching here). NEVER point NEW at ${out} — that would let a stale prior PNG be accepted with no native bake + no HARD-VETO. The agent seam writes ${out} and pickup_image.py --out-existing verifies it.
     `if [ -n "$NEW" ] && [ "$SZ" -gt 500000 ]; then cp "$NEW" "${out}"; H=$(shasum -a 256 "${out}" 2>/dev/null | cut -d' ' -f1); echo "GEN_OK ${out} $SZ sha=$H"; else if grep -qiE 'rate.?limit|429|quota|server_?error|too many requests|overloaded|unavailable|50[23]' /tmp/cm_${pid}_${aTag}.log 2>/dev/null; then K=throttle; else K=other; fi; echo "GEN_FAIL size=$SZ FAILKIND=$K"; fi`,
     `rmdir "$LOCK" 2>/dev/null; trap - EXIT`,   // release the bake lock immediately after pickup (trap is the crash safety-net)
     '```',

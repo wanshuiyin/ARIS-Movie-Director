@@ -2,7 +2,7 @@
 """run_spiral.py — one-command orchestrator for the method-figure spiral (stdlib + subprocess only).
 
 The executing agent only authors blueprint.json; this runs the whole loop:
-  validate → render condition(+png) → [ bake (codex image_gen, read-only) → pickup(verify) →
+  validate → render condition(+png) → [ bake (agent mcp__codex__codex sidecar seam) → pickup(verify) →
   panel: Gemini + Codex blind-transcribe → content_diff (deterministic) → decide ] × rounds → finalize + trace.
 
 Automated panel = Gemini-3 (visual) + Codex-5.5 (arrow/diagnostic) + the deterministic content_diff (the
@@ -19,7 +19,11 @@ Usage:
 import argparse, hashlib, json, os, re, subprocess, sys, time, shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LOCK = "/tmp/aris_imagegen.lock"
+
+# contract-v2 §0a: import the SHARED bake primitives from pickup_image.py (single source of truth — NEVER
+# re-define them here; an inlined copy re-introduces cross-engine drift). pickup_image.py lives in HERE.
+sys.path.insert(0, HERE)
+from pickup_image import build_bake_prompt, emit_bake_request, await_bake_status, _status_path  # noqa: E402
 
 def log(msg):
     print(f"[run_spiral {time.strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -112,7 +116,9 @@ If the figure contains characters/mascots, do NOT eyeball it: ENUMERATE each cha
 fill character_anatomy, and set anatomy_defect=true if ANY character has a wrong hand count (!=2), a third/floating/
 duplicated/merged hand, or fused/extra fingers (character_anatomy=[] and anatomy_defect=false if there are no characters)."""
 
-def run_codex(prompt, images, effort, timeout, logf, image_gen=False):
+def run_codex(prompt, images, effort, timeout, logf):
+    # R4: run_codex now serves ONLY the read-only VISION REVIEW (with -i image attach). The bake NEVER routes
+    # through it — codex exec hand-draws a non-native fallback. No surviving path passes image_gen.
     cmd = ["codex", "exec", prompt]
     for im in images: cmd += ["-i", im]
     cmd += ["--sandbox", "read-only", "-c", f"model_reasoning_effort={effort}", "--skip-git-repo-check"]
@@ -198,15 +204,30 @@ def main():
     ap.add_argument("--from-brief", action="store_true", help="force: treat the input as a method_figure_brief (Step-0 compile)")
     ap.add_argument("--from-blueprint", action="store_true", help="force: treat the input as a ready blueprint (legacy/power-user)")
     ap.add_argument("--p0-only", action="store_true", help="run validate + render the condition (the zero-credit P0 gate), then stop")
+    ap.add_argument("--bake-mode", choices=["agent", "exec"], default="agent",
+                    help="agent = real bake via the mcp__codex__codex sidecar seam (default); exec = legacy/CI non-image path that RAISES if it reaches a real bake (codex exec hand-draws a non-native fallback)")
     a = ap.parse_args()
     a.blueprint, a.identity = resolve_input(a)   # Step-0: sniff brief vs blueprint; auto-compile a brief
+    # ABSOLUTE-REF INVARIANT (mirror run_comic.py): the identity sheet must be an absolute, on-disk path before
+    # it is embedded (as a literal) in the bake prompt — a relative/missing ref would silently desync the agent's
+    # write target from our pickup probe. Absolutize, then existence-check fail-closed.
+    if a.identity:
+        a.identity = os.path.abspath(a.identity)
+    if a.identity and not os.path.exists(a.identity):
+        print(f"[run_spiral] identity sheet not found: {a.identity}", file=sys.stderr); sys.exit(2)
     bp = json.load(open(a.blueprint, encoding="utf-8"))
     fid = bp.get("figure_id", "figure"); cw = bp["canvas"]["width"]; ch = bp["canvas"]["height"]
     rounds = a.max_rounds or (bp.get("render_policy", {}).get("max_rounds", 4))
     minscore = (bp.get("acceptance", {}) or {}).get("min_core_score", 4)
-    os.makedirs(a.out_dir, exist_ok=True)
-    trace = os.path.join(a.out_dir, "trace.jsonl"); open(trace, "w").close()
-    cond_svg = os.path.join(a.out_dir, "condition.svg"); cond_png = os.path.join(a.out_dir, "condition.png")
+    # RELATIVE-PATH FIX (mirror run_comic.py's abspath(project)): resolve out_dir to a TRUE absolute path ONCE,
+    # and derive EVERY downstream path (trace/cond_svg/cond_png + the per-round png/blog + the finalize copies)
+    # from it. build_bake_prompt + emit_bake_request emit refs/out_path under the literal "(absolute path)" label,
+    # so the embedded ref/out paths, the agent's write target, and our own pickup probe (--out png) must all be
+    # the SAME absolute files — a relative out_dir would silently desync them against the agent's cwd.
+    out_dir = os.path.abspath(a.out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+    trace = os.path.join(out_dir, "trace.jsonl"); open(trace, "w").close()
+    cond_svg = os.path.join(out_dir, "condition.svg"); cond_png = os.path.join(out_dir, "condition.png")
 
     log(f"validate {a.blueprint}")
     r = sh(["python3", os.path.join(HERE, "validate_blueprint.py"), a.blueprint], 60)
@@ -255,39 +276,70 @@ def main():
     images = [cond_png] + ([a.identity] if a.identity else [])
     for rd in range(1, rounds + 1):
         log(f"=== round {rd}/{rounds} : BAKE ===")
-        png = os.path.join(a.out_dir, f"round{rd}.png"); blog = os.path.join(a.out_dir, f"round{rd}.bakelog.txt")
-        # the lock MUST cover marker → bake → pickup (the global generated-images dir is shared); never bake
-        # unlocked, and only ever release a lock we actually acquired.
-        acquired = False
-        for _ in range(300):
-            try: os.mkdir(LOCK); acquired = True; break
-            except FileExistsError:
-                if os.path.isdir(LOCK) and time.time() - os.path.getmtime(LOCK) > 900:
-                    try: os.rmdir(LOCK)
-                    except OSError: pass
-                time.sleep(2)
-        if not acquired:
-            log("could not acquire image-gen lock (another bake running >20 min?) — escalate")
-            open(trace, "a").write(json.dumps({"round": rd, "decision": "escalate", "reason": "image-gen lock timeout"}) + "\n")
-            sys.exit(2)
-        try:
-            marker = time.time()
-            run_codex(bake_prompt(bp, cond_png, a.identity, last_fixes, invariants), images, a.effort, a.bake_timeout, blog, image_gen=True)
-            pk = sh(["python3", os.path.join(HERE, "pickup_image.py"), "--marker", str(marker), "--out", png,
-                     "--log", blog, "--aspect", str(cw / ch)], 60)
-        finally:
-            if acquired:
-                try: os.rmdir(LOCK)
-                except OSError: pass
+        png = os.path.join(out_dir, f"round{rd}.png"); blog = os.path.join(out_dir, f"round{rd}.bakelog.txt")
+        # R4: the exec path NEVER bakes (codex exec hand-draws a non-native fallback) — it RAISES. R3: in agent
+        # mode the core does NOT hold /tmp/aris_imagegen.lock (the agent wrapper is the sole serializer; the
+        # foreground core blocking on the agent that must service the sidecar would deadlock).
+        if a.bake_mode != "agent":
+            raise RuntimeError("exec bake retired — it hand-draws a non-native fallback; use --bake-mode=agent")
+        # BAKE via the AGENT (mcp__codex__codex) over the sidecar seam: refs+out_path embedded as ABSOLUTE PATHS
+        # inside prompt_text (the MCP schema has no -i); sandbox=workspace-write; model_reasoning_effort=xhigh via
+        # config{}. The agent writes <png>.bakestatus.json carrying status + raw mcp_output (for the HARD-VETO).
+        created_at = time.time()
+        prompt_text = build_bake_prompt(bake_prompt(bp, cond_png, a.identity, last_fixes, invariants),
+                                        cond_png, a.identity or "", png)
+        # B-NONCE: capture the per-bake request_id RETURNED by emit_bake_request. The shared pickup_image.py
+        # (single source of truth, contract-v2 §0a) mints a uuid4 nonce, stamps it into the bakereq.json payload,
+        # and returns it; we forward it via --request-id so pickup fail-closes if the bakestatus carries a
+        # mismatched id (a stale/foreign bake at <png>.bakestatus.json can't be silently honored). The id never
+        # needs pre-seeding into the dict here — emit owns minting it. Fallback to created_at if a future/legacy
+        # emit ever returns None (mirrors run_comic.py's guard) so request_id is always a usable string.
+        request_id = emit_bake_request(png, {"prompt_text": prompt_text, "out_path": png, "content_png": cond_png,
+                                "identity_ref": a.identity or "", "model": "gpt-5.5",
+                                "config": {"model_reasoning_effort": "xhigh", "include_image_gen_tool": True},
+                                "sandbox": "workspace-write",
+                                # the agent's cwd is a STABLE ABSOLUTE repo root (mirrors run_comic.py's cwd=paths["PROJ"]),
+                                # NOT the parent of out_dir — every ref/out_path is already an absolute path in prompt_text,
+                                # so the bake resolves the same files regardless of cwd, and the cwd never drifts per-run.
+                                "cwd": HERE.rsplit("/skills/", 1)[0],
+                                "created_at": created_at, "min_bytes": 500000, "aspect": cw / ch})
+        if not request_id: request_id = str(created_at)   # defensive: emit always returns a uuid today; keep a usable id
+        status = await_bake_status(png, a.bake_timeout)   # polls <png>.bakestatus.json; {} on timeout
+        if not isinstance(status, dict): status = {}   # await guard: a non-dict return (foreign/future) → treat as timeout
+        # FAIL-CLOSED: ONLY status=="ok" may proceed to verify (an empty/timeout/non-ok status must NOT fall
+        # through to pickup — a stale/foreign PNG at png could otherwise be accepted). A timeout is "other", NOT
+        # "throttle" (only an explicit wrapper failure_kind=="throttle" is a throttle — consistent with run_comic.py).
+        if status.get("status") != "ok":
+            kind = "throttle" if status.get("failure_kind") == "throttle" else "other"
+            why = "agent bake timed out (no <png>.bakestatus.json — is the agent wrapper running?)" if not status \
+                  else f"agent bake not ok [{kind}]: {str(status.get('mcp_error') or status.get('status'))[:300]}"
+            log(f"BAKE not ok [{kind}] (round {rd}) — escalate")
+            open(trace, "a").write(json.dumps({"round": rd, "decision": "escalate", "reason": "agent bake not ok", "failure_kind": kind, "detail": why}) + "\n")
+            print("ESCALATE: image generation failed (throttle? non-native fallback?). See", _status_path(png)); sys.exit(2)
+        # HARD-VETO ENFORCEMENT (status==ok): the HARD-VETO scans status.mcp_output (where a hand-draw leaves
+        # struct/zlib/PIL/SVG/matplotlib traces). An ok status carrying an EMPTY/missing mcp_output would make the
+        # veto INERT — a code-drawn fallback could then sail through pickup. Fail-closed exactly like a failed bake
+        # (same escalate trace + sys.exit(2)), classified "other", BEFORE we ever probe the PNG.
+        m = status.get("mcp_output")
+        if not isinstance(m, str) or not m.strip():
+            # isinstance (not `(... or "").strip()`): blocks null/empty AND a non-string mcp_output that would
+            # otherwise CRASH .strip() — fail-closed exactly like a failed bake (same escalate trace + sys.exit(2)).
+            why = "agent status ok but mcp_output missing/empty/non-string — HARD-VETO inert, fail-closed"
+            log(f"BAKE ok but EMPTY/non-string mcp_output (round {rd}) — HARD-VETO inert, escalate")
+            open(trace, "a").write(json.dumps({"round": rd, "decision": "escalate", "reason": "agent status ok but mcp_output missing/empty/non-string — HARD-VETO inert, fail-closed", "failure_kind": "other", "detail": why}) + "\n")
+            print("ESCALATE: image generation failed (throttle? non-native fallback?). See", _status_path(png)); sys.exit(2)
+        pk = sh(["python3", os.path.join(HERE, "pickup_image.py"), "--out-existing", "--out", png,
+                 "--min-bytes", "500000", "--aspect", str(cw / ch), "--created-at", str(created_at),
+                 "--request-id", request_id, "--transcript", _status_path(png)], 60)
         if pk.returncode != 0:
             log(f"BAKE produced no valid native image (round {rd}) — escalate");
             open(trace, "a").write(json.dumps({"round": rd, "decision": "escalate", "reason": "no native image", "detail": pk.stderr.strip()}) + "\n")
-            print("ESCALATE: image generation failed (throttle? non-native fallback?). See", blog); sys.exit(2)
+            print("ESCALATE: image generation failed (throttle? non-native fallback?). See", _status_path(png)); sys.exit(2)
         log(f"baked → {png} ({sha(png)})  : PANEL (Gemini + Codex)")
         rg = review_gemini(png, a.review_timeout); rc = review_codex(png, a.review_timeout)
         reviews = {}
         for name, rv in (("gemini", rg), ("codex", rc)):
-            j = os.path.join(a.out_dir, f"round{rd}.{name}.json")
+            j = os.path.join(out_dir, f"round{rd}.{name}.json")
             json.dump(rv or {"verdict": "retry", "parse_error": True, "observed_tokens": []}, open(j, "w"), ensure_ascii=False, indent=1)
             reviews[name] = j
         df = sh(["python3", os.path.join(HERE, "content_diff.py"), a.blueprint, reviews["gemini"], reviews["codex"]], 60)
@@ -324,8 +376,8 @@ def main():
         open(trace, "a").write(json.dumps(rec, ensure_ascii=False) + "\n")
         log(f"round {rd}: gemini={gv} codex={cv} core_ok={core_ok} diff_clean={diff.get('content_accurate')} anatomy_ok={not anatomy_defect} → {rec['decision']}")
         if panel_clean:
-            shutil.copy(png, os.path.join(a.out_dir, "figure.png"))
-            bp_dst = os.path.join(a.out_dir, "blueprint.json")
+            shutil.copy(png, os.path.join(out_dir, "figure.png"))
+            bp_dst = os.path.join(out_dir, "blueprint.json")
             # skip the copy when src and dst are the SAME file (Step-0 already wrote it there) — samefile() also
             # catches a symlink/hardlink that abspath string-compare would miss (avoids a shutil SameFileError).
             same = os.path.exists(bp_dst) and os.path.samefile(a.blueprint, bp_dst)
@@ -334,9 +386,9 @@ def main():
             open(trace, "a").write(json.dumps({"final_approve": "panel_clean_awaiting_claude_structural",
                 "image": "figure.png", "blueprint": "blueprint.json", "accepted_round": rd,
                 "verdicts": {"gemini": gv, "codex": cv, "diff": "clean"}}, ensure_ascii=False) + "\n")
-            log(f"PANEL-CLEAN at round {rd} → {a.out_dir}/figure.png")
+            log(f"PANEL-CLEAN at round {rd} → {out_dir}/figure.png")
             print(f"\n✅ PANEL-CLEAN (Gemini approve + Codex no-veto + deterministic diff empty) at round {rd}.")
-            print(f"   figure: {a.out_dir}/figure.png   trace: {trace}")
+            print(f"   figure: {out_dir}/figure.png   trace: {trace}")
             print("   NEXT: the calling agent (Claude) gives the final STRUCTURAL sign-off — the orchestrator")
             print("   does not self-acquit the generator family. Inspect the figure and approve or send one more fix.")
             return

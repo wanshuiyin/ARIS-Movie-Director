@@ -1,9 +1,12 @@
 # method-figure — prompt templates
 
-## A. Generation prompt (to `mcp__codex__codex`, sandbox: read-only, effort xhigh)
+## A. Generation prompt (to `mcp__codex__codex`, sandbox: workspace-write, effort xhigh)
 
-Fill `{...}` from the blueprint + the round-N consolidated fixes. The point of read-only is to FORCE the
-native `image_generation` tool — Codex cannot write files, so it cannot pivot to "build an SVG renderer".
+Fill `{...}` from the blueprint + the round-N consolidated fixes. The bake is the **agent `mcp__codex__codex`
+sidecar** with `sandbox: workspace-write` so Codex can WRITE the native PNG to the explicit out_path. Honesty
+is NOT enforced by any sandbox setting — it is enforced by `pickup_image.py --out-existing`'s fail-closed
+HARD-VETO (a hand-drawn struct/zlib/SVG fallback is rejected even with a valid PNG signature). `codex exec`
+is retired for real bakes; refs + out_path are embedded as absolute paths in the prompt (the MCP schema has no `-i`).
 
 ```
 Use your IMAGE GENERATION tool to output ONE PNG. Image generation only — do NOT write or edit code/SVG/files.
@@ -51,7 +54,9 @@ A vague "looks good" is rejected — list the transcription, and COUNT the hands
 
 ## C. Notes
 - Re-assert the FULL locked-label list every round (image models drift); don't assume the prior round "kept" it.
-- After the bake, `pickup_image.py --marker <epoch>` (set the marker right before the codex call) verifies a
-  real native PNG appeared (signature + size + dims) — fail-closed otherwise.
-- Serialize bakes: never run two image generations at once (the global generated-images dir + newest-after-
-  marker pickup will cross-pollinate).
+- After the bake, `pickup_image.py --out-existing --out <round.png> --transcript <round.png.bakestatus.json>`
+  verifies the EXPLICIT out_path (PNG signature + size + dims + `mtime >= created_at`) and HARD-VETOes
+  struct/zlib/PIL/`<svg>`/matplotlib markers in the agent transcript — fail-closed otherwise.
+- Serialize bakes per the agent SOP (one `mcp__codex__codex` call at a time). Each bake writes to its OWN
+  explicit deterministic out_path, so there is no global-dir cross-pollination (the legacy `--bake-mode=exec`
+  newest-after-marker glob is the only path with that hazard).

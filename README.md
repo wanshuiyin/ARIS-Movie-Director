@@ -135,7 +135,7 @@ wrong frame.)*
 - 📐 **Blueprints** — a deterministic `content_svg` per panel (no baked bubbles)
 - 🧾 **Prompts** — exact bake prompts + verbatim `expected_literals` (搬运工原則)
 - ✅ **Compile** — schema-valid `comic.json`; the zero-credit `p0_proof` gate runs BEFORE any image credit
-- 🔥 **Spiral bake** — render → `codex image_gen` → 3-reviewer `panel_gate` → keep / retry / cross-frame rollback → assembly → viewer
+- 🔥 **Spiral bake** — render → agent `mcp__codex__codex` image_gen → 3-reviewer `panel_gate` → keep / retry-same-panel → `assembly_gate` (re-bakes only NAMED drifting panels on cross-page drift) → viewer
 
 **📐 Flow — the skill chain (trace it top-to-bottom):**
 
@@ -163,7 +163,7 @@ wrong frame.)*
                   → blind transcriptions → deterministic token-diff vs expected_literals
                verdict ─ KEEP → page pool
                        ├ RETRY ≤4   (re-bake the SAME panel + repair note)
-                       └ rollback ≤6 (re-bake NAMED prior panels — cross-frame drift)
+                       └ assembly_gate repair ≤6 — re-bake ONLY the NAMED drifting panels when drift is localized (seed-anchored; never wipes prior good panels)
    page assembly_gate → project accepted panels to comic.json → build_comic.py → outputs/index.html
    ├──────────────── Phase 2/3 · comic-director — audited spiral + viewer ────────────────┤
 
@@ -179,13 +179,20 @@ wrong frame.)*
 `expected_literals` decides KEEP / RETRY; `content_corruption` is a single-vote veto, both visual reviewers must
 score, and **no model self-acquits**. Every attempt / review×3 / decision / failure is written to the `research-wiki`.
 
-**Phase 2/3 standalone** (deterministic, no agent — the CI-tested slice), once `comic.json` exists:
+**Phase 2/3 standalone** (once `comic.json` exists). Only the **zero-credit `--dry-run`** below is genuinely
+agent-free — that's the CI-tested slice:
 ```bash
-python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run    # zero credit: prints bake prompts
-python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --finalize   # bake + rebuild the viewer
+python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run    # zero credit, NO agent: prints bake prompts (the CI-tested slice)
+python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --finalize   # REAL bake — REQUIRES the agent sidecar SOP (see below)
 ```
-`run_comic.py` is a subprocess port of [`packages/core/spiral_engine.js`](packages/core/spiral_engine.js) (no agent
-runtime); it starts from an existing `comic.json` — **it cannot start from a fuzzy idea**. **Throttling:** a
+`run_comic.py` is a subprocess port of [`packages/core/spiral_engine.js`](packages/core/spiral_engine.js)'s movie
+branch; it starts from an existing `comic.json` — **it cannot start from a fuzzy idea**. The deterministic CLI
+core (validation, blueprint render, the token-diff gates) is what CI exercises, but **the `--finalize` bake is
+NOT agent-free**: each panel bake is fulfilled by the agent-sidecar SOP — the
+[`comic-director`](skills/comic-director/SKILL.md) skill agent watches for the core's `*.bakereq.json`, calls
+`mcp__codex__codex` (with `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`) to fire the
+native image tool, and writes back `*.bakestatus.json`. So a real movie bake needs a coding-agent runtime; only
+`--dry-run` runs standalone. **Throttling:** a
 rate-limited bake stops cleanly with `fresh_run_required` — after cooldown launch a **fresh** run for the remaining
 panels, do **not** resume cached state. Caps: **≤4 attempts/panel · ≤6 rollbacks/run · no concurrent bakes**
 ([`docs/spiral-runtime.md`](docs/spiral-runtime.md)).
@@ -212,7 +219,11 @@ retry until clean → **Claude structural sign-off**):
 > /method-figure path/to/method_figure_brief.json
 ```
 
-The **deterministic core** (from a brief, no agent runtime) is one command — `run_spiral.py`:
+The **deterministic core** — Step-0 compile, blueprint validation, the condition render, and the content-diff
+gate — is driven by one command, `run_spiral.py`. Its **zero-credit slices (`--p0-only` / `--dry-run`) run with
+no agent runtime**; a **real `gpt-image-2` bake, however, REQUIRES the agent sidecar SOP** (the
+[`method-figure`](skills/method-figure/SKILL.md) skill agent services the core's `*.bakereq.json` by calling
+`mcp__codex__codex` with `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`):
 ```bash
 # OUR example brief bakes ARIS's own Figure 1 — swap in your own method_figure_brief.json
 python3 skills/method-figure/scripts/run_spiral.py \
@@ -220,7 +231,9 @@ python3 skills/method-figure/scripts/run_spiral.py \
     --out-dir figures/method_figure/demo
 #  → figures/method_figure/demo/figure.png   (the PANEL-CLEAN candidate, awaiting your structural sign-off)
 #     (+ blueprint.json + traceability.json + trace.jsonl of every round)
-#  first run? add --p0-only (zero image credits: validate + compile + render + lint). NOTE: --dry-run still writes these files.
+#  the REAL bake above needs the agent sidecar (mcp__codex__codex servicing .bakereq.json) — NOT agent-free.
+#  first run? add --p0-only — that slice IS agent-free (zero image credits: validate + compile + render + lint).
+#  NOTE: --dry-run (also agent-free) still writes these files.
 ```
 
 <details><summary>📐 flow — /method-figure (brief → audited render → sign-off)</summary>
@@ -234,7 +247,7 @@ python3 skills/method-figure/scripts/run_spiral.py \
    run_spiral.py — the deterministic core (starts from a brief):
      compile_brief.py (Step-0) → blueprint.json + traceability.json     every node traces to a brief field — else FAIL-CLOSED
        → validate_blueprint.py → render_condition.py                    labeled condition SVG → PNG
-       → codex exec --sandbox read-only → gpt-image-2 bake
+       → agent mcp__codex__codex (workspace-write, config{xhigh}) → gpt-image-2 bake    fail-closed verifier, not a sandbox setting
        → Gemini blind-transcribe ‖ Codex blind-transcribe → content_diff.py     deterministic vetoes
        → RETRY ≤4 (re-assert the locked labels) → Claude STRUCTURAL sign-off
    → figure.png   (+ blueprint.json + traceability.json + trace.jsonl of every round)

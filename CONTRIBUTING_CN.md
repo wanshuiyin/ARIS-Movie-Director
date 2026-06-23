@@ -44,6 +44,10 @@ bash tests/smoke.sh
    - 那份 trace 是**可审阅(inspectable)**的,而非逐字节"可复现(reproducible)"的(图像生成并非确定性)。
    - 框架常量文本(例如蓝图的 `rail`)用 `framework:*` 来源标记,而不是 `brief:*`。
    - 不要主张这个领域已经有了的"新颖性"(见 README 的"相关工作"一节)。
+   - `--strict-author-gates` 是一个**可选的生产检查**,不是默认项:`validate_wiki.py` 默认允许裸锁定的作者
+     节点用于开发/实验(CI 断言不带该旗标 fixture 也通过,见 `tests/test_gates.py`)。要提交到 release/评审的
+     项目**应当**在自己的清单里运行 `validate_wiki.py --strict-author-gates`,并用 `decides`/`reviews` 边为
+     每个作者锁定建立门控 —— 但不要声称默认的 smoke/CI 会强制它(它不会)。
 
 ## 加一个示例项目
 

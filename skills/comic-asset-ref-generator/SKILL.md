@@ -61,8 +61,13 @@ the real identity refs, never a free prompt, never a hand-paste.
   **produces** an asset is **forbidden** from approving it; locking belongs to the cross-model
   `comic-asset-review-loop` (a different model family). Setting `review_status:"locked"` here is a contract
   violation.
-- **SERIALIZE BAKES** — never run two `image_gen` calls at once; the global generated-images dir +
-  newest-after-marker pickup will cross-pollinate. One raster bake at a time (`/tmp/aris_imagegen.lock`).
+- **ONE RUNNER PER PROJECT** — each raster bake writes its **own explicit `out_path`** via the
+  `.bakereq.json`/`.bakestatus.json` sidecar seam, so there is **no global-dir cross-pollination** between
+  concurrent bakes. There is **no `/tmp/aris_imagegen.lock`** in agent mode — the agent wrapper itself
+  serializes the `mcp__codex__codex` calls. The real race surface is two runners on the **same project**
+  colliding on the per-asset `.bakereq.json`/`.bakestatus.json` sidecars + the shared `out_path`, so keep
+  **one runner per project**. (The global generated-images dir + newest-after-marker pickup that could
+  cross-pollinate is a hazard of the **legacy exec path ONLY**, retired for real bakes.)
 
 ## Input contract (3 modes)
 This skill **never invents an asset id**. If the outline/storyboard did not declare it, the operator adds it at
@@ -151,14 +156,39 @@ gpt-image "do not add" block — e.g. `"celebrity likeness"`, `"corporate brandi
    symbol on white, no scene". Provide the project's **real identity refs** as read-only condition images when
    the asset must match an existing cast member (never invent a face).
 
-### P2r · RASTER route — fire `image_gen` (CONDITION it, never hand-paste)
-Record a marker timestamp, take `/tmp/aris_imagegen.lock`, call `mcp__codex__codex` with the **canonical shape**
-(Constants). `size` = `1024x1024` (1:1 default) or `1280x720` (scene 16:9); background opaque, fully white;
-`n:1`; write directly to `OUTPUT_PATH`. Pick up the newest PNG after the marker; verify it is a real PNG
-(`file`), non-zero, and the codex log shows **no** shell/python/SVG fallback. **RETRY** per `MAX_GEN_RETRIES`.
-After exhaustion: keep the best PNG if any, else write the `failure_mode` node + exit non-zero (do **not** call
-the review loop on an empty file). **Never** patch a failed bake by hand-pasting the missing trait — re-condition
-and re-bake.
+### P2r · RASTER route — bake via the `.bakereq`/`.bakestatus` sidecar (CONDITION it, never hand-paste)
+This is the same fail-closed bake seam `run_comic.py` / `run_spiral.py` use (no marker, no `/tmp` lock, no
+newest-pickup — **each bake writes its OWN explicit `OUTPUT_PATH`**). `OUTPUT_PATH` is a deterministic
+project-relative path (`<refs>/{subdir}/{name}_v{NNN}.png`); `size` = `1024x1024` (1:1 default) or `1280x720`
+(scene 16:9), background opaque/fully white, `n:1`.
+
+1. **Orchestrator writes** `<OUTPUT_PATH>.bakereq.json` =
+   `{prompt_text, content_png, identity_ref, out_path:OUTPUT_PATH, model:"gpt-5.5", config:{model_reasoning_effort:"xhigh", include_image_gen_tool:true}, sandbox:"workspace-write", cwd, created_at, min_bytes:500000, aspect, request_id:"<uuid4 hex>"}`
+   (atomic `.tmp → mv`), pre-deleting any stale `out_path` + status so a prior bake can't be silently reused.
+   `request_id` is a per-bake uuid4-hex nonce the orchestrator mints (see step 3).
+2. **Agent calls** `mcp__codex__codex` with **exactly that** request (the reference + output paths are LITERAL in
+   `prompt_text` — the `mcp__codex__codex` schema has no `-i` image param); codex writes the native PNG to
+   `OUTPUT_PATH`. The `config` MUST carry **both** `model_reasoning_effort:"xhigh"` and
+   `include_image_gen_tool:true`, else the wrapper won't hand codex the native image tool and no bake fires.
+3. **Agent writes** `<OUTPUT_PATH>.bakestatus.json` =
+   `{status:"ok"|"fail", failure_kind, mcp_output:"<raw codex output>", request_id:"<verbatim from bakereq>"}`.
+   `mcp_output` is **MANDATORY on BOTH ok and fail** (the HARD-VETO scans it for `import struct`/`zlib.compress`/
+   `<svg>`/`matplotlib`/… traces of a hand-drawn fallback); `request_id` is copied **VERBATIM** from the
+   `.bakereq.json` (a missing/mismatched id is a stale/foreign bake and fail-closes).
+4. **Orchestrator verifies the EXPLICIT `OUTPUT_PATH`** (only after reading `status:"ok"`) via
+   ```
+   python3 <method-figure>/scripts/pickup_image.py --out-existing --out OUTPUT_PATH \
+     --min-bytes 500000 --aspect <W/H> --created-at <epoch> \
+     --request-id <uuid4 hex from .bakereq.json> --transcript <OUTPUT_PATH>.bakestatus.json
+   ```
+   which checks PNG sig + IHDR dims + size **strictly > `min_bytes`** + `mtime >= created_at` + a non-empty
+   `mcp_output`, fail-closes on a `request_id` mismatch, and **HARD-VETOES** `struct`/`zlib`/PIL/`<svg>`/
+   `matplotlib` markers in the transcript (a clean PNG sig NEVER overrides a fallback marker). **There is no
+   newest-pickup** — pickup verifies the one explicit `OUTPUT_PATH` this bake wrote.
+
+**RETRY** per `MAX_GEN_RETRIES`. After exhaustion: keep the best valid PNG if any, else write the `failure_mode`
+node + exit non-zero (do **not** call the review loop on an empty file). **Never** patch a failed bake by
+hand-pasting the missing trait — re-condition and re-bake.
 
 > **Grid guard.** A 2×2 / contact-sheet / variation-grid output is a **failed attempt** → retry (the
 > "single coherent image, not a grid" line is the primary mitigation; a PIL aspect-vs-canvas check + an optional
@@ -288,7 +318,11 @@ producing. (P0 reminder from the real run: a missing `researcher_chibi_canonical
 - **DON'T** ever set `review_status:"locked"`/`approved` here — the executor never self-acquits; locking is the
   cross-model `comic-asset-review-loop`'s exclusive right.
 - **DON'T** invent an asset id — if the outline didn't declare it, the operator adds it at the outline layer.
-- **DON'T** run two `image_gen` bakes at once (the global generated-images dir cross-pollinates; one runner).
+- **DON'T** run two runners on the same project at once. Each bake writes its **own explicit `out_path`** via
+  the `.bakereq`/`.bakestatus` sidecar, so there is **no global-dir cross-pollination** and **no
+  `/tmp/aris_imagegen.lock`** in agent mode (the agent wrapper serializes the `mcp__codex__codex` calls) — but
+  two runners on one project still collide on the per-asset sidecars + shared `out_path`, so keep **one runner
+  per project**. (The cross-pollinating global generated-images dir is a hazard of the legacy exec path only.)
 - **DON'T** trigger the review loop on an empty/failed file — write a `failure_mode` node + exit non-zero so the
   spiral routes around it.
 

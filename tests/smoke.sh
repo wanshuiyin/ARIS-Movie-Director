@@ -34,6 +34,16 @@ step "4. comic engine — run_comic.py --dry-run (no image_gen)"
 python3 skills/comic-director/scripts/run_comic.py --project examples/comic_m3_audit --page P00_cover --panels S01 --dry-run >/dev/null 2>&1 \
   && ok "dry-run prints bake prompts" || bad "run_comic --dry-run"
 
+step "4b. p0_proof preflight — a USABLE comic project with NO p0_proof node must fail-closed at the p0 gate"
+P0T=$(mktemp -d); mkdir -p "$P0T/wiki/nodes"
+printf '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"></svg>' > "$P0T/panel_s01.svg"
+printf '# art bible\n' > "$P0T/ART_BIBLE.md"
+printf '%s' '{"schema_version":"comic-ir/1.0","comic_id":"t","defaults":{"text_mode":"html"},"pages":[{"id":"P00","type":"page","beat":"b","panel_ids":["S01"]}],"panels":{"S01":{"text_mode":"html","condition":{"content_svg":"panel_s01.svg","world":"warm-lab","scene":"x"}}}}' > "$P0T/comic.json"
+# NO PIPE (set -o pipefail would otherwise return run_comic's non-zero p0 exit and flip the test): capture rc + output separately.
+OUT=$(python3 skills/comic-director/scripts/run_comic.py --project "$P0T" --repo "$PWD" --page P00 --panels S01 --bake-mode exec 2>&1); RC=$?
+if [ "$RC" != 0 ] && grep -qi p0_proof <<<"$OUT"; then ok "p0_proof fail-closed (usable project, no node)"; else bad "p0_proof should fail-closed with a p0_proof message"; fi
+rm -rf "$P0T"
+
 step "5. method-figure Step-0 — compile_brief (brief → traceable blueprint, no Chrome)"
 python3 skills/method-figure/scripts/compile_brief.py \
   skills/method-figure/examples/method_figure/method_figure_brief.json \

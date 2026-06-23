@@ -26,6 +26,8 @@ def main():
     for k in ("version", "figure_id", "canvas", "render_policy", "nodes"):
         if k not in bp: errs.append(f"missing top-level key '{k}'")
     cw = (bp.get("canvas") or {}).get("width", 0); ch = (bp.get("canvas") or {}).get("height", 0)
+    if not isinstance(cw, (int, float)) or not isinstance(ch, (int, float)) or cw <= 0 or ch <= 0:
+        errs.append(f"canvas dimensions must be positive numbers (got {cw!r}x{ch!r})")
     nodes = bp.get("nodes", []); groups = bp.get("groups", []); edges = bp.get("edges", [])
     ids = [n.get("id") for n in nodes]
     if len(ids) != len(set(ids)): errs.append(f"duplicate node ids: {[i for i in ids if ids.count(i) > 1]}")
@@ -43,7 +45,7 @@ def main():
     for n in nodes:
         if "label_exact" not in n and "label" not in n: errs.append(f"node '{n.get('id')}' has no label_exact")
         p = n.get("pos") or {}; s = n.get("size") or {}
-        if cw and ch and "x" in p and "y" in p:
+        if "x" in p and "y" in p:
             w = s.get("w", 0); h = s.get("h", 0)
             if not (in_canvas(p["x"] - w / 2, p["y"] - h / 2) and in_canvas(p["x"] + w / 2, p["y"] + h / 2)):
                 errs.append(f"node '{n.get('id')}' box (pos {p}, size {s}) extends outside canvas {cw}x{ch}")
@@ -56,12 +58,12 @@ def main():
     for g in groups:
         if traced and not g.get("source"): errs.append(f"group '{g.get('id')}' missing 'source' (compiled_from_brief)")
         b = g.get("bounds") or {}
-        if cw and ch and not (in_canvas(b.get("x", 0), b.get("y", 0)) and in_canvas(b.get("x", 0) + b.get("w", 0), b.get("y", 0) + b.get("h", 0))):
+        if not (in_canvas(b.get("x", 0), b.get("y", 0)) and in_canvas(b.get("x", 0) + b.get("w", 0), b.get("y", 0) + b.get("h", 0))):
             errs.append(f"group '{g.get('id')}' bounds {b} outside canvas {cw}x{ch}")
     callout_boxes = []
     for c in bp.get("callouts", []):
         p = c.get("pos") or {}; s = c.get("size") or {}
-        if cw and ch and "x" in p and "y" in p:
+        if "x" in p and "y" in p:
             w = s.get("w", 0); h = s.get("h", 0)
             if not (in_canvas(p["x"] - w / 2, p["y"] - h / 2) and in_canvas(p["x"] + w / 2, p["y"] + h / 2)):
                 errs.append(f"callout '{c.get('id')}' box (pos {p}, size {s}) extends outside canvas {cw}x{ch}")

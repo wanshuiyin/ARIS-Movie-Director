@@ -121,7 +121,7 @@ python3 cli/preflight.py
 - 📐 **Blueprints(蓝图)** —— 每格一张确定性 `content_svg`(不烤气泡)
 - 🧾 **Prompts** —— 确切的烤制 prompt + 逐字的 `expected_literals`(搬运工原則)
 - ✅ **Compile(编译)** —— schema 合法的 `comic.json`;零信用的 `p0_proof` gate 在任何图像信用之前先跑
-- 🔥 **Spiral bake(螺旋烤制)** —— 渲染 → `codex image_gen` → 3 审 `panel_gate` → keep / retry / 跨帧回滚 → 组装 → 查看器
+- 🔥 **Spiral bake(螺旋烤制)** —— 渲染 → agent `mcp__codex__codex` image_gen → 3 审 `panel_gate` → keep / 同格重试 → `assembly_gate`(跨页漂移时仅重烤被点名的漂移格)→ 组装 → 查看器
 
 **📐 流程 —— skill 链(可从上往下逐条追):**
 
@@ -149,7 +149,7 @@ python3 cli/preflight.py
                   → 盲读转录 → 对 expected_literals 做确定性 token-diff
                verdict ─ KEEP → 入页池
                        ├ RETRY ≤4   (重烤同一格 + 修复提示)
-                       └ rollback ≤6 (重烤被点名的先前格 —— 跨帧漂移)
+                       └ assembly_gate 修复 ≤6 —— 仅在漂移局部时重烤被点名的漂移格(种子锚定;绝不抹掉之前的好格子)
    page assembly_gate → 把通过的格投影回 comic.json → build_comic.py → outputs/index.html
    ├──────────────── Phase 2/3 · comic-director —— 审计螺旋 + 查看器 ────────────────┤
 
@@ -163,12 +163,12 @@ python3 cli/preflight.py
 (有没有落点剧情?)‖ Gemini *视觉* ‖ Codex *视觉*(第二只、不同家族的眼睛)—— 它们
 **盲读转录**像素;再由对 `observed_literals` 与撰写出的 `expected_literals` 的**确定性** token-diff 判 KEEP / RETRY;`content_corruption` 是单票否决,两个视觉审稿人都必须打分,并且**没有任何模型能自证通过**。每一次 尝试/评审×3/决定/失败 都写入 `research-wiki`。
 
-**Phase 2/3 单独跑**(确定性、无需 agent —— 就是 CI 测的那部分),前提是 `comic.json` 已存在:
+**Phase 2/3 单独跑**(前提是 `comic.json` 已存在)。下面只有**零信用的 `--dry-run` 才真正无需 agent** —— 那也正是 CI 测的那部分:
 ```bash
-python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run    # 零信用:打印烤制 prompt
-python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --finalize   # 烤制 + 重建查看器
+python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run    # 零信用、无需 agent:打印烤制 prompt(CI 测的那部分)
+python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --finalize   # 真烤制 —— 需要 agent sidecar SOP(见下)
 ```
-`run_comic.py` 是 [`packages/core/spiral_engine.js`](packages/core/spiral_engine.js) 的子进程移植版(无需 agent 运行时);它从一个已存在的 `comic.json` 起步 —— **它不能从模糊想法起步**。**限流:** 被限速的烤制会带着 `fresh_run_required` 干净地停下 —— 冷却后,为剩余画格启动一次**全新**运行,**不要**复用缓存状态。上限:**每格 ≤4 次尝试 · 每次运行 ≤6 次回滚 · 不并发烤制**
+`run_comic.py` 是 [`packages/core/spiral_engine.js`](packages/core/spiral_engine.js) 电影分支的子进程移植版;它从一个已存在的 `comic.json` 起步 —— **它不能从模糊想法起步**。确定性 CLI 内核(校验、蓝图渲染、token-diff 各 gate)才是 CI 跑的那部分,但 **`--finalize` 的烤制并非无需 agent**:每格烤制都由 agent sidecar SOP 完成 —— [`comic-director`](skills/comic-director/SKILL.md) 的 skill agent 守着内核写出的 `*.bakereq.json`,调用 `mcp__codex__codex`(带 `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`)来点燃原生 image 工具,再写回 `*.bakestatus.json`。所以一次真正的电影烤制需要 coding-agent 运行时;只有 `--dry-run` 能单独跑。**限流:** 被限速的烤制会带着 `fresh_run_required` 干净地停下 —— 冷却后,为剩余画格启动一次**全新**运行,**不要**复用缓存状态。上限:**每格 ≤4 次尝试 · 每次运行 ≤6 次回滚 · 不并发烤制**
 ([`docs/spiral-runtime.md`](docs/spiral-runtime.md))。
 
 **撰写模板:** 加新项目时,从 [`examples/comic_min_author/`](examples/comic_min_author/) 复制 Phase-1 的作者节点形状。
@@ -191,7 +191,7 @@ open  examples/comic_m3_audit/outputs/index.html
 > /method-figure path/to/method_figure_brief.json
 ```
 
-**确定性内核**(从一份 brief 起步、无需 agent 运行时)是一条命令 —— `run_spiral.py`:
+**确定性内核** —— Step-0 编译、蓝图校验、条件图渲染、content-diff gate —— 由一条命令 `run_spiral.py` 驱动。它的**零信用切片(`--p0-only` / `--dry-run`)无需 agent 运行时**;但**一次真正的 `gpt-image-2` 烤制需要 agent sidecar SOP**([`method-figure`](skills/method-figure/SKILL.md) 的 skill agent 通过调用 `mcp__codex__codex`(带 `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`)来服务内核写出的 `*.bakereq.json`):
 ```bash
 # 我们的示例 brief 烤的就是 ARIS 自己的 Figure 1 —— 换成你自己的 method_figure_brief.json 即可
 python3 skills/method-figure/scripts/run_spiral.py \
@@ -199,7 +199,9 @@ python3 skills/method-figure/scripts/run_spiral.py \
     --out-dir figures/method_figure/demo
 #  → figures/method_figure/demo/figure.png   (PANEL-CLEAN 候选,等你做结构签字)
 #     (+ blueprint.json + traceability.json + 每一轮的 trace.jsonl)
-#  第一次跑?加 --p0-only(零图像信用:校验 + 编译 + 渲染 + lint)。注意:--dry-run 也会写出这些文件。
+#  上面这次真烤制需要 agent sidecar(mcp__codex__codex 服务 .bakereq.json)—— 并非无需 agent。
+#  第一次跑?加 --p0-only —— 那个切片确实无需 agent(零图像信用:校验 + 编译 + 渲染 + lint)。
+#  注意:--dry-run(同样无需 agent)也会写出这些文件。
 ```
 
 <details><summary>📐 流程 —— /method-figure(brief → 审计渲染 → 签字)</summary>
@@ -213,7 +215,7 @@ python3 skills/method-figure/scripts/run_spiral.py \
    run_spiral.py —— 确定性内核(从一份 brief 起步):
      compile_brief.py (Step-0) → blueprint.json + traceability.json     每个节点都可追溯到某个 brief 字段 —— 否则 FAIL-CLOSED
        → validate_blueprint.py → render_condition.py                    带标注的条件图 SVG → PNG
-       → codex exec --sandbox read-only → gpt-image-2 烤制
+       → agent mcp__codex__codex(workspace-write, config{xhigh})→ gpt-image-2 烤制    靠 fail-closed 校验器把关,而非 sandbox 设置
        → Gemini 盲读转录 ‖ Codex 盲读转录 → content_diff.py     确定性否决
        → RETRY ≤4(重申锁定标签)→ Claude 结构签字
    → figure.png   (+ blueprint.json + traceability.json + 每一轮的 trace.jsonl)

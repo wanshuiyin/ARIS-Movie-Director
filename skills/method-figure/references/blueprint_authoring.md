@@ -58,9 +58,13 @@ on every object) and an honest `acceptance` block (`required_transcribers:["gemi
 3. **Condition, not paste (GUARD-2).** `condition.svg/png` is a LAYOUT CONTRACT + prompt reference; the final
    image is natively baked from it. No post-hoc vector overlay, no pasted edge-pills, no `*_overlay.svg` repair
    path. `label_policy` stays `baked` in v0 (`hybrid`/`overlay` is a future *policy*, not a fix for a bad bake).
-4. **Force the native tool, fail-closed (GUARD-4).** The bake runs Codex `gpt-5.5 xhigh` with
-   **`sandbox: read-only`** — read-only is what FORCES the native `image_generation` tool (else Codex pivots to
-   writing an SVG renderer). `pickup_image.py` verifies a real native PNG (marker + sha + dims), fail-closed.
+4. **Native tool via the agent seam, fail-closed (GUARD-4).** The real bake is the **agent** `mcp__codex__codex`
+   sidecar in **`--bake-mode=agent`** (Codex `gpt-5.5`, `config: {model_reasoning_effort: xhigh}`,
+   `sandbox: workspace-write` so it can WRITE the explicit `out_path`). `codex exec` is **retired** for real
+   bakes (`--bake-mode=exec` RAISES if it reaches one). No `sandbox` setting forces the native tool — the
+   **load-bearing safeguard is the fail-closed verifier**: `pickup_image.py --out-existing` verifies a real
+   native PNG (sig + sha + dims + `mtime >= created_at`) and **HARD-VETOES** any struct/zlib/PIL/`<svg>`/matplotlib
+   fallback marker in the agent transcript (no 'clean sig wins' override).
 5. **Exact locks re-asserted EVERY round (GUARD-3).** `run_spiral.locked_labels(bp)` re-emits every `*_exact`
    (group/node/edge/callout/rail) + every exact numeric token into every bake prompt — a regeneration may not
    silently drop or rename a label.
