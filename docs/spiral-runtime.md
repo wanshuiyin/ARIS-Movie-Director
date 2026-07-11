@@ -1,5 +1,9 @@
 # Spiral Runtime — how to launch comic generation
 
+> **Live-verified 2026-07-11**: the full agent-mode chain (P0 fail-closed → sidecar bake via
+> `mcp__codex__codex` → pickup verify → 3-reviewer gate → flagged/fail-safe) ran end-to-end on a real
+> panel — see [`BAKE_SMOKE_2026-07-11.md`](BAKE_SMOKE_2026-07-11.md) for the panel + the honest caveats.
+
 The **working entry point is the Python orchestrator**, not the JS engine:
 
 ```bash
