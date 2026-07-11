@@ -14,6 +14,17 @@ These lock the cross-model-audited gate guarantees so a future edit can't silent
   - SIZE-BOUNDARY parity: spiral_engine.js verifyExistingPng applies the SAME floor as pickup_image.py — a PNG of EXACTLY
     min_bytes is REJECTED (ok:false), min_bytes+1 ACCEPTED (ok:true) — so the size comparator is parity-locked, not just VETO_PATS
   - the comic literal-diff exactness contract (a wrong timestamp must NOT satisfy the expected one)
+  - p0_proof DIGEST BINDING (N3/N4): run_comic's spending preflight accepts ONLY a cert whose payload binds
+    comic_sha == sha256(comic.json BYTES) AND bake_plan_sha == bake_plan_digest(get_bake_plan()) — a digest-less
+    (old-shape) cert and a stale cert (comic.json modified after mint) both fail-closed; run_p0_proof.py mints
+    e2e ONLY on a both-families {openai,google} same-digest quorum (one family / wrong comic_sha -> exit 1)
+  - run_spiral.extract_json uses a real decoder (raw_decode): braces INSIDE string values (observed_tokens)
+    can't truncate the payload — parity with run_comic.extract_json (N11)
+  - run_comic --page must NAME an existing comic.json page (a valid-charset ghost id exits !=0, --dry-run
+    included); _p0_clean requires the cert's reviewer_quorum to carry BOTH {openai,google} — correct digests
+    alone never clear the gate; run_p0_proof refuses a quorum-family --author-family (openai -> exit 1,
+    self-acquittal) and --min-bytes N binds bake_plan_sha to the consumer's --min-bytes N plan digest
+    (≠ the default-plan digest)
 
 Run locally:  python3 tests/test_gates.py    (exit 0 = all pass).  Also invoked by tests/smoke.sh + CI.
 """
@@ -513,33 +524,15 @@ check("literal-diff: label fine-parts fallback still matches", _hit("jsonschema"
 # ── 5. p0_proof gate: a USABLE comic project with NO decision:p0_proof_* node must fail-closed at the p0 gate ──
 # (--bake-mode exec avoids any real MCP; the p0 gate is hit BEFORE any render/bake/exec-raise, so it fail-closes
 #  THERE — not at the missing-comic guard and not at the exec-raise. Proves the gate, not the wrong reason.)
-with tempfile.TemporaryDirectory() as td:
-    proj = os.path.join(td, "proj"); os.makedirs(os.path.join(proj, "wiki", "nodes"))
-    open(os.path.join(proj, "panel_s01.svg"), "w").write('<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"></svg>')
-    open(os.path.join(proj, "ART_BIBLE.md"), "w").write("# art bible\n")
-    comic = {"schema_version": "comic-ir/1.0", "comic_id": "t", "defaults": {"text_mode": "html"},
-             "pages": [{"id": "P00", "type": "page", "beat": "b", "panel_ids": ["S01"]}],
-             "panels": {"S01": {"text_mode": "html",
-                                "condition": {"content_svg": "panel_s01.svg", "world": "warm-lab", "scene": "x"}}}}
-    json.dump(comic, open(os.path.join(proj, "comic.json"), "w"))
-    rc = subprocess.run([PY, os.path.join(ROOT, "skills", "comic-director", "scripts", "run_comic.py"),
-                         "--project", proj, "--repo", ROOT, "--page", "P00", "--panels", "S01", "--bake-mode", "exec"],
-                        capture_output=True, text=True, timeout=30)
-    check("p0_proof: usable comic project, NO p0_proof node -> fail-closed at the p0 gate",
-          rc.returncode != 0 and "p0_proof" in ((rc.stderr or "") + (rc.stdout or "")).lower())
+RUN_COMIC = os.path.join(ROOT, "skills", "comic-director", "scripts", "run_comic.py")
+RUN_P0 = os.path.join(ROOT, "skills", "comic-cross-layer-gate", "scripts", "run_p0_proof.py")
+sys.path.insert(0, os.path.join(ROOT, "skills", "comic-director", "scripts"))
+from run_comic import get_bake_plan as _get_bake_plan            # the p0-bound spend plan (single source)
+from pickup_image import bake_plan_digest as _bake_plan_digest   # canonical bakereq/v1 digest (contract-v2 §0a)
+import hashlib as _hashlib
 
-# ── 5b. p0_proof gate SUCCESS: a clean decision:p0_proof_* node lets run_comic proceed PAST the p0 gate ──
-# Complement of §5: with a clean p0_proof gate node in the wiki, the p0 preflight MUST NOT fire — the run advances
-# into the panel loop (and then hits the --bake-mode=exec "exec bake retired" raise, a DIFFERENT, later stop). The
-# discriminator: the p0 FAIL-CLOSED message ("no clean decision:p0_proof_* node") is ABSENT, AND there is evidence the
-# run reached the panel loop / bake (the ▶ attempt log, the exec-bake-retired raise, or "no panel ever generated").
-# NOTE (anchor-intent adaptation): the task wording was verdict "advance" / status "locked", but run_comic._p0_clean()
-# is the contract under test and it requires the DECISION node to have status "final" and payload.verdict ∈
-# {pass,clean,approve,keep,ship,proceed}. "approve" is the natural intersection with the cross-layer-gate's ADVANCE
-# vocabulary (SKILL.md §4.2: ADVANCE -> approve/locked), and the gate's status:"locked" flip lands on the TARGET node,
-# not the decision node. So the fixture node uses verdict:"approve" + status:"final" to satisfy the REAL gate contract
-# while preserving the exact intent ("a clean/advanced p0_proof decision lets the run proceed past the p0 gate").
-with tempfile.TemporaryDirectory() as td:
+def _p0_proj(td):
+    """minimal USABLE comic project (the §5 fixture pattern): svg blueprint + ART_BIBLE + 1-panel comic.json."""
     proj = os.path.join(td, "proj"); nodes = os.path.join(proj, "wiki", "nodes"); os.makedirs(nodes)
     open(os.path.join(proj, "panel_s01.svg"), "w").write('<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"></svg>')
     open(os.path.join(proj, "ART_BIBLE.md"), "w").write("# art bible\n")
@@ -548,20 +541,208 @@ with tempfile.TemporaryDirectory() as td:
              "panels": {"S01": {"text_mode": "html",
                                 "condition": {"content_svg": "panel_s01.svg", "world": "warm-lab", "scene": "x"}}}}
     json.dump(comic, open(os.path.join(proj, "comic.json"), "w"))
-    # a CLEAN decision:p0_proof_* node (all 6 wiki fields + the _p0_clean() payload contract: gate_kind/verdict)
+    return proj, nodes
+
+def _comic_sha(proj):
+    # BYTES digest, exactly as run_comic._p0_clean / run_p0_proof compute it (full hexdigest, not sha()[:16])
+    return _hashlib.sha256(open(os.path.join(proj, "comic.json"), "rb").read()).hexdigest()
+
+def _run_comic_exec(proj, timeout=90, page="P00", extra=()):
+    rc = subprocess.run([PY, RUN_COMIC, "--project", proj, "--repo", ROOT, "--page", page, "--panels", "S01",
+                         "--bake-mode", "exec", *extra], capture_output=True, text=True, timeout=timeout)
+    return rc, ((rc.stderr or "") + (rc.stdout or "")).lower()
+
+def _mint_cert(proj, nodes, with_digests=True, quorum=("google", "openai")):
+    """decision:p0_proof_* fixture in run_p0_proof.py's MINTED shape; with_digests=False = the OLD (pre-binding)
+    payload shape that used to pass — it must now be REJECTED as an unbound cert; quorum=None OMITS
+    reviewer_quorum entirely (the pre-quorum cert shape — correct digests alone must no longer clear the gate)."""
+    pl = {"gate_kind": "p0_proof", "verdict": "advance", "target_node_id": "decision:compile_t",
+          "review_files": ["r_codex.json", "r_gemini.json"]}
+    if quorum is not None:
+        pl["reviewer_quorum"] = list(quorum)
+    if with_digests:
+        # same-way computation as run_comic: sha256(comic.json bytes) + bake_plan_digest(get_bake_plan()) —
+        # no-arg get_bake_plan == the argparse defaults, which is what the exec subprocess resolves too.
+        pl["comic_sha"] = _comic_sha(proj); pl["bake_plan_sha"] = _bake_plan_digest(_get_bake_plan())
+    node = {"node_id": "decision:p0_proof_t_test", "node_type": "decision", "status": "final",
+            "title": "p0_proof gate t -> advance", "created_at": "2026-07-11T00:00:00+00:00", "payload": pl}
+    json.dump(node, open(os.path.join(nodes, "decision_p0_proof_t_test.json"), "w"))
+
+_P0_FAIL_MSG = "no clean decision:p0_proof"   # the p0 preflight's fail-closed discriminator
+
+def _past_p0(rc, out):
+    # evidence the run got PAST the p0 gate into the panel loop: the ▶ attempt log, the exec-bake-retired raise,
+    # or the no-panel escalation (Chrome-less CI) — all strictly LATER stops than the p0 preflight.
+    return ("exec bake retired" in out) or ("attempt 1" in out) or ("no panel ever generated" in out) \
+           or ("▶" in ((rc.stderr or "") + (rc.stdout or "")))
+
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    rc5, out5 = _run_comic_exec(proj, timeout=30)
+    check("p0_proof: usable comic project, NO p0_proof node -> fail-closed at the p0 gate",
+          rc5.returncode != 0 and "p0_proof" in out5)
+
+# ── 5b. p0_proof DIGEST BINDING (P0-3): the OLD digest-less cert shape must now FAIL-CLOSED ──
+# FLIPPED from the pre-Wave2 success assertion: this exact fixture (verdict approve / status final, NO
+# comic_sha/bake_plan_sha) used to let the run proceed — under the digest requirement it is an UNBOUND cert
+# (proves nothing about the CURRENT comic.json + spend plan), so _p0_clean must reject it and the preflight fires.
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
     p0_node = {"node_id": "decision:p0_proof_aris_comic_v1", "node_type": "decision", "status": "final",
                "title": "p0_proof gate -> advance", "created_at": "2026-06-08T00:00:00+00:00",
                "payload": {"gate_kind": "p0_proof", "target_node_id": "p0:pipeline_aris_comic_v1",
                            "verdict": "approve", "reasoning": "zero-credit pre-prod proof: all blockers cleared",
                            "repair_instruction": ""}}
     json.dump(p0_node, open(os.path.join(nodes, "decision_p0_proof_aris_comic_v1.json"), "w"))
-    rc5b = subprocess.run([PY, os.path.join(ROOT, "skills", "comic-director", "scripts", "run_comic.py"),
-                           "--project", proj, "--repo", ROOT, "--page", "P00", "--panels", "S01", "--bake-mode", "exec"],
-                          capture_output=True, text=True, timeout=60)
-    _out5b = ((rc5b.stderr or "") + (rc5b.stdout or "")).lower()
-    _past_p0 = ("exec bake retired" in _out5b) or ("attempt 1" in _out5b) or ("no panel ever generated" in _out5b) or ("▶" in ((rc5b.stderr or "") + (rc5b.stdout or "")))
-    check("p0_proof SUCCESS: clean decision:p0_proof_* node -> run proceeds PAST the p0 gate (no fail-closed at p0)",
-          ("no clean decision:p0_proof" not in _out5b) and _past_p0)
+    rc5b, out5b = _run_comic_exec(proj, timeout=30)
+    check("p0 binding: OLD-shape cert (no comic_sha/bake_plan_sha) -> fail-closed (unbound cert rejected)",
+          rc5b.returncode != 0 and _P0_FAIL_MSG in out5b)
+    check("p0 binding: the rejection names the missing/stale digests (rejected FOR the binding, not another reason)",
+          "missing or stale" in out5b)
+
+# ── 5c. p0_proof DIGEST BINDING success (P0-1): a cert carrying the CORRECT digests clears the p0 gate ──
+# The new pass path: mint the digest-carrying cert (run_p0_proof's shape) against the CURRENT comic.json + the
+# default spend plan, then run --bake-mode exec. The p0 fail-closed message must be ABSENT and the run must show
+# evidence of a strictly LATER stop (attempt log / exec-bake-retired raise / no-panel escalation).
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    _mint_cert(proj, nodes)
+    rc5c, out5c = _run_comic_exec(proj)
+    check("p0 binding SUCCESS: cert with correct comic_sha+bake_plan_sha -> proceeds PAST the p0 gate",
+          (_P0_FAIL_MSG not in out5c) and _past_p0(rc5c, out5c))
+
+# ── 5d. p0_proof DIGEST BINDING staleness (P0-2): modify comic.json AFTER minting -> stale cert rejected ──
+# Same cert as §5c, but comic.json changes post-mint (still cfg-usable, so the run reaches the p0 gate — the
+# failure can only come from the digest mismatch). The cert audited a DIFFERENT comic.json -> fail-closed.
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    _mint_cert(proj, nodes)
+    comic = json.load(open(os.path.join(proj, "comic.json"), encoding="utf-8"))
+    comic["panels"]["S01"]["condition"]["scene"] = "x2 (edited after the cert was minted)"
+    json.dump(comic, open(os.path.join(proj, "comic.json"), "w"))
+    rc5d, out5d = _run_comic_exec(proj, timeout=30)
+    check("p0 binding STALE: comic.json modified after mint -> fail-closed (stale cert rejected)",
+          rc5d.returncode != 0 and _P0_FAIL_MSG in out5d and "missing or stale" in out5d)
+
+# ── 5e. run_p0_proof.py e2e (P0-4/P0-5): mint on a both-families same-digest quorum; fail-closed otherwise ──
+# The minter is the ONLY producer of the artifact §5c consumes — lock the handshake end-to-end: two counted
+# reviews (openai + google, blockers==[], affirmative verdict, comic_sha == the CURRENT comic.json digest)
+# -> exit 0 + a node carrying BOTH digests that run_comic then ACCEPTS; one family only, or the second family
+# acquitting a DIFFERENT comic.json version -> exit 1 (quorum/same-digest fail-closed — timeouts never count).
+def _review(td, name, family, comic_sha, verdict="pass"):
+    p = os.path.join(td, name)
+    json.dump({"family": family, "blockers": [], "verdict": verdict, "comic_sha": comic_sha}, open(p, "w"))
+    return p
+
+def _run_p0(proj, reviews, extra=()):
+    return subprocess.run([PY, RUN_P0, "--project", proj, "--target", "decision:compile_t", *extra,
+                           "--reviews"] + reviews, capture_output=True, text=True, timeout=30)
+
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    csha = _comic_sha(proj)
+    r_ok = _run_p0(proj, [_review(td, "r_codex.json", "openai", csha), _review(td, "r_gemini.json", "google", csha)])
+    minted = [f for f in os.listdir(nodes) if f.startswith("decision_p0_proof_") and f.endswith(".json")]
+    check("run_p0_proof: openai+google clean reviews, correct comic_sha -> exit 0 + cert minted into wiki/nodes",
+          r_ok.returncode == 0 and len(minted) == 1)
+    npl = (json.load(open(os.path.join(nodes, minted[0]), encoding="utf-8")).get("payload") or {}) if minted else {}
+    check("run_p0_proof: minted payload binds BOTH digests (comic_sha + bake_plan_sha, computed the run_comic way)",
+          npl.get("comic_sha") == csha and npl.get("bake_plan_sha") == _bake_plan_digest(_get_bake_plan())
+          and npl.get("gate_kind") == "p0_proof" and sorted(npl.get("reviewer_quorum") or []) == ["google", "openai"])
+    # the HANDSHAKE: the cert the real minter wrote must clear the real consumer's preflight (B4 closed e2e)
+    rc5e, out5e = _run_comic_exec(proj)
+    check("run_p0_proof -> run_comic handshake: the MINTED cert clears the p0 preflight (no fail-closed at p0)",
+          (_P0_FAIL_MSG not in out5e) and _past_p0(rc5e, out5e))
+
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    csha = _comic_sha(proj)
+    # (a) ONE family only (two openai reviews): quorum unmet -> exit 1, nothing minted
+    r_one = _run_p0(proj, [_review(td, "r_c1.json", "openai", csha), _review(td, "r_c2.json", "openai", csha)])
+    check("run_p0_proof: ONE family only (2x openai) -> exit 1 (quorum fail-closed) + no cert minted",
+          r_one.returncode != 0 and "quorum" in (r_one.stderr or "").lower() and not os.listdir(nodes))
+    # (b) second family present but acquitting a DIFFERENT comic.json (wrong comic_sha) -> does NOT count -> exit 1
+    r_stale = _run_p0(proj, [_review(td, "r_c3.json", "openai", csha), _review(td, "r_g1.json", "google", "0" * 64)])
+    check("run_p0_proof: google review with WRONG comic_sha -> exit 1 (same-digest fail-closed) + no cert minted",
+          r_stale.returncode != 0 and "quorum" in (r_stale.stderr or "").lower() and not os.listdir(nodes))
+
+# ── 5f. NONEXISTENT --page fail-closed: a valid-charset ghost page id must exit !=0 — --dry-run included ──
+# A --page that clears the ID_RE charset guard but names NO page in comic.json is a run addressed at a ghost:
+# it must never reach the p0 gate / panel loop (real run) nor print bake prompts (dry-run). A VALID cert is
+# minted so the ONLY possible failure is the page check itself, not the p0 preflight.
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    _mint_cert(proj, nodes)
+    rc5f, out5f = _run_comic_exec(proj, timeout=30, page="P99")
+    check("page check: NONEXISTENT --page P99 (valid chars) -> exit !=0 with a page-related message naming the id",
+          rc5f.returncode != 0 and "page" in out5f and "p99" in out5f)
+    check("page check: the failure IS the page gate — not the p0 preflight, not the panel loop",
+          _P0_FAIL_MSG not in out5f and not _past_p0(rc5f, out5f))
+    rc5fd, out5fd = _run_comic_exec(proj, timeout=30, page="P99", extra=("--dry-run",))
+    check("page check: --dry-run with a NONEXISTENT --page ALSO fails (no bake prompts for a ghost page)",
+          rc5fd.returncode != 0 and "page" in out5fd)
+
+# ── 5g. _p0_clean QUORUM: correct digests alone must NOT clear the p0 gate — the cert needs BOTH families ──
+# §5c/§5e are the positive controls (correct digests + reviewer_quorum ["google","openai"] + target -> PASS);
+# here the SAME digest-stamping code (_mint_cert) writes certs whose only defect is the quorum field.
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    _mint_cert(proj, nodes, quorum=None)          # digests correct, reviewer_quorum MISSING
+    rc5g, out5g = _run_comic_exec(proj, timeout=30)
+    check("p0 quorum: correct digests but reviewer_quorum MISSING -> fail-closed at the p0 gate",
+          rc5g.returncode != 0 and _P0_FAIL_MSG in out5g)
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    _mint_cert(proj, nodes, quorum=["openai"])    # ONE family only — never a cross-model acquittal
+    rc5g2, out5g2 = _run_comic_exec(proj, timeout=30)
+    check('p0 quorum: correct digests but reviewer_quorum == ["openai"] (one family) -> fail-closed at the p0 gate',
+          rc5g2.returncode != 0 and _P0_FAIL_MSG in out5g2)
+
+# ── 5h. run_p0_proof --author-family openai -> REFUSED (a quorum family can drive, never acquit) ──
+# Two otherwise-perfect reviews (openai+google, clean, correct comic_sha) — the ONLY defect is that the
+# declared author family sits INSIDE the quorum, so its own "review" would be a self-acquittal. exit 1, no cert.
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    csha = _comic_sha(proj)
+    r_af = _run_p0(proj, [_review(td, "r_codex.json", "openai", csha), _review(td, "r_gemini.json", "google", csha)],
+                   extra=("--author-family", "openai"))
+    check("run_p0_proof: --author-family openai -> exit 1 (self-acquittal refusal) + no cert minted",
+          r_af.returncode != 0 and not os.listdir(nodes) and "author" in (r_af.stderr or "").lower())
+
+# ── 5i. run_p0_proof --min-bytes 400000: the minted bake_plan_sha binds the NON-default plan ──
+# The cert must acquit the plan the consumer will actually run: bake_plan_sha == bake_plan_digest(
+# get_bake_plan(min_bytes=400000)) — i.e. what run_comic --min-bytes 400000 resolves — and must NOT
+# equal the default-plan digest (a default-plan cert must not bless a non-default spend, and vice versa).
+from types import SimpleNamespace as _NS
+with tempfile.TemporaryDirectory() as td:
+    proj, nodes = _p0_proj(td)
+    csha = _comic_sha(proj)
+    r_mb = _run_p0(proj, [_review(td, "r_codex.json", "openai", csha), _review(td, "r_gemini.json", "google", csha)],
+                   extra=("--min-bytes", "400000"))
+    minted_mb = [f for f in os.listdir(nodes) if f.startswith("decision_p0_proof_") and f.endswith(".json")]
+    check("run_p0_proof --min-bytes 400000: exit 0 + cert minted", r_mb.returncode == 0 and len(minted_mb) == 1)
+    pl_mb = (json.load(open(os.path.join(nodes, minted_mb[0]), encoding="utf-8")).get("payload") or {}) if minted_mb else {}
+    _sha_400k = _bake_plan_digest(_get_bake_plan(_NS(min_bytes=400000)))
+    _sha_dflt = _bake_plan_digest(_get_bake_plan())
+    check("run_p0_proof --min-bytes 400000: bake_plan_sha == the consumer's --min-bytes 400000 plan digest",
+          pl_mb.get("bake_plan_sha") == _sha_400k)
+    check("run_p0_proof --min-bytes 400000: bake_plan_sha != the DEFAULT plan digest (the knob really binds)",
+          _sha_400k != _sha_dflt and pl_mb.get("bake_plan_sha") != _sha_dflt)
+
+# ── 6. run_spiral.extract_json (N11): braces INSIDE string values must not truncate the payload ──
+# A reviewer transcribing figure text routinely puts JSON/code fragments (with unbalanced braces) into
+# observed_tokens. The old bare-character depth counter miscounted the escaped `{` inside the string and
+# truncated; the raw_decode rewrite (parity with run_comic.extract_json) must round-trip it EXACTLY, and
+# required_key must still skip a {"thought":...} preamble fragment.
+import run_spiral as _rs   # MF/scripts already on sys.path; import-safe (main guard)
+_inner = '{"narrative_beat_fidelity":4,"composition_story":5,"note":"brace { inside string"}'
+_blob = 'reviewer prose {"thought":"scanning the panel"} ' \
+        + json.dumps({"verdict": "approve", "observed_tokens": [_inner], "blockers": []}) + " trailing prose"
+_j6 = _rs.extract_json(_blob, required_key="verdict")
+check("run_spiral.extract_json: payload with unbalanced brace INSIDE a string parses (no truncation)",
+      isinstance(_j6, dict) and _j6.get("verdict") == "approve")
+check("run_spiral.extract_json: the brace-carrying observed_tokens string round-trips EXACTLY",
+      isinstance(_j6, dict) and _j6.get("observed_tokens") == [_inner] and _j6.get("blockers") == [])
 
 print()
 if fails:

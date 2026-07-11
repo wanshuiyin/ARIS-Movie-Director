@@ -46,6 +46,9 @@ the 侧栏讲解铁律 + the gate catch (b) every round.
         │ revise ─▶ ② (bounded: MAX_OUTLINE_REVISIONS=3 → auto-abandon → failure_mode node)
         ▼ approve + signed
   outline_spec (locked) → SOURCE OF TRUTH for the storyboard layer
+        │
+        ▼  (much later, orchestrator-owned) OUTLINE_FINAL_LOCK — after the asset layer locks, a cheap
+           re-check that the locked assets still match this approved outline (N1 two-stage; §EXACT gate)
 ```
 
 ## Constants
@@ -54,16 +57,20 @@ the 侧栏讲解铁律 + the gate catch (b) every round.
 - **SYNTHESIZER** = `mcp__codex__codex`, `model_reasoning_effort: xhigh` — a **different model family** from
   the Claude lens authors. Codex both *reconciles* the 3 candidates AND runs the density/restructure pass;
   the outline layer is itself a cross-model artifact (executor ≠ reviewer, [`reviewer-independence`](../../protocols/reviewer-independence.md)).
-- **GATE REVIEWERS** = `mcp__codex__codex` (gpt-5.5 xhigh) ‖ Gemini (`auto-gemini-3`, readability dims) — each
+- **GATE REVIEWERS** = `mcp__codex__codex` (NO model pin — follows the local codex config, currently
+  `gpt-5.6-sol` — at `xhigh`) ‖ Gemini (`auto-gemini-3`, readability dims) — each
   sees ONLY `outline_spec.json` + `intent_spec.json` (the skeleton) + the lens files, never Claude's prose. They
   do **not** acquit; they each persist a `review:<slug>` node (payload `{target_node_id, reviewer, gate_kind:
   "outline", review_scores:{...}}`) with a `reviews` edge `review:<slug> → <outline_id>`, and the SOLE acquittal
   organ [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md) `--gate outline` then **fuses** those
   score-nodes (D4: never invoke the gate cold — write the reviews FIRST, then call the gate).
-- **THE GATE IS RUN TWICE** (the deadlock fix): a **READINESS** pass BEFORE user approval (scores only the
-  author-controllable dims; the gate's own `user_decision_record == 5` floor and the unresolved-questions veto
-  are **not yet satisfiable**, so the readiness reviewers explicitly omit them), then the **FINAL** pass AFTER
-  the user signs + the `待确认` block is emptied (now `user_decision_record == 5` IS satisfiable). See §EXACT gate.
+- **THE GATE IS RUN TWICE BY THIS SKILL** (the user-approval deadlock fix): a **READINESS** pass BEFORE user
+  approval (scores only the author-controllable dims; the gate's own `user_decision_record == 5` floor and the
+  unresolved-questions veto are **not yet satisfiable**, so the readiness reviewers explicitly omit them), then
+  the **FINAL** pass AFTER the user signs + the `待确认` block is emptied (now `user_decision_record == 5` IS
+  satisfiable). See §EXACT gate. A THIRD, later touch — **OUTLINE_FINAL_LOCK** — is owned by the orchestrator,
+  not this skill: after the asset layer locks (provisional storyboard → asset gen/review), a cheap re-check
+  that the locked assets still match the approved outline (§EXACT gate → the N1 two-stage contract).
 - **MAX_OUTLINE_REVISIONS** = 3, then auto-abandon → write a `failure_mode` node so a re-run must diverge. Its
   payload is **exactly** what `validate_wiki.py` PAYLOAD_REQUIRED demands for `failure_mode`: `{"layer":
   "outline", "affected_shot_ids": [<the abandoned skeleton shots, e.g. all S01..SMM>], "active": true}`
@@ -206,7 +213,7 @@ are **not yet satisfiable**. Applying the full conjunctive APPROVE rule here wou
 **explicitly EXCLUDES** `user_decision_record` + the unresolved-questions veto (see §EXACT gate → READINESS).
 
 Run it as a **two-step gate invocation (D4 — never call the gate cold)**:
-1. **Fan out the GATE REVIEWERS** (Codex `gpt-5.5 xhigh` ‖ Gemini `auto-gemini-3`) on the files only
+1. **Fan out the GATE REVIEWERS** (Codex at `xhigh`, no model pin ‖ Gemini `auto-gemini-3`) on the files only
    (`outline_spec.json` + `intent_spec.json` + the lens files, inside the advisory fence — no orchestrator
    prose). **Persist EACH as a `review` node:** `node_id review:<slug>` (e.g. `review:outline_codex_r1`),
    node_type `review`, payload **required** `{target_node_id: <outline_id>, reviewer: "codex"|"gemini",
@@ -215,11 +222,13 @@ Run it as a **two-step gate invocation (D4 — never call the gate cold)**:
    `reviews` edge `{src: review:<slug>, dst: <outline_id>, type: "reviews"}` (the gate walks `reviews` edges in;
    `reviewed_by` is the wrong direction and the fuser won't find it).
 2. **THEN** invoke `comic-cross-layer-gate <outline_id> --gate outline` to fuse the score-nodes + adjudicate.
-   (Its own `--gate outline` floor — `min(coverage, identity_lock_feasibility, scene_lock_feasibility) ≥ 4 AND
-   safety_ip ≥ 4` — runs on whatever dims the reviewers scored; the readiness reviewers feed it the
-   author-controllable subset and intentionally leave `user_decision_record` unscored, which the gate SKIPs,
-   never 0-substitutes.) On a FAIL verdict, fold the blockers and loop back to step 2 (bounded by
-   `MAX_OUTLINE_REVISIONS`); on a clean readiness verdict, proceed to step 10.
+   (This is the OUTLINE_DRAFT_VALID stage: on a fresh outline `identity_lock_feasibility` /
+   `scene_lock_feasibility` are unscorable — no assets exist — so the reviewers leave them `null` and the gate
+   SKIPs them, never 0-substitutes; the effective draft floor is `coverage ≥ 4 AND safety_ip ≥ 4`. The
+   readiness reviewers likewise leave `user_decision_record` unscored. What IS checked here: every referenced
+   `asset_id` is DECLARED with a complete, generatable request — `locked` is NOT required until
+   OUTLINE_FINAL_LOCK, after the asset layer.) On a FAIL verdict, fold the blockers and loop back to step 2
+   (bounded by `MAX_OUTLINE_REVISIONS`); on a clean readiness verdict, proceed to step 10.
 
 **Then schema-validate the (still-`under_review`) `outline_spec` node** payload (`cli/validate_wiki.py` mirrors
 `node_schema.json`); on a schema error, run the `MAX_DRAFT_ATTEMPTS` repair loop with `codex-reply` quoting the
@@ -246,17 +255,31 @@ since the sign-off + `已定决策` block + emptied `待确认` block exist) wit
   `status: locked` by hand without the gate's `approve` verdict node **and** the inline user sign-off.)
 - declare the file **"SOURCE OF TRUTH for the storyboard layer."**
 
-Then hand off to `comic-storyboard-creator` (it inherits the locked beats + the motif arcs as its
-continuity ledger).
+Then hand off to `comic-storyboard-creator` for its PROVISIONAL structural pass (it inherits the locked beats
++ the motif arcs as its continuity ledger). Asset generation/review, OUTLINE_FINAL_LOCK, and the storyboard's
+FINAL asset-resolution validation follow — [`comic-author`](../comic-author/SKILL.md) steps 4–6b.
 
 ## EXACT gate — this skill's PRE-gate rubric, fused by `comic-cross-layer-gate --gate outline`
-**Authority note (D3):** the canonical APPROVE predicate + the status FLIP for the `outline` gate are owned by
-[`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md) `--gate outline` (its floor:
-`min(coverage, identity_lock_feasibility, scene_lock_feasibility) ≥ 4 AND safety_ip ≥ 4`, plus its `outline`
-pre-check that every referenced `asset_id` resolves and is `status: locked`). The dims + verdict rules below are
-**THIS skill's pre-gate routing** (step 9 step-1 fan-out): the rubric the GATE REVIEWERS score into their
-`review:<slug>` nodes, and the local stop-rule this skill uses to loop/abandon **before** deferring to the
-fuser. They are not a competing gate — the cross-layer-gate fuses these score-nodes and makes the final call.
+**Authority note (D3) — the N1 TWO-STAGE contract:** the canonical APPROVE predicate + the status FLIP for the
+`outline` gate are owned by [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md) `--gate outline`,
+and under the N1 DAG that gate runs in **two stages**:
+- **OUTLINE_DRAFT_VALID** (this skill's readiness + final passes) — validates **narrative + continuity +
+  safety only**. It does **NOT** require any referenced asset to be `locked` (on a fresh project assets don't
+  exist yet); it requires every referenced `asset_id` to be **DECLARED with a complete, generatable request**.
+  Because no locked assets exist, the gate-floor dims `identity_lock_feasibility` / `scene_lock_feasibility`
+  are **unscorable at draft time**: the reviewers leave them `null`, the fuser SKIPs them (never
+  0-substitutes), and **the effective draft floor reduces to `coverage ≥ 4 AND safety_ip ≥ 4`** — this is the
+  explicit resolution of the dim-vocabulary gap (the reviewers here never score those two dims; nobody does
+  until assets exist).
+- **OUTLINE_FINAL_LOCK** (orchestrator-owned — [`comic-author`](../comic-author/SKILL.md) step 6a, AFTER the
+  asset layer locks) — a cheap re-check that the now-locked assets still match the approved outline;
+  `identity_lock_feasibility` / `scene_lock_feasibility` ARE scored here, against real locked assets. The hard
+  locked-asset barrier itself stays downstream, before blueprint authoring (comic-author steps 6b–7).
+This replaces the deadlocked single-stage contract (an outline gate demanding locked assets that depend on a
+storyboard that depends on a locked outline). The dims + verdict rules below are **THIS skill's pre-gate
+routing** (step 9 step-1 fan-out): the rubric the GATE REVIEWERS score into their `review:<slug>` nodes, and
+the local stop-rule this skill uses to loop/abandon **before** deferring to the fuser. They are not a
+competing gate — the cross-layer-gate fuses these score-nodes and makes the final call.
 
 Each GATE REVIEWER scores these dims **0–5** seeing ONLY `outline_spec.json` + `intent_spec.json` (the
 skeleton) + the lens files — **no orchestrator prose**:
@@ -342,8 +365,10 @@ global_style_bible, budget`:
   `MIN_CAST_PER_BEAT`).
 - `beat_table` — the 6-column table (the canonical render-source for the storyboard).
 - `motif_arcs` — the 5 arcs with **exact per-shot values** (the continuity contract).
-- `character_asset_ids`, `scene_asset_ids`, `prop_asset_ids` — flat lists holding the **node_ids of prior
-  LOCKED assets** when one matches (reuse over invention); **emit no new asset node here** — that is the asset
+- `character_asset_ids`, `scene_asset_ids`, `prop_asset_ids` — flat lists of asset node_ids: **prior LOCKED
+  assets** when one matches (reuse over invention), else **newly DECLARED ids** whose complete, generatable
+  request the storyboard layer will consolidate (`locked` is NOT required at the draft gate — the N1 two-stage
+  contract; OUTLINE_FINAL_LOCK re-checks once they lock). **Emit no new asset node here** — that is the asset
   layer's job, where `reuse_of` lives. (There is no `reuse_of` field on `outline_spec` — the asset references
   are these three flat id-lists; don't carry the movie source's `asset_plan[].reuse_of` here.)
 - `global_style_bible` — pointer to the locked `ART_BIBLE.md` / `style_anchor` nodes (incl. the warm/dark
@@ -434,8 +459,9 @@ Copy its shape; swap in your own logline / skeleton / cast.
 - [`fan-out-pattern`](../../protocols/fan-out-pattern.md) — the 3 lenses are **Tier-1 Workflow fan-out**
   (faithful ∥ comicnative ∥ clarity), all reconciled at the single Codex synthesis seat; `<3` lenses is a
   veto.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh` (synthesizer + gate);
-  Gemini `auto-gemini-3` (optional readability co-reviewer); never downgrade the tier.
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex at `xhigh` (synthesizer + gate; NO model
+  pin — it follows the local codex config, currently `gpt-5.6-sol`); Gemini `auto-gemini-3` (optional
+  readability co-reviewer); never downgrade the effort tier.
 - [`review-tracing`](../../protocols/review-tracing.md) — every gate round's reviewer verdict + the user
   decision are logged as `review` / `decision` nodes so each verdict is auditable.
 - [`output-versioning`](../../protocols/output-versioning.md) · [`resumable-runs`](../../protocols/resumable-runs.md)

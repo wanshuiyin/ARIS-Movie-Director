@@ -39,6 +39,13 @@ def png_dims(path):
         w, h = struct.unpack(">II", f.read(8))
         return w, h
 
+def bake_plan_digest(plan: dict) -> str:
+    """Fingerprint the RESOLVED bake plan for P0 certificate binding (contract bakereq/v1): sha256 of the
+    canonical JSON dump (sort_keys + tight separators) of the dict run_comic.get_bake_plan() returns. The
+    p0_proof certificate (run_p0_proof.py) binds to THIS digest, so any change to the spend plan
+    (model/effort/sandbox/min_bytes/aspect/timeout) invalidates a previously-minted certificate."""
+    return hashlib.sha256(json.dumps(plan, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
 # ── shared bake primitives (contract-v2 §0a) — single source of truth, imported by the engines ──
 
 def build_bake_prompt(body, content_png_abs, identity_ref_abs, out_path_abs):

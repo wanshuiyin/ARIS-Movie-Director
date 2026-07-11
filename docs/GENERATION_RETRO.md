@@ -1,5 +1,11 @@
 # ARIS-Movie-Director — Generation Retro (empirical, the 24-panel comic run)
 
+> **PRE-REWIRE SNAPSHOT (2026-06).** This retro records the reference run on the pre-rewire engine and is
+> kept verbatim as the empirical record. The in-engine `codex image_gen` bake it describes is since
+> **RETIRED** — the live bake is the agent `mcp__codex__codex` sidecar writing to an explicit per-panel
+> `out_path`, verified by `pickup_image.py --out-existing` (see [`spiral-runtime.md`](spiral-runtime.md)).
+> Incident 4 and the "concurrency unenforced" weakness below are **RESOLVED** by that explicit-out design.
+
 This is the ground-truth record of what actually happened while generating the reference comic
 (`examples/comic_m3_audit/`, 24 panels / 19 pages) end-to-end through the spiral engine. It exists so a
 reviewer can judge whether the FRAMEWORK (not the comic) needs changes before a public release.
@@ -46,6 +52,8 @@ assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickabl
    (`~/.codex/generated_images`) and the engine picks up the mtime-newest PNG. Running two bakes
    concurrently would let them grab each other's images. Currently handled ONLY by operator discipline
    (never launch two bakes at once) — there is NO code-level lock or per-run temp dir.
+   *[RESOLVED post-rewire: the sidecar bake writes to an explicit per-panel `out_path` verified by
+   `pickup_image.py --out-existing` — no global-dir / newest-PNG pickup remains on the live path.]*
 5. **Disconnect mid-run** killed in-flight agents once ("agent stalled on all attempts"); recovered via
    Workflow resume (resumeFromRunId) — the unchanged-prefix cache made S01 a 100% cache hit.
 6. **Asset filename collision = silent run-order downgrade.** Two generators wrote the same path
@@ -86,6 +94,7 @@ assembly_gate. Output: PNGs + a `comic.json` projection + a single-file clickabl
 - **No release gate.** No LICENSE, no AI-image-generation disclosure/rights note, no quickstart README,
   no redaction pass for absolute paths / usernames embedded in committed JSON/scripts.
 - **Concurrency is unenforced** (see incident 4) — a footgun for anyone who runs the engine in parallel.
+  *[RESOLVED post-rewire by the explicit-out sidecar design — see the incident 4 note.]*
 - **Throttle/resume foot-gun** (incident 3) is operator-knowledge, not encoded anywhere.
 
 ## The question for the reviewer

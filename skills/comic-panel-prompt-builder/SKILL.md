@@ -9,11 +9,13 @@ allowed-tools: Bash(python3:*), Read, Write, Edit, Grep, Glob
 
 The **last authoring step before a pixel ever gets baked**. Given ONE upstream-approved `panel_spec` and its
 `status: locked` `blueprint`, this skill COMPILES — it does not brainstorm — the *exact* message
-[`comic-director`](../comic-director/SKILL.md) (Phase 2/3) will hand to `codex image_gen`, plus the locked
-identity-ref list. It is the comic twin of the framework's `shot-prompt-builder`: a pure Layer-3 transform
+[`comic-director`](../comic-director/SKILL.md) (Phase 2/3) will hand to the agent `mcp__codex__codex` sidecar
+bake (Codex's native image tool), plus the locked identity-ref list. It is the comic twin of the framework's
+`shot-prompt-builder`: a pure Layer-3 transform
 with **no Codex call in the happy path** — it only emits a `prompt_bundle`; the spiral engine submits it.
 Everything the generation backend ever sees passes through here, so this is where the **搬运工原則** is
-enforced at emit time: the backend (Codex/gpt-image-2) owns optics; `ART_BIBLE.md` owns style; **no camera /
+enforced at emit time: the bake backend (Codex's native image-generation tool; the underlying image model is
+not pinned or attested by this repo) owns optics; `ART_BIBLE.md` owns style; **no camera /
 lens / lighting / "8K hyperrealistic cinematic" padding leaks into the bake**, and **no bubble text gets
 baked** unless the panel is explicitly `text_mode: "baked"`. The author (storyboard/blueprint layers) decides
 *what*; this skill decides *nothing* — it transcribes a locked spec into a backend-legal string and FAILS
@@ -72,7 +74,8 @@ cross-model *judgement* of the baked pixels is not yours — that lives downstre
   validate (or `rejected`). Write **LEGAL** edges (every `type` ∈ `validate_wiki.py` EDGE_TYPES):
   `derived_from` (prompt_bundle → panel_spec) and `uses_blueprint` (prompt_bundle → blueprint). On retry, the
   failure_mode trace uses a **legal `derived_from`** edge (prompt_bundle → failure_mode, with
-  `evidence.consulted_failure_mode` + score); if a trigger still fires after repair, a legal **`failure_of`**
+  `evidence.consulted_failure_mode` + the `--reason` text — no match score; scoring is planned, not shipped);
+  if a trigger still fires after repair, a legal **`failure_of`**
   edge (failure_mode → prompt_bundle — `failure_of` points failure_mode → target, matching the gate + the script,
   trigger in `evidence`). There is **NO `generated_from` /
   `consulted_failure_mode` / `violates_failure_mode` edge type** in EDGE_TYPES — those would fail the release
@@ -161,22 +164,31 @@ name the active failure it is repairing. Run `python3 scripts/_validate.py --com
      is the upstream of `panel_gate`'s literal diff.
    Write `_meta.json` (character/element counts) for the trace.
 3. **Phase 1·5 · failure_mode positive-invariant injection (retry only — the spiral active-memory hook).**
-   On `--retry`, query the wiki for **ACTIVE** `failure_mode` nodes scoped to this panel via
-   `target_layer ∈ {prompt_pattern, visual_transition, global}`; rank by `recency*severity`
-   (recency `= 1.0/age_days`, severity default 3); take the top 10. Match the composed string against each
-   mode's `semantic_signature` by weighted Jaccard
-   (`0.35*assets + 0.25*cterms + 0.20*kw + 0.20*frags`); **threshold 0.55** fires a match. For a matched mode,
-   inject its `repair_pattern` **ONLY if `encoding_style == "positive_invariant"`** (else WARN + skip —
-   negatives like "no missing ears" make diffusion fixate on the negated concept). Inject each as a
+   This is what the SHIPPED `build_prompt.py` does — mirror it exactly, do not hand-roll a richer version. On
+   `--retry`, collect **ALL ACTIVE** `failure_mode` nodes (`payload.active == true`) **project-wide** — there
+   is NO layer or panel scoping in the shipped code. Sort them by `payload.severity` DESC (default 3 —
+   **severity ONLY**, no recency term), take the **top 10**, and for each mode whose
+   `encoding_style == "positive_invariant"` inject its `repair_pattern` **UNCONDITIONALLY** (no semantic
+   matching against the composed string) — non-`positive_invariant` modes are skipped here (negatives like "no
+   missing ears" make diffusion fixate on the negated concept). The injected patterns form one
    **"POSITIVE INVARIANTS (must be present in every panel, highest priority):"** block at the **FRONT** of the
-   message. Record the consult as a **legal `derived_from`** edge (prompt_bundle → failure_mode) with
-   `evidence.consulted_failure_mode: true` + the match score (there is no `consulted_failure_mode` edge type).
-   This is exactly the `--reason` a retry must name.
-4. **Phase 1·6 · trigger re-scan.** Re-scan the FULL message against the `trigger_patterns` of EVERY active
-   banlist mode (not just injected ones). If a matched mode is a `positive_invariant` whose `repair_pattern`
-   isn't present yet → append it in-place into the POSITIVE INVARIANTS block. If any violation STILL remains
-   → write a **legal `failure_of`** edge (failure_mode → prompt_bundle — failure_mode → target, trigger in `evidence`; there is no
-   `violates_failure_mode` edge type) and **exit 7** (a regenerate signal to the orchestrator).
+   message. Record the consult as a **legal `derived_from`** edge (prompt_bundle → the consulted failure_mode)
+   with `evidence.consulted_failure_mode: true` + the `--reason` text (there is no `consulted_failure_mode`
+   edge type). This is exactly the `--reason` a retry must name.
+   *(ASPIRATIONAL — planned, NOT yet implemented; do not describe as current behavior: scoping by the schema's
+   **`layer`** field (∈ {prompt_pattern, visual_transition, global} — the field is `layer`, there is no
+   `target_layer` in the schema), `recency*severity` ranking (recency `= 1.0/age_days`), a
+   `semantic_signature` weighted-Jaccard match (`0.35*assets + 0.25*cterms + 0.20*kw + 0.20*frags`, threshold
+   0.55), and a match score on the edge. The shipped injector is the severity-top-10 unconditional inject
+   above.)*
+4. **Phase 1·6 · trigger re-scan (retry only).** Re-scan the FULL composed message against the
+   `trigger_patterns` of EVERY active failure_mode (not just injected ones). In the shipped script, trigger
+   matching gates **ONLY the exit-7 path**: if a trigger of a **non-`positive_invariant`** mode still matches,
+   it persists the bundle as `status: "rejected"` FIRST (so the edge endpoint resolves), writes a **legal
+   `failure_of`** edge (failure_mode → prompt_bundle — `failure_of` points failure_mode → target, the trigger
+   in `evidence`; there is no `violates_failure_mode` edge type) and **exits 7** (a regenerate signal to the
+   orchestrator). A matched `positive_invariant` mode never exit-7s and there is **NO append-in-place repair
+   branch** — its `repair_pattern` was already injected in Phase 1·5 iff it made the severity top-10.
 5. **Phase 2 · VALIDATE = the hard gate (runs on the FULL composed message; this is the rubric).** Delegate to
    `scripts/_validate.py` (the single source): `passes_all = length_ok AND no_banned_vocab AND no_baked_bubbles
    AND real_refs_ok`. ANY failure → preserve `_validation.json`, set the panel's
@@ -234,8 +246,9 @@ is binary; ANY hit is a hard fail (no single-vote averaging — this is detect-o
 not `node_type panel_spec` or not `status: locked`) · `3` upstream prereq unmet (**blueprint not
 `status: locked`** / ref not real / `content_svg` missing / `expected_literals` missing on a baked
 figure-panel / style_prefix bad / failure_mode query failed) · `4` banned-vocab | length | baked-bubble | ref
-fail (gate → fail, `_validation.json` preserved) · `7` Phase 1·6 regenerate (a `trigger_pattern` still matches
-after repair; a legal **`failure_of`** edge written).
+fail (gate → fail, `_validation.json` preserved) · `7` Phase 1·6 regenerate (a **non-`positive_invariant`**
+mode's `trigger_pattern` still matches after repair; the bundle is persisted `status: "rejected"` and a legal
+**`failure_of`** edge written).
 
 ## Worked example
 The reference movie's per-panel `condition` blocks —
@@ -307,10 +320,11 @@ by the time a `panel_spec` reaches *this* skill it is locked, and this skill onl
   acquittal: a deterministic same-model check is allowed to confirm "the message is backend-legal", but the
   quality/correctness verdict on the result is the cross-model `panel_gate`, never this skill.
 - [`reviewer-routing`](../../protocols/reviewer-routing.md) — N/A on the happy path (no model call); if a
-  blocked retry ever escalates to an external consult, Codex `gpt-5.5` `xhigh` / Gemini `auto-gemini-3`, never
-  downgraded.
+  blocked retry ever escalates to an external consult, Codex at `xhigh` (no model pin — the CLI follows the
+  local codex config) / Gemini `auto-gemini-3`, never downgraded.
 - [`review-tracing`](../../protocols/review-tracing.md) — every emit logs to `wiki/log.md`; every retry writes
-  a legal **`derived_from`** edge to the consulted `failure_mode` (consult + score in `evidence`), and a legal
+  a legal **`derived_from`** edge to the consulted `failure_mode` (consult flag + retry reason in `evidence`;
+  no match score — Jaccard scoring is planned, not shipped), and a legal
   **`failure_of`** edge if a trigger still fires, so the spiral memory is auditable (both edge types are in
   `validate_wiki.py` EDGE_TYPES).
 - [`output-versioning`](../../protocols/output-versioning.md) — the `prompt_bundle` records `file_sha256` of

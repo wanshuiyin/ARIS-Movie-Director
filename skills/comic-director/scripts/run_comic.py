@@ -23,14 +23,27 @@ The generator family (the agent mcp__codex__codex sidecar bake) can NOT self-acq
 deterministic token-diff over Gemini+Codex blind transcriptions. The calling agent (Claude) gives the final
 structural sign-off; this orchestrator prints a run-report JSON and never claims that acquittal for itself.
 """
-import argparse, hashlib, json, os, re, subprocess, sys, time
+import argparse, hashlib, json, os, re, shutil, subprocess, sys, time
+from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 PATH_RE = re.compile(r"^/[A-Za-z0-9._/-]+$")
 REL_SVG_RE = re.compile(r"^[\w][\w./-]*\.svg$")
 REL_PNG_RE = re.compile(r"^[\w][\w./-]*\.png$")
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+def find_chrome():
+    """No hardcoded Chrome path: $ARIS_CHROME > macOS app path > PATH lookup (the cli/preflight.py candidates).
+    Hard error if none found — a missing rasterizer is an environment fault, not a per-panel retry."""
+    for c in (os.environ.get("ARIS_CHROME"),
+              "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+              "/Applications/Chromium.app/Contents/MacOS/Chromium"):
+        if c and os.path.exists(c): return c
+    for c in ("google-chrome", "chromium", "chromium-browser", "chrome"):
+        p = shutil.which(c)
+        if p: return p
+    sys.exit("no headless Chrome/Chromium found — set $ARIS_CHROME to a Chrome binary or install one of "
+             "google-chrome/chromium/chromium-browser/chrome (same candidates as cli/preflight.py)")
 
 # contract-v2 §0a: import the SHARED bake primitives from pickup_image.py (the single source of truth — NEVER
 # re-define them here; an inlined copy re-introduces the cross-engine drift this rewire exists to kill). The
@@ -64,6 +77,10 @@ def sh(cmd, timeout, **kw):
 
 def sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16] if os.path.exists(path) else ""
+
+def now_utc():
+    """created_at for EVERY wiki node write — real wall-clock UTC, never a hardcoded stamp (provenance must be honest)."""
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 # clamp every reviewer score to a finite 0..5 (the engine's SCORE schema bound). The pure-subprocess port has
 # NO schema validation, so a stray 50 could KEEP and a numeric string could crash min(); out-of-range/non-numeric
@@ -99,11 +116,34 @@ def derive_paths(project, repo):
     REPO = os.path.abspath(repo) if repo else re.sub(r"/examples/[^/]+/?$", "", PROJ)
     if not PATH_RE.match(PROJ): sys.exit(f"unsafe --project (abs path, no spaces/metachars, {PATH_RE.pattern}): {PROJ}")
     if not PATH_RE.match(REPO): sys.exit(f"unsafe --repo: {REPO}")
+    # canonical identity: movie.project.json identity_ref (resolved project-relative) wins over the historical
+    # constant; per-panel cfg.identity_ref still overrides BOTH at bake/review time (precedence unchanged).
+    # HARDENED: project-relative ONLY (no absolute paths, no ".." traversal) and the resolved file must EXIST —
+    # a phantom/escaping identity_ref logs a warning and falls back to the default canon (never bake a phantom).
+    canon = PROJ + "/assets/duo_canonical_ref_v001.png"
+    try:
+        ir = (json.load(open(PROJ + "/movie.project.json", encoding="utf-8")) or {}).get("identity_ref")
+        if isinstance(ir, str) and ir:
+            if ir.startswith("/") or ".." in ir:
+                log(f"⚠ movie.project.json identity_ref REJECTED (absolute/traversal — project-relative only): {ir!r} → default canon")
+            elif not os.path.isfile(PROJ + "/" + ir):
+                log(f"⚠ movie.project.json identity_ref not found on disk: {PROJ + '/' + ir} → default canon")
+            else:
+                canon = PROJ + "/" + ir
+    except (OSError, ValueError): pass
+    # runtime node-id suffix: derived from comic.json comic_id, slugified to node_schema's [a-z0-9_-] charset;
+    # the historical "_aris_comic_v1" literal ONLY when comic_id is absent/unreadable.
+    suffix = "_aris_comic_v1"
+    try:
+        cid = str((json.load(open(PROJ + "/comic.json", encoding="utf-8")) or {}).get("comic_id") or "")
+        slug = re.sub(r"[^a-z0-9_-]+", "_", cid.lower()).strip("_-")
+        if slug: suffix = "_" + slug
+    except (OSError, ValueError): pass
     return {
         "PROJ": PROJ, "REPO": REPO,
         "PANELS": PROJ + "/panels", "NODES": PROJ + "/wiki/nodes",
-        "CANON": PROJ + "/assets/duo_canonical_ref_v001.png", "BIBLE": PROJ + "/ART_BIBLE.md",
-        "COMICJSON": PROJ + "/comic.json",
+        "CANON": canon, "BIBLE": PROJ + "/ART_BIBLE.md",
+        "COMICJSON": PROJ + "/comic.json", "SUFFIX": suffix,
         "PICKUP": HERE.rsplit("/skills/", 1)[0] + "/skills/method-figure/scripts/pickup_image.py",
         "BUILD": REPO + "/packages/viewer/build_comic.py",
     }
@@ -246,7 +286,17 @@ def assembly_verdict(cc, gem, mode="html"):
         return {"v": "rollback", "reason": f"[{mode}] assembly weak (min={min_dim} sum={ssum}/25)", "drift_panels": drift, "point_of_divergence": (drift[0] if drift else None)}
     return {"v": "accept", "reason": f"[{mode}] assembly ok (min={min_dim} sum={ssum}/25)", "drift_panels": [], "point_of_divergence": None}
 
-# ── generation: render content_svg -> blueprint PNG -> codex image_gen bake -> pickup (engine 191-271) ──
+# ── generation: render content_svg -> blueprint PNG -> agent mcp__codex__codex sidecar bake -> pickup ──
+def get_bake_plan(args=None):
+    """CANONICAL bake plan (contract bakereq/v1) — the SINGLE source: emit_bake_request's model/config/sandbox
+    payload is built FROM this dict, and the p0_proof cert binds to bake_plan_digest(get_bake_plan(args))
+    (_p0_clean; run_p0_proof.py mints against get_bake_plan(<its own argparse namespace>) — its --min-bytes/
+    --bake-timeout defaults MUST stay in sync with parse_args here). Change a knob here and any prior cert
+    fail-closes — never edit the emit payload independently; a non-default run needs a matching-flag cert."""
+    return {"contract": "bakereq/v1", "model": "gpt-5.5", "effort": "xhigh", "include_image_gen_tool": True,
+            "sandbox": "workspace-write", "min_bytes": getattr(args, "min_bytes", 500000),
+            "aspect": "1280x720", "bake_timeout": getattr(args, "bake_timeout", 600)}
+
 def bake_prompt_body(cfg, bake_lang, invariants):
     id_desc = cfg.get("identity_desc") or "the CANONICAL DUO — blue executor: brown hair, NO beard; green reviewer: dark hair, beard"
     chars = cfg.get("characters") or " ".join(x for x in [
@@ -292,7 +342,7 @@ def generate_panel(paths, pid, cfg, ai, invariants, args, bakelog):  # bakelog: 
                 "gen_failed_reason": f"identity_ref not found on disk: {id_ref_abs}"}
     os.makedirs(cdir, exist_ok=True)
     # STEP 1 — render the content blueprint SVG -> persistent PNG (deterministic; no lock needed)
-    rc = sh([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
+    rc = sh([find_chrome(), "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
              "--window-size=1280,720", f"--screenshot={cpng}", f"file://{paths['PROJ']}/{svg_rel}"], 45)
     if not os.path.exists(cpng) or os.path.getsize(cpng) < 1000:
         return {"status": "generation_failed", "image_path": "", "gen_failed_reason": f"content_svg render failed (need headless Chrome): {getattr(rc,'stderr','')[:200]}"}
@@ -308,17 +358,21 @@ def generate_panel(paths, pid, cfg, ai, invariants, args, bakelog):  # bakelog: 
     prompt_text = build_bake_prompt(body, content_png_abs=cpng, identity_ref_abs=id_ref_abs, out_path_abs=out)
     created_at = time.time()
     # A: include_image_gen_tool MUST sit in the config payload next to model_reasoning_effort — without it the agent
-    # wrapper will not hand the native image tool to codex (repo contract) and the bake never fires.
+    # wrapper will not hand the native image tool to codex (repo contract) and the bake never fires. Every knob below
+    # comes FROM get_bake_plan(args) (the p0-bound single source) — never inline a model/effort/sandbox here.
+    plan = get_bake_plan(args)
+    aw, ah = (int(x) for x in plan["aspect"].split("x"))
     request_id = emit_bake_request(out, {"prompt_text": prompt_text, "out_path": out, "content_png": cpng,
-                            "identity_ref": id_ref_abs, "model": "gpt-5.5",
-                            "config": {"model_reasoning_effort": "xhigh", "include_image_gen_tool": True},
-                            "sandbox": "workspace-write",
-                            "cwd": paths["PROJ"], "created_at": created_at, "min_bytes": args.min_bytes,
-                            "aspect": 1280 / 720})
+                            "identity_ref": id_ref_abs, "model": plan["model"],
+                            "config": {"model_reasoning_effort": plan["effort"],
+                                       "include_image_gen_tool": plan["include_image_gen_tool"]},
+                            "sandbox": plan["sandbox"],
+                            "cwd": paths["PROJ"], "created_at": created_at, "min_bytes": plan["min_bytes"],
+                            "aspect": aw / ah})
     # B: capture the request_id RETURNED by emit_bake_request (a uuid4 hex it stamps into the bakereq + returns) and
     # forward it to the pickup verifier below. Fall back to the request's own marker (created_at) only if it's falsy.
     if not request_id: request_id = str(created_at)
-    status = await_bake_status(out, args.bake_timeout)   # polls <out>.bakestatus.json (agent wrapper writes it); {} on timeout
+    status = await_bake_status(out, plan["bake_timeout"])   # polls <out>.bakestatus.json (agent wrapper writes it); {} on timeout
     # C (BLOCKER-defense): harden against a non-dict status (None/list/str from a future wrapper or a corrupt
     # status file) so every status.get(...) below is total — a non-dict here would crash the whole panel loop.
     if not isinstance(status, dict): status = {}
@@ -344,7 +398,7 @@ def generate_panel(paths, pid, cfg, ai, invariants, args, bakelog):  # bakelog: 
     # correlated to the WRONG request. The shipped pickup supports --request-id (contract-v2 §0a); no probe is needed
     # (a probe could be poisoned by a transient sh() failure and silently drop the nonce for the entire run).
     pk = sh(["python3", paths["PICKUP"], "--out-existing", "--out", out,
-             "--min-bytes", str(args.min_bytes), "--aspect", str(1280 / 720),
+             "--min-bytes", str(plan["min_bytes"]), "--aspect", str(aw / ah),
              "--created-at", str(created_at), "--request-id", str(request_id),
              "--transcript", _status_path(out)], 60)
     if pk.returncode == 0 and os.path.exists(out) and os.path.getsize(out) > args.min_bytes:
@@ -441,8 +495,8 @@ def add_edges(paths, edges):
 def write_wiki(paths, pid, gen, gate, ai):
     os.makedirs(paths["NODES"], exist_ok=True)
     sl = pid.lower(); aTag = "a" + str(ai).zfill(2); v = gate["verdict"]["v"]
-    ts = "2026-06-08T00:00:00+00:00"
-    panel_node = f"panel:{sl}_aris_comic_v1"; attempt_node = f"attempt:{sl}_{aTag}"
+    ts = now_utc()
+    panel_node = f"panel:{sl}{paths['SUFFIX']}"; attempt_node = f"attempt:{sl}_{aTag}"
     def w(name, obj): json.dump(obj, open(f"{paths['NODES']}/{name}.json", "w"), ensure_ascii=False, indent=1)
     w(f"panel_attempt_{sl}_{aTag}", {"node_id": attempt_node, "node_type": "panel_attempt", "status": "under_review",
         "title": f"{pid} panel attempt {ai}", "created_at": ts,
@@ -462,7 +516,7 @@ def write_wiki(paths, pid, gen, gate, ai):
     w(f"decision_panel_{sl}_{aTag}", {"node_id": dnode, "node_type": "decision", "status": "final",
         "title": f"panel_gate {pid} a{ai} → {v}", "created_at": ts,
         "payload": {"gate_kind": "panel", "target_node_id": attempt_node, "verdict": v,
-                    "reviewer_families": {"cc": "anthropic", "gemini": "google", "codex": "openai"},  # cross-family provenance: the visual acquitters (gemini/codex) differ from the Claude author
+                    "reviewer_families": {"cc": "openai", "gemini": "google", "codex": "openai"},  # honest provenance: the narrative "cc" slot CURRENTLY shells the codex CLI (an OpenAI model; a configurable --narrative-reviewer is planned) — cross-family acquittal vs the Claude author still holds via gemini + codex
                     "reasoning": gate["verdict"]["reason"][:300], "repair_instruction": gate["verdict"].get("invariant", "")}})
     edges.append((dnode, attempt_node, "decides"))
     if v != "keep":
@@ -477,7 +531,7 @@ def update_comic_json(paths, comic, pid, gen, ai):
     panel = comic.setdefault("panels", {}).setdefault(pid, {})
     panel["image_path"] = rel_img(paths, gen["image_path"])
     panel["active_attempt_id"] = f"{pid}_{aTag}"
-    panel["wiki_node_id"] = f"panel:{pid.lower()}_aris_comic_v1"
+    panel["wiki_node_id"] = f"panel:{pid.lower()}{paths['SUFFIX']}"
     json.dump(comic, open(paths["COMICJSON"], "w"), ensure_ascii=False, indent=2)
 
 # ── assembly_gate + cross-frame repair (ported engine 388-464) ──
@@ -521,7 +575,7 @@ def parse_args():
     ap.add_argument("--skip-assembly", action="store_true")
     ap.add_argument("--skip-p0-proof", action="store_true", help="bake without a clean decision:p0_proof_* node (UNAUDITED; forces the run non-shippable)")
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
-    ap.add_argument("--effort", default="high"); ap.add_argument("--review-effort", default="xhigh")
+    ap.add_argument("--review-effort", default="xhigh")   # bake effort is get_bake_plan's p0-bound knob, not a flag
     ap.add_argument("--min-bytes", type=int, default=500000)
     ap.add_argument("--bake-mode", choices=["agent", "exec"], default="agent",
                     help="agent = real bake via the mcp__codex__codex sidecar seam (default); exec = legacy/CI non-image path that RAISES if it reaches a real bake (exec hand-draws a non-native fallback)")
@@ -534,6 +588,19 @@ def main():
     validate_ids(args.page, panel_ids)
     if not os.path.exists(paths["COMICJSON"]): sys.exit(f"comic.json missing: {paths['COMICJSON']}")
     comic = json.load(open(paths["COMICJSON"], encoding="utf-8"))
+    # FAIL-CLOSED (dry-run included): --page must be a real pages[].id and every --panels id must belong to that
+    # page's panel_ids. A strict SUBSET is allowed — throttle-resume runs the remainder of a page.
+    page_ids = [p.get("id") for p in (comic.get("pages") or []) if isinstance(p, dict)]
+    page_def = next((p for p in (comic.get("pages") or []) if isinstance(p, dict) and p.get("id") == args.page), None)
+    if page_def is None:
+        print(f"FAIL-CLOSED: --page {args.page!r} is not a pages[].id in {paths['COMICJSON']} (pages: {page_ids})", file=sys.stderr)
+        sys.exit(2)
+    page_panel_ids = [x for x in (page_def.get("panel_ids") or []) if isinstance(x, str)]
+    rogue = [p for p in panel_ids if p not in page_panel_ids]
+    if rogue:
+        print(f"FAIL-CLOSED: --panels {rogue} not in page {args.page!r}'s panel_ids {page_panel_ids} "
+              f"(a subset IS allowed — throttle-resume runs a remainder)", file=sys.stderr)
+        sys.exit(2)
     cfg_map = load_conditions(comic, panel_ids, args.bake_lang)
 
     missing = [p for p in panel_ids if not cfg_usable(cfg_map.get(p))]
@@ -554,6 +621,17 @@ def main():
     # The agent bake seam is SYNCHRONOUS and main() never re-enters, so _p0_clean()/p0_skipped is evaluated EXACTLY
     # ONCE per run and stays valid across every panel + assembly bake — no --p0-proof-clean resume flag is needed.
     def _p0_clean():
+        # P0 BINDING (fail-closed): a p0_proof cert acquits ONLY the exact inputs it audited — require the node's
+        # payload.comic_sha == sha256(CURRENT comic.json bytes) AND payload.bake_plan_sha == the canonical digest of
+        # get_bake_plan(args). A node missing either digest, or mismatching, is a stale/foreign cert → REJECTED.
+        try:
+            from pickup_image import bake_plan_digest   # lazy: module load / --dry-run never need the p0 digest
+        except ImportError:
+            sys.exit("FAIL-CLOSED: pickup_image.bake_plan_digest missing — cannot verify the p0_proof cert binding; "
+                     "update skills/method-figure/scripts/pickup_image.py, then re-run the p0 gate via "
+                     "skills/comic-cross-layer-gate/scripts/run_p0_proof.py")
+        comic_sha = hashlib.sha256(open(paths["COMICJSON"], "rb").read()).hexdigest()
+        plan_sha = bake_plan_digest(get_bake_plan(args))
         nd = paths["NODES"]
         if not os.path.isdir(nd): return False
         for fn in os.listdir(nd):
@@ -578,7 +656,21 @@ def main():
                and str(d.get("node_id", "")).startswith("decision:p0_proof") \
                and str(pl.get("gate_kind", "")).lower() == "p0_proof" \
                and verdict_ok:
-                return True
+                if pl.get("comic_sha") == comic_sha and pl.get("bake_plan_sha") == plan_sha:
+                    # CONSUMER CHECKS (fail-closed): a real cert (run_p0_proof.py mint) always carries the
+                    # counted cross-model quorum (BOTH openai + google) and the target it acquits — a
+                    # hand-built/partial payload without them is NOT a certificate, even with correct digests.
+                    quorum, tgt = pl.get("reviewer_quorum"), pl.get("target_node_id")
+                    if isinstance(quorum, list) and {"openai", "google"} <= {str(q).lower() for q in quorum} \
+                       and isinstance(tgt, str) and tgt.strip():
+                        return True
+                    log(f"✗ p0_proof cert {fn} REJECTED: payload.reviewer_quorum must be a list with BOTH "
+                        f"'openai' and 'google' and payload.target_node_id a non-empty string — hand-built/"
+                        f"partial cert; mint via skills/comic-cross-layer-gate/scripts/run_p0_proof.py")
+                    continue
+                log(f"✗ p0_proof cert {fn} REJECTED: comic_sha/bake_plan_sha missing or stale — the cert does not "
+                    f"bind the CURRENT comic.json + bake plan; re-run the p0 gate via "
+                    f"skills/comic-cross-layer-gate/scripts/run_p0_proof.py")
         return False
     p0_skipped = False
     if not _p0_clean():
@@ -684,17 +776,26 @@ def main():
     for k in kept:
         k["acceptance_stage"] = "page_accepted" if (page_accepted and not k["needs_human"] and k["pid"] not in flagged) else "panel_accepted"
 
-    if args.finalize and shippable and os.path.exists(paths["BUILD"]):
-        log("finalize: building viewer")
-        sh(["python3", paths["BUILD"], paths["PROJ"]], 120)
+    finalize_failed = False
+    if args.finalize and shippable:
+        if not os.path.isfile(paths["BUILD"]):   # a missing builder must NEVER read as a successful finalize
+            finalize_failed = True
+            log(f"finalize FAILED (viewer builder missing): {paths['BUILD']}")
+        else:
+            log("finalize: building viewer")
+            br = sh(["python3", paths["BUILD"], paths["PROJ"]], 120)
+            if br.returncode != 0:   # a broken viewer build must NEVER read as a successful finalize
+                finalize_failed = True
+                log(f"finalize FAILED (viewer build rc!=0): rc={br.returncode} {(br.stderr or '')[:200]}")
 
     report = {"page": args.page, "panel_ids": panel_ids, "kept": kept, "flagged_for_human": flagged,
               "needs_human": any_needs_human, "shippable": shippable, "assembly_skipped": assembly_skipped, "p0_skipped": p0_skipped, "throttled": throttled, "escalated": escalated,
               "assembly": (asm["verdict"] if asm else None), "rewrite_storyboard": rewrite_storyboard,
-              "attempts_per_panel": total_by, "finalize": bool(args.finalize and shippable)}
+              "attempts_per_panel": total_by, "finalize": bool(args.finalize and shippable and not finalize_failed)}
     print("\n" + json.dumps(report, ensure_ascii=False, indent=2))
     if escalated or throttled: sys.exit(2)
     if any_needs_human: sys.exit(3)
+    if finalize_failed: sys.exit(4)
 
 if __name__ == "__main__":
     main()

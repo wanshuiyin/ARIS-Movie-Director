@@ -1,6 +1,6 @@
 ---
 name: comic-director
-description: Phase 2/3 of a movie — bake + cross-model-verify a movie from an authored comic.json. Per frame: render the content-SVG blueprint, bake with codex image_gen, gate with a 3-model panel (CC ‖ Gemini ‖ Codex), keep/retry/assemble, write the wiki trace, project to the viewer. The movie-side twin of method-figure's render half. (Author the comic.json first with the comic-author skill.)
+description: Phase 2/3 of a movie — bake + cross-model-verify a movie from an authored comic.json. Per frame: render the content-SVG blueprint, bake via the agent mcp__codex__codex sidecar, gate with a 3-reviewer cross-model panel (narrative [currently the codex CLI] ‖ Gemini visual ‖ Codex visual, deterministic fuse), keep/retry/assemble, write the wiki trace, project to the viewer. The movie-side twin of method-figure's render half. (Author the comic.json first with the comic-author skill.)
 ---
 
 # comic-director — the Audited Spiral + Release (Phase 2/3)
@@ -8,7 +8,7 @@ description: Phase 2/3 of a movie — bake + cross-model-verify a movie from an 
 The **middle + right of Figure 1**: take an authored `comic.json` (produced by the
 [`comic-author`](../comic-author/SKILL.md) skill, Phase 1) and turn it into baked frames + a clickable
 viewer, through the audited spiral. Per frame: render a deterministic content-SVG blueprint → bake a
-pixel-art frame (`codex image_gen`) → a 3-reviewer cross-model `panel_gate` → keep / retry → page assembly →
+pixel-art frame (agent `mcp__codex__codex` sidecar) → a 3-reviewer cross-model `panel_gate` → keep / retry → page assembly →
 projection. The movie twin of `method-figure`'s render half. (Image-based today; video-based is next.)
 
 ## Input contract — `comic.json` (authored upstream)

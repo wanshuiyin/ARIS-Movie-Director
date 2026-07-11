@@ -7,8 +7,10 @@
 | **story + how-to-draw** | **YOU author this** | `pages[]`, each panel's `condition{}` (what to generate), and the render fields (`bubbles`, `caption`, `safe_zones`, `crop`, `text_mode`) |
 | **generation results** | **the spiral engine fills this** | `image_path`, `active_attempt_id`, `wiki_node_id` (left empty/absent until a panel is baked + kept) |
 
-To make a new comic you author the first layer; `packages/core/spiral_engine.js` bakes each panel and
-writes back the second layer; `packages/viewer/build_comic.py` then projects the whole thing to the viewer.
+To make a new comic you author the first layer; `skills/comic-director/scripts/run_comic.py` bakes each
+panel (the agent-sidecar bake — `packages/core/spiral_engine.js` is its canonical spec mirror and cannot
+bake standalone) and writes back the second layer; `packages/viewer/build_comic.py` then projects the whole
+thing to the viewer.
 Formal schema: [`schemas/comic.schema.json`](../schemas/comic.schema.json). Copy
 `examples/comic_m3_audit/comic.json` as a working template.
 
@@ -138,4 +140,7 @@ set) has no ascii-tokenizable `expected_literals` — there'd be nothing to veri
 }
 ```
 Run the spiral on this → it bakes `S01`, gates it, and fills `image_path`/`active_attempt_id`/`wiki_node_id`.
+(Spending is P0-gated first: `run_comic.py` fail-closes without a clean, digest-bound `decision:p0_proof_*`
+node minted by `skills/comic-cross-layer-gate/scripts/run_p0_proof.py`; `--skip-p0-proof` bakes UNAUDITED
+and forces the run non-shippable — see [`spiral-runtime.md`](spiral-runtime.md).)
 Then `build_comic.py` → the viewer.

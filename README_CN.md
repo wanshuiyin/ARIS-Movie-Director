@@ -24,7 +24,7 @@
 
 **🔬 方法一览。** 从左到右看这张图 —— [`/movie-pipeline`](skills/movie-pipeline/SKILL.md) 这个 agent 工作流跑完整条环路(*撰写真值源 → 烤制 → 跨模型 gate*):**(1)**
 [`comic-author`](skills/comic-author/SKILL.md) 把模糊意图变成撰写出的 `comic.json` + 锁定的引用,**(2)**
-[`comic-director`](skills/comic-director/SKILL.md) 逐格跑审计螺旋 —— 也就是 **multi-agent debate(多智能体辩论)**(CC ‖ Gemini ‖ Codex 盲读 → 确定性 diff),把每次尝试 / 决定都写入
+[`comic-director`](skills/comic-director/SKILL.md) 逐格跑审计螺旋 —— 也就是 **multi-agent debate(多智能体辩论)**(Codex 叙事 ‖ Gemini + Codex 视觉盲读 → 确定性 diff),把每次尝试 / 决定都写入
 **[research-wiki](examples/comic_m3_audit/wiki/)** —— **(3)** 流水线把通过的画格组装进发布的查看器。左下角那个失败就是全部规则:*好看但数字错了照样不过*
 (`+6.2` 期望 vs `+6.25` 实际)。
 
@@ -34,9 +34,9 @@
 
 <details><summary><b>图 1 — 阶段、gate 与出处</b>(点击展开)</summary>
 
-> **(1) 撰写出的真值源** —— 资产库 · 大纲 · 分镜编译成 `comic.json`(`content_svg · expected_literals · identity_ref`)。**(2) 审计螺旋(逐格)** —— 一张 content-SVG 蓝图由 image_gen 烤制,然后一个 3 审的跨模型 `panel_gate`(CC 叙事 ‖ Gemini + Codex 视觉*盲读转录* → 确定性 token-diff · 单票否决)给出确定性 `verdict`:**KEEP**,或 **RETRY**(每格 ≤4)带着上次失败的修复提示重烤;每一次 尝试/评审/决定/失败 都记入 `research-wiki`。**(3) 组装 + 发布** —— 一个 cast-aware 的 `page_assembly_gate`(修复漂移 → 重烤,每次运行 ≤6)输出 PNG 画格 + 单文件 HTML 查看器。点睛之笔(左下):**好看但数字错的画格不会通过** —— `+6.2` 期望 vs `+6.25` 实际,被 token-diff 拦下。
+> **(1) 撰写出的真值源** —— 资产库 · 大纲 · 分镜编译成 `comic.json`(`content_svg · expected_literals · identity_ref`)。**(2) 审计螺旋(逐格)** —— 一张 content-SVG 蓝图由 image_gen 烤制,然后一个 3 审的跨模型 `panel_gate`(叙事 ‖ Gemini + Codex 视觉*盲读转录* → 确定性 token-diff · 单票否决)给出确定性 `verdict`:**KEEP**,或 **RETRY**(每格 ≤4)带着上次失败的修复提示重烤;每一次 尝试/评审/决定/失败 都记入 `research-wiki`。**(3) 组装 + 发布** —— 一个 cast-aware 的 `page_assembly_gate`(修复漂移 → 重烤,每次运行 ≤6)输出 PNG 画格 + 单文件 HTML 查看器。点睛之笔(左下):**好看但数字错的画格不会通过** —— `+6.2` 期望 vs `+6.25` 实际,被 token-diff 拦下。
 >
-> *这张图本身就是用它所描绘的那条环路做出来的:一张带标注的蓝图作为条件喂给 `gpt-image-2`(由 Codex GPT-5.5 xhigh 驱动),随后 4 轮生成由 method-figure 审议团 —— **Gemini + Codex 盲读转录 + 确定性 `content_diff`,再加一道 Claude 的结构签字** —— 直到干净。**烤出这张图的确切 prompt 序列**(全部 4 轮 + 跨模型批评)原样发布作为参考:[`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md)。*
+> *这张图本身就是用它所描绘的那条环路做出来的:一张带标注的蓝图作为条件喂给 Codex 原生图像生成工具(由 Codex GPT-5.5 xhigh 驱动 —— 2026-06 的带时间戳出处;当时称作 `gpt-image-2` 的底层图像后端并无运行时证明),随后 4 轮生成由 method-figure 审议团 —— **Gemini + Codex 盲读转录 + 确定性 `content_diff`,再加一道 Claude 的结构签字** —— 直到干净。**烤出这张图的确切 prompt 序列**(全部 4 轮 + 跨模型批评)原样发布作为参考:[`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md)。*
 
 </details>
 
@@ -121,7 +121,7 @@ python3 cli/preflight.py
 - 📐 **Blueprints(蓝图)** —— 每格一张确定性 `content_svg`(不烤气泡)
 - 🧾 **Prompts** —— 确切的烤制 prompt + 逐字的 `expected_literals`(搬运工原則)
 - ✅ **Compile(编译)** —— schema 合法的 `comic.json`;零信用的 `p0_proof` gate 在任何图像信用之前先跑
-- 🔥 **Spiral bake(螺旋烤制)** —— 渲染 → agent `mcp__codex__codex` image_gen → 3 审 `panel_gate` → keep / 同格重试 → `assembly_gate`(跨页漂移时仅重烤被点名的漂移格)→ 组装 → 查看器
+- 🔥 **Spiral bake(螺旋烤制)** —— 渲染 → agent `mcp__codex__codex` sidecar 烤制(Codex 原生 image 工具)→ 3 审 `panel_gate` → keep / 同格重试 → `assembly_gate`(跨页漂移时仅重烤被点名的漂移格)→ 组装 → 查看器
 
 **📐 流程 —— skill 链(可从上往下逐条追):**
 
@@ -144,8 +144,8 @@ python3 cli/preflight.py
    comic-cross-layer-gate --gate p0_proof     ├─ P0 · 零信用证明 —— 必须在任何图像信用之前通过 ─┤
    │
    ▼   comic-director —— 审计螺旋     (run_comic.py  |  packages/core/spiral_engine.js)
-   逐格:  content_svg → codex image_gen → panel_gate
-                  审稿人: CC 叙事 ‖ Gemini 视觉 ‖ Codex 视觉
+   逐格:  content_svg → agent mcp__codex__codex sidecar 烤制 → panel_gate
+                  审稿人: Codex 叙事 ‖ Gemini 视觉 ‖ Codex 视觉
                   → 盲读转录 → 对 expected_literals 做确定性 token-diff
                verdict ─ KEEP → 入页池
                        ├ RETRY ≤4   (重烤同一格 + 修复提示)
@@ -159,16 +159,17 @@ python3 cli/preflight.py
                       升级;不收敛的画格会被标给你,绝不静默发布。
 ```
 
-**`panel_gate`**(Phase 2/3,逐格):烤出的图由 **3 个独立审稿人**读 —— CC *叙事*
-(有没有落点剧情?)‖ Gemini *视觉* ‖ Codex *视觉*(第二只、不同家族的眼睛)—— 它们
+**`panel_gate`**(Phase 2/3,逐格):烤出的图由 **3 个独立审稿人**读 —— 一个*叙事*审稿人
+(有没有落点剧情?—— **当前由 codex CLI 承担**,provenance 如实记为家族 `openai`;可配置的 `--narrative-reviewer` 在计划中、尚未实现)‖ Gemini *视觉* ‖ Codex *视觉* —— 它们
 **盲读转录**像素;再由对 `observed_literals` 与撰写出的 `expected_literals` 的**确定性** token-diff 判 KEEP / RETRY;`content_corruption` 是单票否决,两个视觉审稿人都必须打分,并且**没有任何模型能自证通过**。每一次 尝试/评审×3/决定/失败 都写入 `research-wiki`。
+这个审议团里**没有实时的 Claude CLI 审稿人** —— Claude 的角色是工作流层的结构签字;相对 Claude 撰写的 prompt 的跨家族裁定,来自 Gemini + 确定性融合。
 
 **Phase 2/3 单独跑**(前提是 `comic.json` 已存在)。下面只有**零信用的 `--dry-run` 才真正无需 agent** —— 那也正是 CI 测的那部分:
 ```bash
 python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --dry-run    # 零信用、无需 agent:打印烤制 prompt(CI 测的那部分)
 python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <PAGE> --panels S01,S02 --finalize   # 真烤制 —— 需要 agent sidecar SOP(见下)
 ```
-`run_comic.py` 是 [`packages/core/spiral_engine.js`](packages/core/spiral_engine.js) 电影分支的子进程移植版;它从一个已存在的 `comic.json` 起步 —— **它不能从模糊想法起步**。确定性 CLI 内核(校验、蓝图渲染、token-diff 各 gate)才是 CI 跑的那部分,但 **`--finalize` 的烤制并非无需 agent**:每格烤制都由 agent sidecar SOP 完成 —— [`comic-director`](skills/comic-director/SKILL.md) 的 skill agent 守着内核写出的 `*.bakereq.json`,调用 `mcp__codex__codex`(带 `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`)来点燃原生 image 工具,再写回 `*.bakestatus.json`。所以一次真正的电影烤制需要 coding-agent 运行时;只有 `--dry-run` 能单独跑。**限流:** 被限速的烤制会带着 `fresh_run_required` 干净地停下 —— 冷却后,为剩余画格启动一次**全新**运行,**不要**复用缓存状态。上限:**每格 ≤4 次尝试 · 每次运行 ≤6 次回滚 · 不并发烤制**
+`run_comic.py` 是 [`packages/core/spiral_engine.js`](packages/core/spiral_engine.js) 电影分支的子进程移植版;它从一个已存在的 `comic.json` 起步 —— **它不能从模糊想法起步**。确定性 CLI 内核(校验、蓝图渲染、token-diff 各 gate)才是 CI 跑的那部分,但 **`--finalize` 的烤制并非无需 agent**:每格烤制都由 agent sidecar SOP 完成 —— [`comic-director`](skills/comic-director/SKILL.md) 的 skill agent 守着内核写出的 `*.bakereq.json`,调用 `mcp__codex__codex`(带 `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`)来点燃原生 image 工具,再写回 `*.bakestatus.json`。所以一次真正的电影烤制需要 coding-agent 运行时;只有 `--dry-run` 能单独跑。**模型诚实:** 烤制 payload 把 `model: gpt-5.5` + effort `xhigh` 钉成单一兼容默认(`run_comic.get_bake_plan()` —— 正是 P0 证书所摘要的那份 spend plan;config 驱动的覆盖在计划中、尚未实现);而 codex CLI 的**审稿人**不钉任何模型 —— 它们跟随你本机的 codex 配置,effort 为 `xhigh`(`--review-effort`)。**限流:** 被限速的烤制会带着 `fresh_run_required` 干净地停下 —— 冷却后,为剩余画格启动一次**全新**运行,**不要**复用缓存状态。上限:**每格 ≤4 次尝试 · 每次运行 ≤6 次回滚 · 不并发烤制**
 ([`docs/spiral-runtime.md`](docs/spiral-runtime.md))。
 
 **撰写模板:** 加新项目时,从 [`examples/comic_min_author/`](examples/comic_min_author/) 复制 Phase-1 的作者节点形状。
@@ -184,14 +185,14 @@ open  examples/comic_m3_audit/outputs/index.html
 
 ### 🖼️ 工作流 2 · 方法图 — `/method-figure`(一份 brief → Figure-1)
 一条**斜杠命令** [`/method-figure`](skills/method-figure/SKILL.md) —— 给它一份 `method_figure_brief.json`
-(就是 `paper-plan` 在它的 claims_matrix 之后产出的那种 brief),它会把整条审计螺旋跑到一张签过字的图(Step-0 编译 → 渲染条件图 → `gpt-image-2` 烤制 → Gemini + Codex 盲读审议 + `content_diff` →
+(就是 `paper-plan` 在它的 claims_matrix 之后产出的那种 brief),它会把整条审计螺旋跑到一张签过字的图(Step-0 编译 → 渲染条件图 → 经 Codex 原生图像生成工具的 sidecar 烤制 → Gemini + Codex 盲读审议 + `content_diff` →
 重试到干净 → **Claude 结构签字**):
 
 ```text
 > /method-figure path/to/method_figure_brief.json
 ```
 
-**确定性内核** —— Step-0 编译、蓝图校验、条件图渲染、content-diff gate —— 由一条命令 `run_spiral.py` 驱动。它的**零信用切片(`--p0-only` / `--dry-run`)无需 agent 运行时**;但**一次真正的 `gpt-image-2` 烤制需要 agent sidecar SOP**([`method-figure`](skills/method-figure/SKILL.md) 的 skill agent 通过调用 `mcp__codex__codex`(带 `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`)来服务内核写出的 `*.bakereq.json`):
+**确定性内核** —— Step-0 编译、蓝图校验、条件图渲染、content-diff gate —— 由一条命令 `run_spiral.py` 驱动。它的**零信用切片(`--p0-only` / `--dry-run`)无需 agent 运行时**;但**一次真正的烤制 —— Codex 原生图像生成工具(图像后端无运行时证明)—— 需要 agent sidecar SOP**([`method-figure`](skills/method-figure/SKILL.md) 的 skill agent 通过调用 `mcp__codex__codex`(带 `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`)来服务内核写出的 `*.bakereq.json`):
 ```bash
 # 我们的示例 brief 烤的就是 ARIS 自己的 Figure 1 —— 换成你自己的 method_figure_brief.json 即可
 python3 skills/method-figure/scripts/run_spiral.py \
@@ -215,7 +216,7 @@ python3 skills/method-figure/scripts/run_spiral.py \
    run_spiral.py —— 确定性内核(从一份 brief 起步):
      compile_brief.py (Step-0) → blueprint.json + traceability.json     每个节点都可追溯到某个 brief 字段 —— 否则 FAIL-CLOSED
        → validate_blueprint.py → render_condition.py                    带标注的条件图 SVG → PNG
-       → agent mcp__codex__codex(workspace-write, config{xhigh})→ gpt-image-2 烤制    靠 fail-closed 校验器把关,而非 sandbox 设置
+       → agent mcp__codex__codex(workspace-write, config{xhigh})→ 原生 image-gen 烤制    靠 fail-closed 校验器把关,而非 sandbox 设置
        → Gemini 盲读转录 ‖ Codex 盲读转录 → content_diff.py     确定性否决
        → RETRY ≤4(重申锁定标签)→ Claude 结构签字
    → figure.png   (+ blueprint.json + traceability.json + 每一轮的 trace.jsonl)
@@ -234,7 +235,7 @@ Step-0 是**在该 skill 内部**的确定性步骤 —— 你从不手写蓝图
 > [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md)。
 
 ### 🛡️ 两道 gate 为何不同(都对,刻意为之)
-**电影**的 `panel_gate` 是一个 **3 审**审议团(CC *叙事* ‖ Gemini *视觉* ‖ Codex *视觉*)—— 一格剧情画必须既落点剧情、又在视觉上贴模。**方法图**的审议团是 **Gemini + Codex
+**电影**的 `panel_gate` 是一个 **3 审**审议团(*叙事* —— 当前是 codex CLI ‖ Gemini *视觉* ‖ Codex *视觉*)—— 一格剧情画必须既落点剧情、又在视觉上贴模。**方法图**的审议团是 **Gemini + Codex
 盲读转录 + 确定性 `content_diff`**,再由 **Claude** 做后置结构签字 —— 一张图没有"剧情落点",所以标准是确切标签 + 干净版式,而非叙事。两者都遵守同一条规则:
 
 > gate 才是重点:一张好看但数字错的画格/图**不会**通过。忠实 = 一次 token-diff,而审稿人从不被告知期望值。
@@ -259,9 +260,10 @@ ARIS-Movie-Director 是 **[ARIS](https://github.com/wanshuiyin/Auto-claude-code-
 - **protocols/** —— 跨模型评审 / 治理契约(框架自有)
 - **schemas/** —— 带版本的 IR + wiki schema(`comic.schema.json`、`node_schema.json`、`edge_schema.json`)
 - **cli/** —— `validate_wiki.py`(项目 wiki 的标准库发布 gate)
-- **docs/** —— `comic-json.md`(撰写输入规范)、`architecture.md`(SSOT)、`spiral-runtime.md`、`GENERATION_RETRO.md`
+- **docs/** —— `comic-json.md`(撰写输入规范)、`spiral-runtime.md`(现行运行时文档)、`architecture.md`(rewire 前的历史设计)、`GENERATION_RETRO.md`
 - **examples/comic_m3_audit/** —— 参考电影:`comic.json` IR、`gen/` 蓝图脚本、
-  `panels/` 烤制画作、`wiki/` 那份 198 节点的生成 trace、`outputs/` 构建好的查看器
+  `panels/` 烤制画作、`wiki/` 那份 198 节点的生成 trace(查看器 `outputs/index.html`
+  由 `build_comic.py` **按需构建**,不随仓库分发)
 
 <a id="community"></a>
 

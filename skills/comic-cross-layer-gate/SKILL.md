@@ -1,6 +1,6 @@
 ---
 name: comic-cross-layer-gate
-description: The ONE parameterized score-fuser for EVERY comic-author authoring gate — `--gate intent|outline|asset|storyboard|blueprint|continuity|p0_proof|compile`. A single fuser (not a per-layer split) prevents drift. It NEVER re-runs a reviewer; it collects the reviewer score-nodes already on the wiki (via `reviews` edges), fuses them deterministically (min-fuse per dim, max for inverted dims, SKIP missing dims — never substitute 0), then a Codex gpt-5.5 xhigh adjudicator that sees ONLY structured inputs (scores + tags + raw artifact PATHS + verbatim source context + verbatim rubric — NEVER reviewer prose) makes an asymmetric call (threshold HARD-vetoes "advance"; Codex SOFT-vetoes everything else). The `--gate p0_proof` mode is the zero-credit pre-production proof: a text-only cross-model adversarial review of the pipeline's CODE + IR-CONTRACT + ENGINE state-machine that MUST clear all blockers BEFORE a single metered image-generation credit is spent. Use when a sibling step (intent-parser, outline-creator, asset-review-loop, storyboard-creator, blueprint-author, continuity-audit, json-compiler) defers its acquittal to "the gate", or the user says "过 gate", "cross-layer gate", "审这一层", "p0 proof", "证明流水线再花钱".
+description: The ONE parameterized score-fuser for EVERY comic-author authoring gate — `--gate intent|outline|asset|storyboard|blueprint|continuity|p0_proof|compile`. A single fuser (not a per-layer split) prevents drift. It NEVER re-runs a reviewer; it collects the reviewer score-nodes already on the wiki (via `reviews` edges), fuses them deterministically (min-fuse per dim, max for inverted dims, SKIP missing dims — never substitute 0), then a Codex xhigh adjudicator (NO model pin — follows the local codex config) that sees ONLY structured inputs (scores + tags + raw artifact PATHS + verbatim source context + verbatim rubric — NEVER reviewer prose) makes an asymmetric call (threshold HARD-vetoes "advance"; Codex SOFT-vetoes everything else). The `--gate p0_proof` mode is the zero-credit pre-production proof: a text-only cross-model adversarial review of the pipeline's CODE + IR-CONTRACT + ENGINE state-machine that MUST clear all blockers in BOTH non-author families and then MINT the digest-bound decision:p0_proof certificate via scripts/run_p0_proof.py BEFORE a single metered image-generation credit is spent. Use when a sibling step (intent-parser, outline-creator, asset-review-loop, storyboard-creator, blueprint-author, continuity-audit, json-compiler) defers its acquittal to "the gate", or the user says "过 gate", "cross-layer gate", "审这一层", "p0 proof", "证明流水线再花钱".
 ---
 
 # comic-cross-layer-gate — the Universal Authoring Score-Fuser + the Zero-Credit P0 Proof (Phase 1)
@@ -33,7 +33,7 @@ time; this skill is the **authoring-side, pre-bake** gate that decides whether a
                               ▼
    ② THRESHOLD   per-dim min-fuse (max for inverted dims); SKIP missing dims (NEVER 0-substitute); per-gate floor → threshold_verdict
                               ▼
-   ③ ADJUDICATE  Codex gpt-5.5 xhigh — sees ONLY {scores + failure_mode tags + threshold_block + raw PATHS + ≤200w verbatim source + verbatim rubric}
+   ③ ADJUDICATE  Codex xhigh (no model pin — local codex config) — sees ONLY {scores + failure_mode tags + threshold_block + raw PATHS + ≤200w verbatim source + verbatim rubric}
                               ▼               (NEVER reviewer prose / notes / overall — that is the contamination vector)
    ④ ASYMMETRIC  threshold HARD-VETO over "advance"; Codex SOFT-VETO over everything else
                               ▼
@@ -45,8 +45,10 @@ time; this skill is the **authoring-side, pre-bake** gate that decides whether a
 The `--gate p0_proof` branch is a different shape (a text-only adversarial *review* of the pipeline machinery,
 not a score-fuse over a spec) — it is documented in its own section below. It is the **single most important
 contract this skill owns**: it runs AFTER [`comic-json-compiler`](../comic-json-compiler/SKILL.md) and
-**BEFORE** any metered `codex image_gen` bake, costs **zero generation credits**, and must clear all blockers
-or the spiral is forbidden to spend a credit.
+**BEFORE** any metered image bake (the agent `mcp__codex__codex` sidecar), costs **zero generation credits**,
+and must clear all blockers in BOTH non-author families and then MINT the digest-bound `decision:p0_proof_*`
+certificate via [`scripts/run_p0_proof.py`](scripts/run_p0_proof.py) — or the spiral is forbidden to spend a
+credit.
 
 ## Constants
 - **GATE KINDS** = `intent | outline | asset | storyboard | blueprint | continuity | p0_proof | compile`. The
@@ -54,12 +56,16 @@ or the spiral is forbidden to spend a credit.
   `intent` gate can never emit `keep`; the `asset` gate can emit `locked`, the `intent` gate cannot). The legal
   node `status` tokens a FLIP may write are ONLY `{draft, pending, under_review, locked, rejected, superseded,
   active, complete, final}` (schema enum) — a *verdict* (`revise`/`regenerate`/`fallback`) is never a status.
-- **REVIEWERS** (collected, never re-run here): **Codex `gpt-5.5` `model_reasoning_effort: xhigh`** for
-  every gate's ambiguity / correctness / logic pass; **Gemini `auto-gemini-3`** wherever a second family or a
-  *visual* read is needed (image inputs, UX/design). Never downgrade the tier
-  ([`reviewer-routing`](../../protocols/reviewer-routing.md)).
-- **ADJUDICATOR** = **Codex `gpt-5.5` `xhigh`**, fed ONLY structured inputs (§③). Its `effort` is **always
-  xhigh** regardless of the run's `--effort` — effort widens fan-out, it never weakens the judge.
+- **REVIEWERS** (collected, never re-run here): the **Codex CLI at `model_reasoning_effort: xhigh` with NO
+  model pin** — it follows the local codex config (currently `gpt-5.6-sol`) — for every gate's ambiguity /
+  correctness / logic pass; **Gemini `auto-gemini-3`** wherever a second family or a *visual* read is needed
+  (image inputs, UX/design). Never downgrade the effort tier
+  ([`reviewer-routing`](../../protocols/reviewer-routing.md)). *(The one place a model IS pinned is the
+  metered BAKE, not this skill: `gpt-5.5` + `xhigh` as the single compat default in
+  `run_comic.get_bake_plan()` — config-driven override plumbing is planned, not yet implemented.)*
+- **ADJUDICATOR** = the **Codex CLI at `xhigh`** (same no-model-pin rule — local codex config), fed ONLY
+  structured inputs (§③). Its effort is **always xhigh** — effort widens fan-out, it never weakens the judge.
+  (`run_comic.py` exposes only `--review-effort`; there is no `--effort` flag.)
 - **FUSE RULE** = **min** per dimension (most-pessimistic), **EXCEPT inverted dims** (`artifact_severity`,
   `*_severity`, anything where higher = worse) use **max**; **SKIP a dim no reviewer scored** (filter the
   `null`s) — **NEVER substitute 0** (the v1.0 bug: a lite reviewer leaving a dim unscored must neither slip an
@@ -74,8 +80,11 @@ or the spiral is forbidden to spend a credit.
   (≥3 distinct reviewer families lock-pass together). Fewer than 3 families approving → `regenerate
   --another-voter` (**re-vote to reach the third family, not re-bake**); a family's hard-fail → re-bake. (NOT
   "three consecutive rounds" — that aris_movie video port is wrong for this repo; the owner is same-round unanimity.)
-- **P0 GATE THRESHOLD** = `blockers.length == 0` — a **HARD HALT**. Zero image-generation credits are spent
-  until clear. The review is deliberately text-only → not rate-limited → free.
+- **P0 GATE THRESHOLD** = `blockers.length == 0` in **BOTH non-author families `{openai, google}` on the SAME
+  `comic_sha`**, then the certificate is MINTED by [`scripts/run_p0_proof.py`](scripts/run_p0_proof.py) — a
+  **HARD HALT** until the digest-bound `decision:p0_proof_*` node exists (a timed-out/missing family does NOT
+  count toward quorum; quorum unmet = no certificate = baking stays blocked). Zero image-generation credits
+  are spent before the mint. The review is deliberately text-only → not rate-limited → free.
 - **CODEX UNAVAILABLE** → emit the **threshold-only provisional** verdict with `_confidence: "low"`, exit code
   2, and **skip** `failure_mode` compilation. Malformed adjudicator JSON → `codex-reply` retry ×2, then fall
   back to threshold-only.
@@ -101,9 +110,15 @@ handed prose:
   **`=== EXTERNAL CONTEXT (advisory) ===`** fence around any cross-cutting context — never the author's
   interpretation. The fence is what keeps "here is the situation" from becoming "here is what to conclude".
 
-## The universal architecture (every `--gate` except `p0_proof`)
+## The universal architecture (every `--gate` except `p0_proof` — which has its OWN write path, the deterministic minter, §p0_proof below)
 Ported verbatim from the aris_movie 6-gate skill; the deterministic-JS fuse pattern is the same one the engine
 already proves in [`packages/core/spiral_engine.js:59`](../../packages/core/spiral_engine.js) (`panelVerdict`).
+
+> **Honesty note:** the six universal score-fuse gates ship **NO runner today** — the agent executes this SOP
+> directly (collect → fuse → adjudicate → write → flip, by hand, per the steps below); a parameterized
+> `run_gate.py` is **planned**, not shipped. The only executables this skill owns/shells today are
+> [`scripts/run_p0_proof.py`](scripts/run_p0_proof.py) (the p0 certificate minter) and the deterministic
+> `--gate compile` scripts. The worked-example workflows below are the pattern to copy.
 
 ### ⓪ Pre-check — the structural facts the gate computes
 Before touching reviewers, compute the **raw artifacts** (filesystem facts, not opinions) the gate hard-vetoes
@@ -124,7 +139,7 @@ any reviewer that left it `null`. Apply the per-gate floor (each rubric below). 
 fresh reviewer can re-derive it from the table alone.
 
 ### ③ Adjudicate — Codex, structured inputs only
-Call Codex `gpt-5.5 xhigh` with EXACTLY: `per_reviewer` scores, `failure_mode_tags`, the `threshold_block`
+Call the Codex CLI at `xhigh` (no model pin — local codex config) with EXACTLY: `per_reviewer` scores, `failure_mode_tags`, the `threshold_block`
 (the fused values + the floor), the **raw artifact PATHS**, a **≤200-word verbatim slice** of the source node
 (not a summary — a literal excerpt), and the **verbatim rubric** for this gate. Ask for a verdict in this
 gate's legal set + a one-line `confidence` + the single most important fix. **Trace** the call
@@ -148,7 +163,8 @@ target, not the ban (negative patterns are only for explicit banlists). Default 
 
 ### ⑥ Flip + emit
 Flip `target.status` (`locked` on advance for asset/storyboard/etc.; leave/`rejected` on a terminal fail).
-Append the `decides` edge. Print the parse line.
+Exception: a PROVISIONAL-stage storyboard `approve` never flips — the node stays `under_review` (see `--gate
+storyboard`). Append the `decides` edge. Print the parse line.
 
 ## EXACT gates (dimensions · thresholds · vetoes) — ported from the aris_movie source
 Every reviewer scores each dim **0–5**. "ADVANCE" verdict in CAPS. Advisory dims do NOT block advance; they
@@ -165,13 +181,30 @@ ride into the decision audit and the adjudicator's context.
   [`comic-intent-parser`](../comic-intent-parser/SKILL.md) step ⑥ — this gate is the cross-model adjudication,
   not the human sign-off.
 
-### `--gate outline` → verdicts `{approve, revise}`
-- **Pre-check (HARD):** every referenced `asset_id` (scene / character / prop / must_show in the
-  `*_asset_ids` lists) must **resolve AND be `status: locked`**, else hard-fail with the missing-asset list
-  ("outline cannot be approved with draft assets").
-- **ADVANCE (`APPROVE`) iff** `min(coverage, identity_lock_feasibility, scene_lock_feasibility) ≥ 4` **AND**
-  `safety_ip ≥ 4`.
-- Advisory: `asset_promptability`, `audio_plan`.
+### `--gate outline` → verdicts `{approve, revise}` — two checkpoints: OUTLINE_DRAFT_VALID, then OUTLINE_FINAL_LOCK
+The outline acquittal is deliberately split in two. A single-stage "outline needs locked assets" contract
+**deadlocks a fresh project**: assets are produced from the storyboard's `consolidated_asset_requests`, the
+storyboard needs an approved outline, so the outline can never see a locked asset first. The Phase-1 DAG is:
+
+```text
+OUTLINE_DRAFT_VALID → human outline approval → provisional storyboard (structural pass, may
+reference draft assets) → consolidated_asset_requests → asset generation + review → assets LOCKED →
+OUTLINE_FINAL_LOCK (cheap re-check) → storyboard FINAL asset-resolution validation → blueprints
+```
+
+- **OUTLINE_DRAFT_VALID (this gate, pre-assets):** validates NARRATIVE + CONTINUITY + safety only — it does
+  **NOT** require any referenced asset to be locked.
+  - **Pre-check (HARD):** every referenced `asset_id` (scene / character / prop / must_show in the
+    `*_asset_ids` lists) must be **DECLARED with a complete, generatable request** (enough spec for the asset
+    pipeline to produce it), else hard-fail with the missing-declaration list. Declared-but-draft is fine;
+    undeclared or unrequestable is not.
+  - **ADVANCE (`APPROVE`) iff** `coverage ≥ 4` **AND** `safety_ip ≥ 4`.
+  - Advisory: `asset_promptability`, `audio_plan`.
+- **OUTLINE_FINAL_LOCK (after assets lock):** the cheap re-check that the now-locked assets still match the
+  approved outline — **this** is where `identity_lock_feasibility ≥ 4` and `scene_lock_feasibility ≥ 4` are
+  scored (they are meaningless before real locked refs exist). The **hard locked-asset barrier** lives at the
+  storyboard FINAL asset-resolution validation + the `blueprint` gate, **before blueprint authoring** — not
+  at the draft outline.
 
 ### `--gate asset` → verdicts `{approve, regenerate, locked, abandon_shot}`
 - **LOCK (`LOCKED`) iff** `identity_lock_satisfied ≥ 4` **AND** `ref_quality ≥ 4` **AND** `bg_isolation ≥ 4`
@@ -184,9 +217,22 @@ ride into the decision audit and the adjudicator's context.
 - **Cap:** `MAX_ASSET_REGEN = 4` → escalate to the outline gate (`abandon_shot`).
 
 ### `--gate storyboard` → verdicts `{approve, revise}` — STRUCTURAL, CC-only (no visual reviewer; no pixels yet)
-This is the **`comic.json` structural validator** (it supersedes the lone `check_asset_collisions.py`). The
-four structural dims are **FILE-SYSTEM FACTS the gate computes**, not reviewer opinion:
-- **`panel_assets_referenceable`** — every asset ref in each *panel* resolves **and** is `locked`.
+This is the **`comic.json` structural validator** (it supersedes the lone `check_asset_collisions.py`) — and
+it is a **TWO-STAGE contract**: the gate runs TWICE per storyboard (the N1 DAG under `--gate outline`;
+[`comic-storyboard-creator`](../comic-storyboard-creator/SKILL.md) ⑨.0 quotes this same ordering):
+- **PROVISIONAL stage** (right after authoring, pre asset-lock): structural pass only — declared-but-**draft**
+  assets are allowed; `panel_assets_referenceable` is unscorable, left `null`, and the fuser **SKIPs** it (the
+  verdict rides on the other three dims; only an UNDECLARED ref — no whitelist entry, no complete
+  `asset_request` — vetoes). A provisional `approve` does **NOT** lock the storyboard node — no ⑥ FLIP; it
+  stays `under_review`.
+- **FINAL stage** (after the asset layer locks everything + OUTLINE_FINAL_LOCK): all four dims scorable — the
+  **full asset-resolution predicate** applies (every panel asset ref resolves AND is `locked`; an un-locked
+  ref hard-vetoes via `_unresolved_asset_refs`), and `approve` flips the storyboard to `locked` on advance.
+
+The four structural dims are **FILE-SYSTEM FACTS the gate computes**, not reviewer opinion:
+- **`panel_assets_referenceable`** — every asset ref in each *panel* resolves **and** is `locked`. *(Scored at
+  the **FINAL stage only** — the storyboard's FINAL asset-resolution validation, the hard locked-asset barrier
+  of the Phase-1 DAG; at the PROVISIONAL stage it is `null`/SKIPped and the declared-check applies instead.)*
 - **`global_policies_valid`** — `global_policies` fields match expected (e.g. text-mode rules present;
   mirror-lock policy present; page-order authority declared).
 - **`panel_count_band_aligned`** — panels-per-page in band per target tier `{mvp:(2,2), demo:(4,6),
@@ -194,8 +240,10 @@ four structural dims are **FILE-SYSTEM FACTS the gate computes**, not reviewer o
   panels-per-page == panel count; NEW + reused == total).
 - **`continuity_chain_well_formed`** — the MOTIF STATE TABLE has one row per panel; links have no
   dangling / out-of-order / cycle; every per-panel `motifs` field agrees with its table row.
-- **ADVANCE (`APPROVE`) iff ALL FOUR ≥ 4.**
-- **STRUCTURAL HARD VETO:** any non-empty `_unresolved_asset_refs` / `_policy_violations` /
+- **ADVANCE (`APPROVE`) iff ALL FOUR ≥ 4** — at the PROVISIONAL stage, all *scorable* dims
+  (`panel_assets_referenceable` is SKIPped, never substituted with 0).
+- **STRUCTURAL HARD VETO:** any non-empty `_unresolved_asset_refs` (FINAL stage; at the PROVISIONAL stage
+  declared-but-unlocked refs are expected — only an UNDECLARED ref vetoes) / `_policy_violations` /
   `_continuity_breaks`, or an out-of-band `_panel_count_band`, forces `revise` **regardless of reviewer scores
   OR Codex**. *(Plus the comic-specific structural vetoes the storyboard step also asks for: DDL
   non-monotonic; bounce-uniqueness broken; the two metric columns co-mingling; a DONE panel retro-edited; the
@@ -245,28 +293,44 @@ any stderr in the decision audit. The §⑥ FLIP target is the schema-valid `dec
 this gate writes (`status: final`) — **NOT `comic.json`**, which is a file, not a wiki node (it has no legal
 node_id prefix, carries no `wiki_node_id`, and can never be an edge endpoint).
 
-> The folded-already clip gate (the 11-dim `panel_gate`: `KEEP iff min(narrative_intent, plot_continuity) ≥ 4
-> AND artifact_severity < 4 [max-fused] AND safety_ip ≥ 4`; style/visual dims ADVISORY) and the page
-> `assembly_gate` are **NOT re-implemented here** — they run at bake time inside
-> [`packages/core/spiral_engine.js`](../../packages/core/spiral_engine.js). This skill is the authoring-side
-> gate; the engine is the artifact-side gate. They share the same fuse discipline.
+### `--gate p0_proof` → verdict `{advance}` — MINTED, never hand-written
+The one gate whose decision node comes from a script: [`scripts/run_p0_proof.py`](scripts/run_p0_proof.py)
+mints `verdict: advance` after verifying the two-family same-digest quorum itself (full contract in the
+dedicated section below). Its `target_node_id` is the compile/intent anchor **NODE** (e.g.
+`decision:compile_<slug>`) — never `comic.json`, which is a file, not a wiki node.
 
-## `--gate p0_proof` — the zero-credit visual / code proof (the one contract that gates ALL spending)
+> The bake-time `panel_gate` (`spiral_engine.js` `panelVerdict`: **KEEP iff** `narr ≥ 4 AND minIdent ≥ 4 AND
+> styleOK AND compOK AND NOT artifactBad AND textOK AND NOT anatomyDefect AND disagree < 2`, where
+> `narr = min(narrative_beat_fidelity, composition_story)`, `artifactBad` is **corroborated** — both visual
+> reviewers must flag it, a lone pixel-purist cannot single-veto — and `disagree` is the two visual
+> reviewers' identity-score gap) and the page `assembly_gate` are **NOT re-implemented here** — they run at
+> bake time inside [`packages/core/spiral_engine.js`](../../packages/core/spiral_engine.js). *(Provenance
+> note: the engine's narrative "cc" reviewer slot currently shells the codex CLI and is honestly recorded as
+> `openai` in the wiki; a configurable `--narrative-reviewer` is planned, not yet implemented — cross-family
+> acquittal vs the Claude author still holds via gemini + codex.)* This skill is the authoring-side gate; the
+> engine is the artifact-side gate. They share the same fuse discipline.
+
+## `--gate p0_proof` — the zero-credit code proof + the digest-bound spending certificate
 Runs **AFTER** [`comic-json-compiler`](../comic-json-compiler/SKILL.md), **BEFORE** any metered image
 generation. It is a **text-only cross-model adversarial review** of the pipeline machinery the executor
 authored solo — distinct from `experiment-integrity` (audits results after the fact) and from the per-unit
-clip/panel gate (audits generated artifacts). It is a **pre-production correctness proof that is deliberately
-free** (text review, not `image_gen` → not rate-limited). Ported verbatim from
-[`examples/comic_m3_audit/workflows/p0-review.js`](../../examples/comic_m3_audit/workflows/p0-review.js).
+panel gate (audits generated artifacts). It is a **pre-production correctness proof that is deliberately
+free** (text review, not image generation → not rate-limited). The fan-out shape is ported from
+[`examples/comic_m3_audit/workflows/p0-review.js`](../../examples/comic_m3_audit/workflows/p0-review.js); the
+certificate is minted by the shipped deterministic [`scripts/run_p0_proof.py`](scripts/run_p0_proof.py) — the
+agent **never hand-writes** the decision node.
 
-**Fan out 3 watchdog-bounded CLI reviewers, each `cat`'ing the REAL files into its prompt (never a Claude
-summary), each a DIFFERENT model family from the Claude author:**
+**Step 1 — compute the digest, fan out.** `comic_sha = sha256(<project>/comic.json BYTES)`. Fan out 3
+watchdog-bounded CLI reviewers, each `cat`'ing the REAL files into its prompt (never a Claude summary), each
+a DIFFERENT model family from the Claude author — and **inject the `comic_sha` digest into every reviewer
+prompt with the instruction to echo it back in the review output**; the echo is what binds each review to the
+exact compiled version it read:
 1. **`codex` on CODE** — the build script + the viewer: base64 inlining, `</` escaping in the JSON-in-`<script>`
    blob, missing-image handling, path resolution, the locale (`T()`) toggle, bubble positioning, **XSS via
    `innerHTML`** of `T()`, `?p=` bounds.
 2. **`codex` on ENGINE LOGIC** — `spiral_engine.js`: the `panelVerdict` formula (deadlock / wrong-keep /
    skip-missing-dim / disagree gate), the retry/rollback/caps state machine (infinite-loop risk, rollback
-   target math, `kept[]` filtering, `localByPanel` reset), `generatePanel`'s `image_gen` + the
+   target math, `kept[]` filtering, `localByPanel` reset), `generatePanel`'s bake seam + the
    `gen_failed`/rate-limit path, the gate prompts eliciting **parseable** JSON, the `REPO + "/" + REPO` path
    hack, `Promise.all` races.
 3. **`gemini` on DESIGN / CONTRACT / UX** — is `ART_BIBLE.md` an **executable convergence target** for the
@@ -279,14 +343,54 @@ blocker, it is a complaint); plus `nice[]` and a one-line `overall`. Synthesis d
 points (noting the drop), **orders BLOCKER > SHOULD > NICE**, adds `blocker_count` / `should_count`, and
 returns the single-most-important fix.
 
-**THRESHOLD: `blockers.length == 0` — HARD HALT.** Clear every blocker, re-run, and only then may the spiral
-spend its first `codex image_gen` credit. (Operational hardening copied from the source: **MCP is forbidden**
-inside this fan-out — an unbounded hang would freeze it — so every external call is a watchdog-bounded CLI:
-`codex sleep 540-600s`, `gemini sleep 300-360s`, `kill -9` on timeout, unique temp file per branch, and a
-timed-out model is **noted in its field and the gate proceeds** — never blocks.)
+**Step 2 — write one review JSON per family.** From the CLEARED fan-out (every blocker fixed and re-reviewed)
+the agent writes **≥2 review files, one per non-author family** — e.g. `p0_codex.json` for `openai`,
+`p0_gemini.json` for `google` — each carrying `{family, verdict, blockers, comic_sha}` (extra fields are
+tolerated; these four are what the minter checks). A review **COUNTS toward quorum** only if `family ∈
+{openai, google, anthropic}`, `blockers == []` (the literal empty list), `verdict ∈ {pass, clean, approve,
+advance}`, **AND** its `comic_sha` equals the digest of the CURRENT `comic.json`. **Parseable alone is NOT
+quorum** — a review that acquitted a different comic.json version, a non-empty blocker list, a missing file
+(reviewer timeout/skip) or unparseable JSON simply **does not count**. **NEVER proceed on timeout:** for this
+gate a timed-out family means quorum unmet, which means NO certificate, which means baking stays **BLOCKED**
+— fail-closed. ("Note the timeout and proceed" is legal ONLY for ADVISORY fan-outs, e.g. the pivot-design
+consult — never for the spending gate.)
+
+**Step 3 — MINT the certificate (deterministic, fail-closed).**
+
+```bash
+python3 skills/comic-cross-layer-gate/scripts/run_p0_proof.py \
+  --project <dir> --target <anchor_node_id> --reviews p0_codex.json p0_gemini.json
+```
+
+The minter re-verifies everything itself (it never trusts the agent's account of the fan-out): it recomputes
+`comic_sha` from the comic.json BYTES, computes `bake_plan_sha =
+pickup_image.bake_plan_digest(run_comic.get_bake_plan())` (the resolved `bakereq/v1` spend plan —
+model/effort/include_image_gen_tool/sandbox/min_bytes/aspect/bake_timeout), discards every review that does
+not count (stderr notes why), and requires **BOTH non-author families `{openai, google}` among the counted
+reviews** — the Claude author family can drive, never acquit. Any violation → clear stderr reason + exit 1 +
+**no node**. On success it **atomically writes** `wiki/nodes/decision_p0_proof_<slug>_<utcstamp>.json`:
+node_id `decision:p0_proof_<slug>_<utcstamp>` (slug from `comic.json` `comic_id`), `node_type: decision`,
+`status: final`, real-UTC `created_at`, payload `{gate_kind: p0_proof, verdict: advance, target_node_id,
+comic_sha, bake_plan_sha, reviewer_quorum, review_files}`.
+
+**The legal `p0_proof` verdict is `advance` — minted by the script, never hand-written.** What
+`run_comic.py`'s `_p0_clean()` preflight then verifies before spending a credit: a `decision:p0_proof_*` node
+with `gate_kind == p0_proof` and an accepted status/verdict, **AND `payload.comic_sha` == sha256 of the
+CURRENT comic.json AND `payload.bake_plan_sha` == the digest of `get_bake_plan(args)`**. Edit `comic.json`
+after minting and the cert is stale → **REJECTED** (the log points back at `run_p0_proof.py`); the mint binds
+the argparse-DEFAULT plan, so a run with non-default `--min-bytes`/`--bake-timeout` also needs a fresh cert.
+This kills the "a certificate once existed somewhere in this directory" hole: the cert acquits ONLY the exact
+bytes + spend plan it audited.
+
+(Operational hardening kept from the source: **MCP is forbidden** inside this fan-out — an unbounded hang
+would freeze it — so every external call is a watchdog-bounded CLI: `codex sleep 540-600s`, `gemini sleep
+300-360s`, `kill -9` on timeout, unique temp file per branch. A killed reviewer simply produces **no counted
+review file** — see step 2: no quorum, no cert, no spending.)
 
 ## Two engine contracts the gate enforces (fail-closed)
-These mirror the engine's own fail-closed checks ([`spiral_engine.js:202`, `:347`](../../packages/core/spiral_engine.js)) — the gate refuses to ADVANCE a spec that would later make the engine refuse to run:
+These mirror the engine's own fail-closed checks — `cfgUsable` (~L422) and `generatePanel`'s content_svg
+shell-safety guard (~L273) in [`packages/core/spiral_engine.js`](../../packages/core/spiral_engine.js) — the
+gate refuses to ADVANCE a spec that would later make the engine refuse to run:
 1. **Every panel needs a blueprint SVG — but the field name differs by artifact (do NOT conflate them):**
    the wiki `blueprint.payload.content_svg` (top-level on the payload), the `panel_spec.payload.content_blueprint`
    (the panel_spec's own field — there is NO `content_svg` on a panel_spec), and the `comic.json` panel's
@@ -320,6 +424,11 @@ These mirror the engine's own fail-closed checks ([`spiral_engine.js:202`, `:347
   _disagreement, _confidence, _cited_dimensions, _score_fingerprint` (+ the structural sets
   `_unresolved_asset_refs / _policy_violations / _count_band / _continuity_breaks` when computed). `status:
   "final"`. Append a **`decides`** edge (`decision → target`, optional `verdict` on the edge).
+- **EXCEPTION — `p0_proof` decisions are never hand-written:**
+  [`scripts/run_p0_proof.py`](scripts/run_p0_proof.py) mints `decision:p0_proof_<slug>_<utcstamp>` (verdict
+  `advance`, `status: final`, payload adds `comic_sha, bake_plan_sha, reviewer_quorum, review_files`)
+  atomically, fail-closed, after verifying the two-family same-digest quorum itself. Every OTHER gate's
+  decision node is written by the agent per this section.
 - **`failure_mode`** (`node_id` `fail:<gate>_<slug>`) — **only on a FAIL verdict**. Payload **required**
   `layer, affected_shot_ids, active`; `repair_pattern` is the **positive invariant**; default scope
   movie-local. `status: "active"`. Append a **`failure_of`** edge (`failure_mode → target`).
@@ -335,8 +444,10 @@ The canonical exhibits are the three historical orchestration scripts + the engi
   **`cat`-the-real-file** rule (`files.map(f => 'echo "===== ${f} ====="; cat "${f}"')` — never a summary), and
   the **synthesis reducer** that dedups → orders BLOCKER>SHOULD>NICE → returns `blocker_count`/`should_count`.
   Its watchdog hardening (`codex … & P=$!; ( sleep 540; kill -9 $P ) & WD=$!; wait $P; kill $WD`) is exactly
-  the MCP-forbidden / never-block-on-timeout discipline. **The threshold `blockers.length == 0` before any
-  credit is the contract.**
+  the MCP-forbidden discipline — but note where the LIVE contract diverges from the exhibit: p0-review.js
+  noted a timeout and proceeded; the shipped minter makes a timed-out family **not count** toward quorum, so
+  the spending gate stays blocked. **The contract is `blockers.length == 0` in both non-author families on
+  the same `comic_sha`, then the `run_p0_proof.py` mint, before any credit.**
 
 - **The cross-model adjudication shape — [`examples/comic_m3_audit/workflows/pivot-design.js`](../../examples/comic_m3_audit/workflows/pivot-design.js).**
   Copy the **typed gate schemas** that force the gate to be *real*: `DESIGN_SCHEMA`
@@ -345,7 +456,8 @@ The canonical exhibits are the three historical orchestration scripts + the engi
   `CRITIQUE_SCHEMA` (`required: ['model','biggest_flaws','missing','risks','verdict']`, prompt forbids
   softening: *"pass through the sharpest valid points"*). The "form your OWN take FIRST → get codex → get
   gemini → **reconcile/judge** → surface only genuine human forks" loop is the adjudicator discipline; the
-  **unique temp file per branch** + **note-a-timeout-and-proceed** is the operational guard.
+  **unique temp file per branch** + **note-a-timeout-and-proceed** is the operational guard — legal here
+  because this consult is ADVISORY; the p0_proof spending gate must fail-closed on timeout instead.
 
 - **The deterministic fuse — [`packages/core/spiral_engine.js:59`](../../packages/core/spiral_engine.js) (`panelVerdict`).**
   This is the **exact min-fuse / skip-missing / max-for-inverted / single-vote-veto** pattern to port into §②:
@@ -368,8 +480,10 @@ The canonical exhibits are the three historical orchestration scripts + the engi
   must neither slip an advance nor force a fail.)
 - **DO** keep the trust **asymmetric**: the deterministic threshold (and the structural facts) **hard-veto
   advance**; Codex **soft-vetoes** everything else. Codex can never overrule a *failed* floor into an advance.
-- **DO** run **`--gate p0_proof` to a clean `blockers.length == 0` BEFORE the first metered bake.** It is free.
-  Skipping it to "save a step" trades zero-cost text review for credit-cost regeneration.
+- **DO** run **`--gate p0_proof` to `blockers.length == 0` in BOTH non-author families AND mint the cert via
+  `scripts/run_p0_proof.py` BEFORE the first metered bake.** It is free, and `run_comic.py` fail-closes
+  without the digest-bound node. Skipping it to "save a step" trades zero-cost text review for credit-cost
+  regeneration.
 - **DON'T** regenerate the artifact when scores are **identical across rounds** — that means the **judge** is
   broken, not the spec. **HALT and flag `judge_suspect`; audit this rubric** (memory:
   `feedback_gate_identical_scores_judge_broken`). A gate that scores the same regardless of the work is broken.
@@ -381,8 +495,9 @@ The canonical exhibits are the three historical orchestration scripts + the engi
   gate can say `locked`/`abandon_shot`) — it is a hard error.
 - **DON'T** mint a `failure_mode` on an advance, or when Codex was unavailable (the provisional verdict is
   `_confidence: low`, exit 2 — fix and re-gate, don't poison the banlist).
-- **DON'T** call MCP inside the `p0_proof` fan-out — watchdog-bounded CLI only; a timed-out model is noted in
-  its field and the gate proceeds (never blocks).
+- **DON'T** call MCP inside the `p0_proof` fan-out — watchdog-bounded CLI only. And **DON'T** treat a p0
+  timeout as skippable: a timed-out family does not count toward quorum → no certificate → baking stays
+  blocked (fail-closed). Note-a-timeout-and-proceed is for ADVISORY fan-outs only.
 
 ## Protocols (governance contracts this skill honors)
 - [`reviewer-independence`](../../protocols/reviewer-independence.md) — the adjudicator sees scores + tags +
@@ -395,9 +510,11 @@ The canonical exhibits are the three historical orchestration scripts + the engi
 - [`review-tracing`](../../protocols/review-tracing.md) — every collected reviewer + the adjudicator call + the
   p0_proof fan-out is traced (prompt + response + `threadId` + verdict) so each acquittal is auditable and the
   independence claim is checkable after the fact.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh` for the adjudicator and
-  every correctness/logic reviewer; Gemini `auto-gemini-3` for the visual/design family; never downgrade the
-  tier (effort widens fan-out, never weakens the judge).
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — the Codex CLI at `xhigh` with no model pin (it
+  follows the local codex config, currently `gpt-5.6-sol`) for the adjudicator and every correctness/logic
+  reviewer; Gemini `auto-gemini-3` for the visual/design family; the metered bake alone pins `gpt-5.5` +
+  `xhigh` in `run_comic.get_bake_plan()` (single compat default; config-driven override is planned). Never
+  downgrade the effort tier (effort widens fan-out, never weakens the judge).
 - [`artifact-integrity`](../../protocols/artifact-integrity.md) — structural facts (asset-resolve / policy /
   count-band / continuity / sha-match / blueprint-renders) are RAW artifacts the gate computes and hard-vetoes
   on; they are *verified*, never originated, and forwarding them to Codex is not an independence breach.

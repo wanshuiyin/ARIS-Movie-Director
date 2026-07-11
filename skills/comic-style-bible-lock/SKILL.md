@@ -1,6 +1,6 @@
 ---
 name: comic-style-bible-lock
-description: "Phase-1 (S2) of the comic-author suite — compile the project's ART_BIBLE.md into an EXECUTABLE convergence target, not aesthetic prose. The bible is the ONE visual dialect read verbatim into every bake prompt AND into every visual reviewer's rubric (`style_consistency`/`identity_consistency` literally = 'conforms to this file'). A `bootstrap` parses the bible into immutable per-dimension `style_anchor` wiki nodes (palette / line / shading / two-world warm-vs-cyber lighting / identity-lock / text-mode / forbidden / by-design exceptions); a deterministic `validate` lints candidate authoring text against the FORBIDDEN list + identity-lock + world-mismatch; an append-only `update` Gemini-harvests recurring drift from KEEP panels into by-design exceptions. Auto-bootstrap if the bible is missing; otherwise LEAVE LOCKED. Locked anchors are immutable — pivoting the style = a fresh project, never an in-place edit."
+description: "Phase-1 (S2) of the comic-author suite — compile the project's ART_BIBLE.md into an EXECUTABLE convergence target, not aesthetic prose. The bible is the ONE visual dialect read verbatim into every bake prompt AND into every visual reviewer's rubric (`style_consistency`/`identity_consistency` literally = 'conforms to this file'). A `bootstrap` parses the bible into immutable per-dimension `style_anchor` wiki nodes (palette / line / shading / two-world warm-vs-cyber lighting / identity-lock / per-world STYLE_PREFIX / text-mode / forbidden / by-design exceptions); a deterministic `validate` lints candidate authoring text against the FORBIDDEN list + identity-lock + world-mismatch; an append-only `update` Gemini-harvests recurring drift from KEEP panels into by-design exceptions. Auto-bootstrap if the bible is missing; otherwise LEAVE LOCKED. Locked anchors are immutable — pivoting the style = a fresh project, never an in-place edit."
 argument-hint: [bootstrap | validate <authoring_text> | update] [--project <dir>]
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, mcp__gemini__analyzeFile, mcp__gemini-cli__ask-gemini
 ---
@@ -29,7 +29,8 @@ source-pinned target instead of one prose blob — **one visual dialect, never t
         ▼
   ① bootstrap  ── deterministic parse → ONE immutable style_anchor node per dimension
         │           (palette · line · shading · two-world warm/cyber lighting · identity-lock
-        │            · text-mode · forbidden · by-design exceptions)  +  EXACT style_bible gate (6 dims ≥4, 5 vetoes)
+        │            · per-world STYLE_PREFIX · text-mode · forbidden · by-design exceptions)
+        │           +  EXACT style_bible gate (6 dims ≥4, 6 vetoes)
         ▼
   ② validate <authoring_text>  ── deterministic lint (NO LLM): FORBIDDEN vocab + identity-conflict + world-mismatch
         │                          → called by every downstream author step BEFORE the text enters a bake prompt
@@ -56,7 +57,7 @@ exceptions. The convergence guarantee — "one visual dialect, never two" — is
 - **QUORUM** = `(n+1)//2` (≥50%) of the **same-beat** multi-panel drift samples must flag a dimension before an
   exception is written (bump to 75% if drift-from-noise floods). One noisy panel must **not** mutate the bible.
 - **MAX_PANELS_PER_UPDATE** = 6 (cost cap on the Gemini drift pass).
-- **GATE** = the deterministic `style_bible` gate (6 dims ≥4 + 5 hard vetoes) — **rule-check, NO cross-model
+- **GATE** = the deterministic `style_bible` gate (6 dims ≥4 + 6 hard vetoes) — **rule-check, NO cross-model
   gate** (the bible IS the rubric the *other* skills' cross-model gates consume; here we only certify it compiles).
 - **IMMUTABLE BASELINE** — `bootstrap` anchors and the §0–§7 spine are **locked**. `update` only *appends*
   exception anchors; pivoting the baseline = a **fresh bootstrap in a NEW project dir**, never an in-place edit
@@ -70,6 +71,7 @@ Copy `examples/comic_m3_audit/ART_BIBLE.md` as the shape:
 |---|---|---|---|
 | **§0** | 总风格声明 (overall style) | register, anchored to a **NAMED probe image** + **dated user approval** (real: `= 批准的 probe/S02_codexgen_a01.png 那个程度`); `image-rendering: pixelated` + integer-multiple scaling | `style:overall_register` |
 | **§0.5** | 双世界色调 (two-world palette) | **warm 人间** vs **dark 赛博** (`dark_navy_void #0A0E27`), with the baked gate instruction **`冷暖是 by-design 的,不是漂移`** | `style:palette_warm_world`, `style:palette_dark_world`, `style:by_design_warm_cyber` |
+| **§0.6** | STYLE_PREFIX (machine-readable per-world prompt block) | one `STYLE_PREFIX[<world>]:` line per world (≤200 chars, no camera/lens vocab) — the block **`build_prompt.py` reads VERBATIM by each panel's `world`** (real worlds: `warm-lab` / `dark-cyber` / `starfield`) | `style:style_prefix_<world>` (one per world) |
 | **§1** | 角色身份锁 (identity lock) | authority-ref pointer (`duo_canonical_ref_v001.png`) + per-character **hex table** + the 铁律 | `style:identity_executor`, `style:identity_reviewer`, `style:identity_authority_ref` |
 | **§2** | 主角 chibi (researcher) | researcher chibi spec (glasses/hair/backpack, same person across panels) | `style:researcher_chibi` |
 | **§3** | 线条 / 阴影 / 色阶 | hard-edge pixels, **no smooth gradient on character/foreground** + the **reviewer-calibrated background-atmosphere carve-out** (dated `2026-06-08`) | `style:line_shading` |
@@ -91,11 +93,13 @@ Run once per project, before any other S-step authors text. Re-run is **idempote
    the `锁定 <date>` lock, the project id, and at least one dated user-attributed approval line (`(用户 <date> …)`).
    Any missing → **veto** (see gate); do not proceed.
 3. **Assert the §0–§7 spine compiles.** Grep each section header from the table above. A missing §0 (no probe +
-   approval), §0.5 (no by-design instruction), §1 (no authority ref / hex table), §6 (no text-mode), or §7
-   (no FORBIDDEN list) is a **hard veto**.
-4. **Deterministic parse → ONE `style_anchor` node per dimension.** Regex-grab the §0.5 palette block, the §1
-   hex table, the §3/§4 rules, the §6 mode list, the §7 FORBIDDEN list, and the §0.5 by-design exceptions. Emit
-   exactly the anchors in the table's right column. Node shape (matches `schemas/node_schema.json` →
+   approval), §0.5 (no by-design instruction), §0.6 (no `STYLE_PREFIX[<world>]` line for a world some panel
+   uses — `build_prompt.py` fail-closes, exit 7, on every panel of that world), §1 (no authority ref / hex
+   table), §6 (no text-mode), or §7 (no FORBIDDEN list) is a **hard veto**.
+4. **Deterministic parse → ONE `style_anchor` node per dimension.** Regex-grab the §0.5 palette block, the
+   §0.6 `STYLE_PREFIX[<world>]:` lines (one anchor per world, `payload.value` = the verbatim ≤200-char prefix),
+   the §1 hex table, the §3/§4 rules, the §6 mode list, the §7 FORBIDDEN list, and the §0.5 by-design
+   exceptions. Emit exactly the anchors in the table's right column. Node shape (matches `schemas/node_schema.json` →
    `style_anchor`, payload **required** `dimension, value, source, locked`):
    ```json
    {
@@ -127,9 +131,12 @@ Run once per project, before any other S-step authors text. Re-run is **idempote
    [`comic-json-compiler`](../comic-json-compiler/SKILL.md) is the owner that emits `movie.project.json` as "the
    pure pointer-hub manifest"). Confirm `movie.project.json.art_bible` resolves to this project's `ART_BIBLE.md`
    (and `movie.project.json.comic_json` to `comic.json`); if the `art_bible` field is missing, **escalate to
-   comic-json-compiler to add it** — do not invent a `comic.json` edit. Then confirm every downstream
-   bake-prompt builder reads the bible verbatim (the [`comic-panel-prompt-builder`](../comic-panel-prompt-builder/SKILL.md)
-   prepends `style:overall_register` + the relevant world/identity/forbidden anchors). This is the
+   comic-json-compiler to add it** — do not invent a `comic.json` edit. Then confirm the per-world prompt seam:
+   the shipped [`comic-panel-prompt-builder`](../comic-panel-prompt-builder/SKILL.md) runner
+   (`build_prompt.py`, `read_style_prefix()`) reads the §0.6 `STYLE_PREFIX[<world>]` line for each panel's
+   `world` **DIRECTLY from `ART_BIBLE.md`** (regex over the bible text; ≤200 chars enforced; exit 7 if the
+   world's line is missing) — the `style:style_prefix_<world>` anchors mirror those lines for wiki
+   addressability, but **the bible line itself is the runtime truth the builder consumes**. This is the
    "one dialect into every prompt" guarantee, made mechanical.
 
 ### ② `validate <authoring_text>` — deterministic lint (NO LLM)
@@ -146,7 +153,7 @@ text is allowed into a bake prompt. Pure Python, no model call — fast, reprodu
    itself (it is by-design). This is the concrete embodiment of *intended-variation ≠ drift*.
 4. **(Optional, mostly DROPPED for us) over-prompt / quality-padding guard** — the video source banned camera/
    lighting/`8K`/`hyperrealistic` vocab because it hijacks Pippit's per-beat decomposition and triggers a
-   silent model downgrade. **codex image_gen has no per-beat decomposition to hijack**, so this whole category
+   silent model downgrade. **the sidecar image bake has no per-beat decomposition to hijack**, so this whole category
    DROPs by default; keep only a thin quality-padding check if a baked title ever shows the over-prompt signature.
 5. **Conservative-refuse rule:** prefer a **false-positive** (force a human glance) over letting an
    identity/world/forbidden violation slip into a paid bake. Merge → `passes_all`; exit 0 (clean) / 1 (fail).
@@ -168,9 +175,9 @@ recurring, *intended* deviations become written exceptions; one-off noise does n
    reported in **≥ QUORUM** panels of the **SAME beat**. Then: write a NEW `style_anchor`
    (`tags: ["style_anchor","exception"]`, `payload.value` adds `support_frames`/`total_frames`,
    `payload.locked: true`), and add a `uses_style_anchor` edge to `wiki/edges.jsonl` in the **exact
-   `{src, dst, type}` shape `cli/validate_wiki.py` enforces** (line 149: every edge needs `src`/`dst`/`type`;
-   line 153: `type` ∈ `EDGE_TYPES`; both endpoints must resolve to a wiki `node_id` **or** a `comic.json` panel
-   anchor `panels.<id>.wiki_node_id`). Endpoints: `src` = a representative KEEP panel of the beat addressed by
+   `{src, dst, type}` shape `cli/validate_wiki.py` enforces** (line 158: every edge needs `src`/`dst`/`type`;
+   line 161: `type` ∈ `EDGE_TYPES`; lines 165-167: both endpoints must resolve to a wiki `node_id` **or** a
+   `comic.json` panel anchor `panels.<id>.wiki_node_id`). Endpoints: `src` = a representative KEEP panel of the beat addressed by
    its **legal panel anchor** `panel:<panel_id>` (e.g. `panel:s12_aris_comic_v1`, copied from
    `comic.json panels.<id>.wiki_node_id` — **never** a `<beat_id>`, which is not a legal `node_id` prefix; the
    only legal prefixes are `intent|style|outline|asset|storyboard|panel|blueprint|prompt|motif|cont|attempt|review|decision|fail`),
@@ -190,7 +197,13 @@ gate only proves the rubric itself is complete and conflict-free.
 
 **Dimensions — ALL must score `≥4`:**
 - **`anchor_completeness`** — every §0–§7 dimension compiled to an addressable `style_anchor` node (no prose-only blob).
-- **`authority_ref_resolved`** — the §1 identity authority ref (`duo_canonical_ref_v001.png`) exists on disk and is pointed at.
+- **`authority_ref_resolved`** — the §1 identity authority image exists on disk. **Resolve via
+  `movie.project.json.identity_ref` (the pointer-hub field) or a basename match under the project** — NOT by
+  the §1 pointer's literal path: in the canonical worked example the §1 pointer
+  (`movie-wiki/assets/refs/sprites/duo_canonical_ref_v001.png`, echoed by `comic.json identity_refs`) is a
+  historical private-layout path that does NOT resolve as written; the real file is
+  `assets/duo_canonical_ref_v001.png` and only `movie.project.json.identity_ref` points there. Scoring the
+  literal §1 path would false-veto the very bible this skill says to copy.
 - **`identity_lock_specificity`** — per-character hex + beard + silhouette iron-law is concrete, not adjectives
   (executor 蓝+棕发+无须 / reviewer 绿+黑发+有须; L/R free; color/beard/silhouette immutable).
 - **`text_mode_contract`** — §6 declares the mode vocabulary (`html | baked | code`) AND **every observed
@@ -209,7 +222,9 @@ gate only proves the rubric itself is complete and conflict-free.
 **Hard vetoes — ANY one fails the gate outright (no score can rescue it):**
 1. **No user-approval / version / project lock** — bible lacks a dated user approval, a `art-bible/N.N` version,
    or a project id.
-2. **No duo authority ref** — §1 has no resolvable identity authority image.
+2. **No duo authority ref** — §1 has no resolvable identity authority image (resolution =
+   `movie.project.json.identity_ref` or basename match, per the `authority_ref_resolved` dim above — never the
+   §1 pointer's literal path, which in the worked example is a dead historical path).
 3. **Warm/dark not declared by-design** — §0.5 missing the explicit by-design instruction (the gate would then
    false-flag the intended split forever).
 4. **An observed `text_mode` has NO licensing §6 clause** — some `comic.json` panel (or `defaults.text_mode` /
@@ -219,6 +234,10 @@ gate only proves the rubric itself is complete and conflict-free.
    un-licensed mode — NOT on a mere html-default-vs-baked-majority spread, which §6's multi-clause ledger
    legitimately allows.
 5. **No FORBIDDEN list** — §7 absent (the lint has nothing to enforce; "style drift" becomes unfalsifiable).
+6. **An observed panel `world` has NO `STYLE_PREFIX[<world>]` line** — §0.6 misses a world some `comic.json`
+   panel actually uses. The shipped `build_prompt.py` (`read_style_prefix()`) fail-closes — exit 7 — on every
+   panel of that world, so the bible would strand downstream prompt-building; each prefix line must be ≤200
+   chars with no camera/lens vocab (the builder enforces the length as a hard problem).
 
 ## Node it reads / writes (per `schemas/node_schema.json`)
 - **Reads:** `ART_BIBLE.md` (source of truth) · the pointer-hub manifest **`movie.project.json`** (the
@@ -230,7 +249,7 @@ gate only proves the rubric itself is complete and conflict-free.
   is **`style:`** (per the schema's id pattern). The payload's **required** fields are exactly
   `dimension, value, source, locked`:
   - `dimension` — the locked axis (e.g. `palette:dark_world`, `identity:reviewer`, `line_shading`, `forbidden`,
-    `by_design:warm_cyber`, `text_mode`, `env_density`).
+    `by_design:warm_cyber`, `style_prefix:warm-lab`, `text_mode`, `env_density`).
   - `value` — the concrete spec (hexes / rule text / the by-design instruction / the mode set / the ban list).
   - `source` — the exact `ART_BIBLE.md §N` the value traces to (un-sourced anchor = refuse, never fabricate).
   - `locked` — `true` for baseline anchors (immutable) and exception anchors alike.

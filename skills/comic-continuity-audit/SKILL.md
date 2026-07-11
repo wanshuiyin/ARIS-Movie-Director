@@ -60,7 +60,8 @@ instead of asking a holistic judge to infer intent.
   the salient panels (first + last + the dominant `big-frame` panel), one `analyzeFile` each.
 - **JUDGE** = Claude (this agent), **deterministic predicate evaluator** over the observed JSON vs the table row
   + the global invariants. The judge is logic, not per-pixel taste.
-- **CROSS-MODEL INDEPENDENCE** — the executor that **baked** the panel (Codex `image_gen`) is NOT a judge here;
+- **CROSS-MODEL INDEPENDENCE** — the executor that **baked** the panel (the Codex-family `mcp__codex__codex`
+  sidecar bake) is NOT a judge here;
   it never self-acquits ([`reviewer-independence`](../../protocols/reviewer-independence.md)). Gemini extracts,
   Claude judges; the generator family is excluded from this audit.
 - **GEMINI_FALLBACK** — a frame Gemini fails: retry once; if it still fails, **mark that dimension
@@ -115,11 +116,15 @@ carries exactly the `validate_wiki.py` `PAYLOAD_REQUIRED` fields for its type):
 - **on a contradiction** a **`decision`** node (`node_type: "decision"`, id `decision:continuity_<panel>_<slug>`,
   payload schema-required `target_node_id, verdict, gate_kind` — `gate_kind: "continuity"`, `status: "final"`)
   whose **`verdict` is `retry_panel`** (same-panel mug/tokyo/metric miss) **or `assembly_drift`** (a cross-frame
-  motif break — routed to the page assembly_gate's `drift_panels`, NOT a per-panel rollback) + a
+  motif break — routed to the page assembly_gate's `drift_panels`, NOT a per-panel rollback); plus a
+  **`failure_mode`** node. *(Vocabulary note, by design: `retry_panel`/`assembly_drift` are bake-time **REPAIR
+  REQUESTS** consumed by the engine/`comic-director` — a deliberately SEPARATE vocabulary from the cross-layer
+  `--gate continuity` acquittal verdicts `{approve, revise}`; two different decision nodes with two different
+  jobs, and the node schema does not constrain verdict strings, so both validate.)* That
   **`failure_mode`** node (`node_type: "failure_mode"`, id `fail:continuity_<panel>_<slug>`, payload
-  schema-required **`layer: "continuity"`**, **`affected_shot_ids`**, **`active: true`**, status `active`) whose
-  **`repair_pattern`** is the **POSITIVE INVARIANT** for the next bake — e.g. *"S06 DDL reads exactly `T-18:40`
-  so `18:40 > S07's 18:30` holds the countdown"*, never the ban. **(Dataflow, exact:** the engine sources the
+  schema-required **`layer: "continuity"`**, **`affected_shot_ids`**, **`active: true`**, status `active`)
+  carries a **`repair_pattern`** that is the **POSITIVE INVARIANT** for the next bake — e.g. *"S06 DDL reads
+  exactly `T-18:40` so `18:40 > S07's 18:30` holds the countdown"*, never the ban. **(Dataflow, exact:** the engine sources the
   next bake's invariant from the panel-gate reviewer's in-memory `failure_mode_positive_invariant` →
   `verdict.invariant` → `pending[pid]` → the next `generate_panel`; the persisted
   `failure_mode.payload.repair_pattern` is the audit SINK written FROM that same invariant, NOT read back by the
@@ -368,7 +373,8 @@ one `stamp_family_v1.svg` for all verdict stamps; one `wiki_starmap_nodes_v1.jso
   for cast-blindness (the B03 false-drift lesson), do not keep regenerating.
 - **DO** fail closed: no `content_svg` on the panel, or no `expected_literals` on a baked figure panel → REFUSE
   and route back; never audit a free-baked or un-anchored unit.
-- **DON'T** let the model that **baked** the panel (Codex `image_gen`) judge its own continuity — the generator
+- **DON'T** let the model that **baked** the panel (the Codex-family `mcp__codex__codex` sidecar bake) judge
+  its own continuity — the generator
   family never self-acquits; this audit is Gemini-extract + Claude-judge, and the cross-layer gate adjudicates.
 - **DON'T** default an `indeterminate` (Gemini failed / confidence `< 0.6`) to `satisfied` or `violated` —
   surface the ambiguity; a false negative wastes a re-bake.
@@ -384,8 +390,8 @@ one `stamp_family_v1.svg` for all verdict stamps; one `wiki_starmap_nodes_v1.jso
 
 ## Protocols (governance contracts this skill honors)
 - [`reviewer-independence`](../../protocols/reviewer-independence.md) — Gemini blind-extracts facts from the
-  image only (never shown the expected table row); the executor that baked the panel (Codex `image_gen`) is not
-  a judge of its own continuity.
+  image only (never shown the expected table row); the executor that baked the panel (the Codex-family
+  `mcp__codex__codex` sidecar bake) is not a judge of its own continuity.
 - [`acceptance-gate`](../../protocols/acceptance-gate.md) — the loop can DRIVE but can't ACQUIT: this skill only
   authors the continuity review (the four gate dims); [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md)
   `--gate continuity` (a different model family) fuses + decides, and the gate is **design-aware (absence≠drift)**

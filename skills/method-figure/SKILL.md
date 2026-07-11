@@ -1,6 +1,6 @@
 ---
 name: method-figure
-description: "Generate a publication-grade method / architecture / pipeline / workflow figure (a paper or README 'Figure 1') as an AUDITABLE object, not a one-shot prompt. A deterministic JSON blueprint LOCKS the content; an image model (gpt-image-2, baked by the agent via mcp__codex__codex — Codex GPT-5.5 xhigh, sandbox workspace-write) bakes the aesthetic from a labeled-condition render + the project's real identity refs; a cross-model panel (Gemini + Codex) blind-transcribes the result and a script hard-diffs it against the blueprint; the loop regenerates until Gemini approves, Codex does not veto, and the diff is empty — then the calling agent (Claude) gives the structural sign-off. NOT for statistical plots (use a plotting tool) or photo scenes."
+description: "Generate a publication-grade method / architecture / pipeline / workflow figure (a paper or README 'Figure 1') as an AUDITABLE object, not a one-shot prompt. A deterministic JSON blueprint LOCKS the content; an image model (gpt-image-2, baked by the agent via mcp__codex__codex — Codex GPT-5.5 xhigh, sandbox workspace-write) bakes the aesthetic from a labeled-condition render + the project's real identity refs; a cross-model panel (Gemini + Codex) blind-transcribes the result and a script hard-diffs it against the blueprint; the loop regenerates until Gemini AND Codex approve and the diff is empty — then the calling agent (Claude) gives the structural sign-off. NOT for statistical plots (use a plotting tool) or photo scenes."
 argument-hint: [method_figure_brief.json | blueprint.json]
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, mcp__codex__codex, mcp__codex__codex-reply, mcp__gemini-cli__ask-gemini, mcp__gemini__chat
 ---
@@ -36,7 +36,10 @@ blind-transcribe-then-hard-diff loop turns (a) into a reliable result and catche
 
 ## Constants
 - **GENERATOR** = Codex `gpt-5.5`, `config: {model_reasoning_effort: xhigh, include_image_gen_tool: true}` → the native `image_generation`
-  tool (gpt-image-2). **CRITICAL**: image_gen is produced ONLY via **`mcp__codex__codex`** (the agent tool), NOT
+  tool (gpt-image-2). The `gpt-5.5` pin is a single hardcoded COMPAT DEFAULT in the bake sidecar payload
+  (`run_spiral.py` mirrors `run_comic.py`'s canonical bake plan; a config-driven model override is PLANNED, not
+  yet implemented). It pins the BAKE only — the panel's Codex reviewer is un-pinned (see PANEL below).
+  **CRITICAL**: image_gen is produced ONLY via **`mcp__codex__codex`** (the agent tool), NOT
   `codex exec`. `codex exec` / over-specified / forbid-list prompts make Codex hand-draw a code fallback
   (struct+zlib PNG or SVG/matplotlib) — visually indistinguishable for trivial shapes, useless for a real
   method-figure. The working invocation is **`mcp__codex__codex`** with a **dead-simple** prompt +
@@ -55,9 +58,12 @@ blind-transcribe-then-hard-diff loop turns (a) into a reliable result and catche
   without those markers can slip past it. The **load-bearing faithfulness gate is the cross-model blind-transcribe
   panel + the deterministic `content_diff`** (the pixels are what reviewers transcribe), with this denylist as a
   cheap upstream filter.
-- **PANEL** (automated blind-transcribe) = `mcp__gemini-cli__ask-gemini` (`auto-gemini-3`) + `mcp__codex__codex`
-  (gpt-5.5 xhigh) + the deterministic `content_diff`. **Claude (this agent) is the post-pass STRUCTURAL sign-off,
-  not a blind transcriber** — the loop converges on Gemini-approve + Codex-no-veto + empty-diff, then Claude signs off.
+- **PANEL** (automated blind-transcribe) = the orchestrator SHELLS the `gemini` + `codex` CLIs as subprocesses
+  (both must be on PATH; MCP is ONLY the bake seam): Gemini = `gemini --model auto-gemini-3`; Codex =
+  `codex exec -i <png>` with NO model pin (it follows the local codex config — currently `gpt-5.6-sol`) at
+  effort `xhigh` — so the reviewer model ≠ the bake's pinned `gpt-5.5`. Plus the deterministic `content_diff`.
+  **Claude (this agent) is the post-pass STRUCTURAL sign-off, not a blind transcriber** — the loop converges on
+  Gemini-approve + Codex-approve + empty-diff, then Claude signs off.
 - **CROSS-MODEL ACQUITTAL** — Codex is the generation family, so a Codex `approve` can only *diagnose/veto*,
   never be the sole acquitter. ACCEPT requires **Gemini approve + Claude structural approve + the hard-diff empty**.
 - **MAX_ROUNDS** = 4, then escalate to human with best-so-far + open blockers.
@@ -94,7 +100,8 @@ This skill is **pure render + verify**. Ownership:
 ONE ARIS-format file; the blueprint, the coordinates, and the identity wiring are all derived. The identity
 sheet is resolved from the brief's `identity_refs[].path` (no separate `--identity` to manage). **Where the
 input comes from**, in authority order:
-1. **a `method_figure_brief.json`** — the canonical ARIS hand-off (what `paper-plan` emits); auto-detected + compiled. ·
+1. **a `method_figure_brief.json`** — the canonical ARIS hand-off (what `paper-plan` emits); auto-detected (by
+   its `schema_version: "method-figure/brief/v1"`) + compiled. ·
 2. an existing hand-tuned `blueprint.json` — power-user override (`--from-blueprint`, used as-is). ·
 3. an `experiment-plan` / `paper-write` method section / free-text — no brief yet: the agent first DRAFTS a
    `method_figure_brief.json` from it (claims/numbers verbatim; anything missing → Refuse-and-Escalate), then compiles.
@@ -106,17 +113,20 @@ compiler (an un-traceable object is a Refuse-and-Escalate, not a render). The id
 upstream and locked; method-figure only reads it.
 
 ## Fast path — one command (single input: a brief)
-Feed ONE `method_figure_brief.json`; the whole loop is one command:
+Feed ONE `method_figure_brief.json`; the whole loop is one command (all commands below run from the **repo
+root**; the panel shells the `gemini` + `codex` CLIs, so both must be on PATH):
 ```bash
-python3 scripts/run_spiral.py your_method_figure_brief.json --out-dir figures/method_figure/<id>
+python3 skills/method-figure/scripts/run_spiral.py your_method_figure_brief.json --out-dir figures/method_figure/<id>
 #  auto-detects a brief → Step-0 compile_brief.py → blueprint.json + traceability.json (deterministic, fail-closed)
 #  → validates → renders condition(+png) → [bake (agent: mcp__codex__codex --bake-mode=agent, workspace-write,
 #  gpt-5.5 config{xhigh} → gpt-image-2 native PNG via the .bakereq.json sidecar) → pickup_image.py --out-existing
 #  verify (fail-closed, HARD-VETO over the status file's mcp_output) → Gemini + Codex blind-transcribe → content_diff → blockers] × rounds
 #  → on PANEL-CLEAN writes figure.png + blueprint.json + traceability.json + trace.jsonl.
-#  input auto-detect: brief (components+flows) vs blueprint (version) vs ambiguous → fail-closed (--from-brief/--from-blueprint)
+#  input auto-detect: a brief is detected ONLY by schema_version "method-figure/brief/v1" vs a blueprint (version);
+#  a bare components+flows JSON with NO schema_version is REFUSED — it REQUIRES --from-brief (fail-closed, no guessing)
 #  --identity is OPTIONAL (resolved from the brief's identity_refs[0].path);  --dry-run prints the round-1 bake
-#  prompt;  --p0-only runs the zero-credit gate (validate+compile+render) then stops;  --max-rounds N;  --effort high|xhigh.
+#  prompt;  --p0-only runs the zero-credit gate (validate+compile+render+prompt-lint) then stops;  --max-rounds N.
+#  There is NO --effort knob (the flag is removed) — bake + review effort are hardcoded xhigh by design.
 ```
 > **Power-user / override:** already have a hand-tuned blueprint? `run_spiral.py blueprint.json --identity
 > sheet.png --out-dir … --from-blueprint` runs the legacy path unchanged. A worked example brief lives at
@@ -131,8 +141,8 @@ deterministic `content_diff` empty, core scores (incl. `character_identity` when
 ## Who runs `--bake-mode=agent` (the agent-wrapper SOP) — REQUIRED for the default mode to function
 The bake is a **synchronous sidecar handshake** and the **skill agent** is its fulfiller (without it, every bake
 polls to `--bake-timeout` and escalates with `failure_kind="other"` — fail-closed, not a hang, never a false throttle):
-1. Launch the orchestrator in the **BACKGROUND**:
-   `python3 scripts/run_spiral.py your_brief.json --out-dir figures/method_figure/<id> --bake-mode agent`.
+1. Launch the orchestrator in the **BACKGROUND** (from the repo root):
+   `python3 skills/method-figure/scripts/run_spiral.py your_brief.json --out-dir figures/method_figure/<id> --bake-mode agent`.
 2. **Loop** until it prints PANEL-CLEAN / escalates / exits:
    - watch `<out-dir>/` for a new `*.bakereq.json` (the orchestrator writes `round<N>.png.bakereq.json`);
    - read it; call `mcp__codex__codex` with **exactly** its
@@ -161,12 +171,12 @@ Write `blueprint.json` per `schemas/blueprint.schema.json`. The `*_exact` fields
 group/edge/callout `*_exact`, `rail.label_exact`) are the **LOCKED text re-asserted verbatim every round**;
 `expected_tokens[]` are what the panel must blind-transcribe and the diff checks. Then:
 ```bash
-python3 scripts/validate_blueprint.py blueprint.json   # jsonschema (if installed) + unique ids · edges resolve · box/group/callout bounds · no dup labels
+python3 skills/method-figure/scripts/validate_blueprint.py blueprint.json   # jsonschema (if installed) + unique ids · edges resolve · box/group/callout bounds · no dup labels
 ```
 
 ### ② Render the CONDITION
 ```bash
-python3 scripts/render_condition.py blueprint.json --out condition.svg --png condition.png   # white-bg labeled layout → rasterized
+python3 skills/method-figure/scripts/render_condition.py blueprint.json --out condition.svg --png condition.png   # white-bg labeled layout → rasterized
 ```
 Prepare `identity_sheet.png` from the project's REAL characters if the figure has any (never invent robots).
 The condition PNG + the identity sheet are the two image references.
@@ -181,25 +191,26 @@ prompt** (the schema has no `-i`) and the **exact out_path** to save the native 
 `request_id` copied VERBATIM from `round<N>.png.bakereq.json`** (pickup `--request-id` fail-closes if it's
 missing/mismatched), then verify the explicit out_path (no marker/glob):
 ```bash
-python3 scripts/pickup_image.py --out-existing --out figures/method_figure/<id>/round<N>.png --min-bytes 500000 --aspect <W/H> --created-at <epoch> --request-id <uuid4 hex from round<N>.png.bakereq.json> --transcript figures/method_figure/<id>/round<N>.png.bakestatus.json
+python3 skills/method-figure/scripts/pickup_image.py --out-existing --out figures/method_figure/<id>/round<N>.png --min-bytes 500000 --aspect <W/H> --created-at <epoch> --request-id <uuid4 hex from round<N>.png.bakereq.json> --transcript figures/method_figure/<id>/round<N>.png.bakestatus.json
 ```
 
 ### ④ PANEL — blind transcribe, then hard diff
-Ask each reviewer (`references/prompt_templates.md §B`) for the STRICT JSON of
-`references/reviewer_protocol.md` — they transcribe `observed_tokens` / `observed_edges` / `identity_audit`
-and an `anomalies` list (the **Negative-Space Audit**), NOT shown the expected labels. Save as
-`round<N>.{cc,gemini,codex}.json`, then:
+Ask each of the TWO blind transcribers — Gemini + Codex (`references/prompt_templates.md §B`) — for the STRICT
+JSON of `references/reviewer_protocol.md`: they transcribe `observed_tokens` / `observed_edges` /
+`identity_audit` and an `anomalies` list (the **Negative-Space Audit**), NOT shown the expected labels.
+**Claude is NOT a transcriber** — it never produces a blind `round<N>.cc.json`; its structural sign-off comes
+post-pass in ⑤/⑥. Save as `round<N>.{gemini,codex}.json`, then:
 ```bash
-python3 scripts/content_diff.py blueprint.json round<N>.cc.json round<N>.gemini.json round<N>.codex.json
+python3 skills/method-figure/scripts/content_diff.py blueprint.json round<N>.gemini.json round<N>.codex.json
 # → missing_tokens / unaccounted_tokens / anomalies ; empty == content-accurate
 ```
 
 ### ⑤ Decide (stop rule) — the agent consolidates
-Read the diff report + the three reviewers' `blockers`. The executing agent itself merges **blockers only**
+Read the diff report + the two transcribers' `blockers`. The executing agent itself merges **blockers only**
 (ignore `nice_to_have` — chasing polish makes it oscillate), carries the union of `positive_invariants`
 forward, and writes the round-N+1 bake prompt.
-- **ACCEPT** iff: diff has no `missing_tokens`/`anomalies` · Gemini `approve` · Claude structural `approve` ·
-  every core score ≥ `acceptance.min_core_score` (default 4). (Codex may veto but can't be the sole acquitter.)
+- **ACCEPT** iff: diff has no `missing_tokens`/`anomalies` · Gemini `approve` · Codex `approve` (required, but
+  never the sole acquitter) · Claude structural `approve` · every core score ≥ `acceptance.min_core_score` (default 4).
 - **RETRY** iff: blockers are prompt/condition-fixable and `round < MAX_ROUNDS` → back to ③.
 - **ESCALATE** to human iff: same root failure 2 rounds · irreconcilable reviewers · MAX_ROUNDS hit · or a
   non-prompt-fixable failure (throttle / identity drift / no native image).
@@ -260,5 +271,7 @@ critiques, paths redacted) — the canonical exhibit of *how detailed a conditio
 - [`reviewer-independence`](../../protocols/reviewer-independence.md) — reviewers blind-transcribe from the image only; the generator (Codex image_gen) ≠ the visual judges.
 - [`acceptance-gate`](../../protocols/acceptance-gate.md) — the loop drives, can't acquit: ACCEPT needs the deterministic content-diff clean + Gemini approve + Codex no-veto + Claude structural sign-off.
 - [`artifact-integrity`](../../protocols/artifact-integrity.md) — the baker doesn't judge its own figure's numbers; the blueprint is ground truth, verified by the blind diff.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`; never downgrade.
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — bake sidecar pins Codex `gpt-5.5` + `xhigh` (a
+  hardcoded compat default; config-driven override is planned); the CLI reviewers pin NO model (they follow the
+  local codex config — currently `gpt-5.6-sol`) at `xhigh`; Gemini `auto-gemini-3`; never downgrade effort.
 - [`review-tracing`](../../protocols/review-tracing.md) — every round's reviewer verdicts are logged to `trace.jsonl`.

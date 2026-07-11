@@ -90,10 +90,12 @@ Project the locked nodes into the IR. Copy `examples/comic_m3_audit/comic.json` 
 1. **Top level** — `schema_version: "comic-ir/1.0"`, `comic_id`, `defaults` (`text_mode`, `default_locale`,
    `panels_per_page_cap`, `nav_default`, `pixel_rendering`), `identity_refs` (the locked cast hex table from
    the style bible — pure pointer/hex hub, never duplicated art), `ui_tokens` (viewer theming, palette pinned).
-2. **`pages[]` — reading order, ONE entry per `storyboard_spec.page_order` page, in that exact order.** Each:
-   `id` (the stable storyboard page id, e.g. `P00_cover`/`P02_b08`/`P03_end`), `type`
+2. **`pages[]` — reading order, ONE entry per `storyboard_spec.page_order` page, in that exact order —
+   EXCEPT a declared endcard page** (the ENDCARD FOLD, below: an endcard/finale storyboard page compiles into
+   the PRIOR page's `closing{}`, never its own `pages[]` entry). Each entry: `id` (the stable FINAL page id,
+   e.g. `P00_cover`/`P_B03`/`P02_b08` — see the PAGE-ID rule below), `type`
    (`cover|single|grid|grid2x2|feature|finale`), `panel_ids` (the panel ids that page shows), plus optional
-   `beat`/`beat_title`/`narration`/`skill`/`title`/`links` (cover/endcard buttons — `https://` only).
+   `beat`/`beat_title`/`narration`/`skill`/`title`/`links` (cover/closing buttons — `https://` only).
 3. **`panels{}` — ONE keyed entry per panel id** that appears in any page. Per panel project:
    - **`condition{}`** (what to GENERATE): `content_svg` (the locked blueprint's deterministic SVG = the
      content authority), `expected_literals` (verbatim from the blueprint), `world`, `identity_ref`
@@ -106,6 +108,23 @@ Project the locked nodes into the IR. Copy `examples/comic_m3_audit/comic.json` 
 4. **Emit `movie.project.json`** — the pure pointer-hub manifest (`project_id`, `title{zh,en}`, `story`,
    `schema_version`, `comic_json`, `art_bible`, `identity_ref`, `dirs`, `text_mode_default`, `palette`). It
    **names** the other artifacts; it NEVER duplicates their content.
+
+**Two storyboard→IR projections step ② MUST know (or the reference itself looks broken):**
+- **THE ENDCARD FOLD.** A storyboard page of type `endcard` (the finale card) does **NOT** compile to its own
+  `pages[]` entry: its single panel becomes the **PRIOR page's `closing.image`** (with the logo/tag/links in
+  the same `closing{}` block). Reference: the storyboard declares **19 pages** ending in a standalone
+  `P03_end[S22·endcard]`; the compiled IR ships **18** `pages[]` with `P_B12` (type `finale`, panels S20+S21)
+  carrying `closing.image: "S22"`. The 19-vs-18 difference IS the fold — by design, not a lost page. NOTE the
+  schema does not model `closing{}` at all (it validates via `additionalProperties`), so asserting "the fold
+  actually happened" is step ②'s inline job, nobody else's.
+- **THE PAGE-ID RULE.** The compiled IR's canonical page ids are **beat-keyed** (`P_B<beat>`: `P_B03…P_B07`,
+  `P_B08_0…P_B12`), while the human `STORYBOARD_DRAFT.md`'s first-third draft ids are **ordinal-prefixed**
+  (`P02_b03`/`P03_b04`/…). The stable key is the beat token (`b03` ↔ `B03`, case-insensitive); the
+  already-canonical anchors (`P00_cover`, `P01_b02`, `P02_b08`) keep their ids. The LOCKED
+  `storyboard_spec.page_order` — the reconcile authority — must be authored in the **FINAL IR vocabulary**;
+  the compiler never renames silently. **Never build a `page_order` for the reconcile from the `.md` draft's
+  ordinal ids** — that draft is a human artifact, not the locked node, and an element-wise compare against it
+  false-blocks the shipped reference.
 
 ### ② RECONCILE page-count integrity (the heart of this skill — INLINE python, NO external script)
 **There is no `reconcile_pages.py` — it never existed.** This catch is run *inline* (the schema and the
@@ -126,9 +145,18 @@ dangling  = sorted(ref_set  - defined)            # a page/closing points at a m
 # over-count that a count comparison silently passes.
 comic_order = [p["id"] for p in c["pages"]]
 sb_order    = list(sb["page_order"])
-order_mismatch = comic_order != sb_order               # STRICT: any reorder / missing / extra / dup → BLOCKER
-order_missing  = [pid for pid in sb_order if pid not in comic_order]    # storyboard page absent from comic.json
-order_extra    = [pid for pid in comic_order if pid not in sb_order]    # comic.json page not in storyboard
+# ENDCARD FOLD — a declared endcard page has NO pages[] entry (its panel compiles into the PRIOR page's
+# closing.image: storyboard P03_end[S22·endcard] → P_B12.closing.image; 19 declared → 18 pages[]). EXCLUDE the
+# declared endcard pages from the element-wise compare, then assert the fold HAPPENED (a declared endcard panel
+# on no page's closing.image = the finale silently vanished → BLOCKER). Read the declaration off the storyboard
+# (its global_policies endcard map {endcard_page_id: panel_id}) — declared, never inferred.
+gp0 = sb.get("global_policies", {})
+endcard_map = dict(gp0.get("endcard_folds") or {})     # e.g. {"P03_end": "S22"}; {} when the comic has no endcard
+sb_order_cmp = [pid for pid in sb_order if pid not in endcard_map]
+endcard_unfolded = sorted(pn for pn in endcard_map.values() if pn not in set(closing_refs))  # fold missing → BLOCKER
+order_mismatch = comic_order != sb_order_cmp           # STRICT: any reorder / missing / extra / dup → BLOCKER
+order_missing  = [pid for pid in sb_order_cmp if pid not in comic_order]  # storyboard page absent from comic.json
+order_extra    = [pid for pid in comic_order if pid not in sb_order_cmp]  # comic.json page not in storyboard
 page_id_dups   = sorted({pid for pid in comic_order if comic_order.count(pid) > 1})  # duplicate page id (over-count)
 bad_grid  = [p["id"] for p in c["pages"] if p["type"] == "grid2x2" and len(p["panel_ids"]) != 4]  # arity → BLOCKER
 empty_pg  = [p["id"] for p in c["pages"] if not p["panel_ids"]]    # empty page → BLOCKER
@@ -158,12 +186,13 @@ gp = sb.get("global_policies", {})
 sanctioned = set(gp.get("recap_panel_ids") or gp.get("sanctioned_recap") or [])   # storyboard-declared recap/grid set
 dups = sorted({pid for pid in page_refs if page_refs.count(pid) > 1} - sanctioned)  # UNDECLARED panel dup → BLOCKER
 blockers = {"orphans": orphans, "dangling": dangling, "order_mismatch": order_mismatch, "order_missing": order_missing,
-            "order_extra": order_extra, "page_id_dups": page_id_dups, "bad_grid2x2": bad_grid, "empty_pages": empty_pg,
+            "order_extra": order_extra, "page_id_dups": page_id_dups, "endcard_unfolded": endcard_unfolded,
+            "bad_grid2x2": bad_grid, "empty_pages": empty_pg,
             "undeclared_dups": dups, "content_svg_null": no_csvg, "baked_literals_invalid": baked_lits_fail,
             "engine_fields_authored": engine_authored,
             "bubble_anchor_unresolved": bad_anchor}
 if any(blockers.values()):
-    sys.exit(f"RECONCILE BLOCKERS: {blockers}  (pages {len(comic_order)} vs storyboard {len(sb_order)})")
+    sys.exit(f"RECONCILE BLOCKERS: {blockers}  (pages {len(comic_order)} vs storyboard {len(sb_order_cmp)} after endcard fold)")
 print("reconcile OK")
 ```
 - **The orphan check counts `closing.image`.** In the reference `comic.json`, `S22` (the wordless constellation
@@ -172,7 +201,9 @@ print("reconcile OK")
   panel in `panels{}` referenced by neither a page's `panel_ids` NOR any `closing.image`; that is a real BLOCKER
   the compiler must catch, not ship — page it, or (if genuinely cut) make an upstream *storyboard* edit + re-lock,
   never a quiet drop. When a locked `storyboard_spec` node is present, its `page_order` is the element-wise page
-  authority (reorder / missing / extra / duplicate page id all block).
+  authority (reorder / missing / extra / duplicate page id all block) — **after excluding its declared endcard
+  pages**, which by contract have no `pages[]` entry (the fold itself is asserted separately via
+  `endcard_unfolded`).
 - **Recap reuse is the ONE legitimate multi-reference** and must be *declared*, not inferred. In the
   reference comic, `S12,S13,S14,S15` are each referenced **twice** — once as individual `single` pages
   (`P_B08_1..4`) and once in the `grid2x2` recap/hero page (`P02_b08`). That is by-design (the storyboard's
@@ -250,8 +281,10 @@ Structural predicates (each PASS/FAIL):
 - **`panel_refs_resolve`** **[inline step ②]** — every `pages[].panel_ids` entry exists as a key in `panels{}`
   (no DANGLING ref).
 - **`page_count_authority_match`** **[inline step ②]** — the `pages[]` count + ids reconcile with the locked
-  `storyboard_spec.page_order` (no short-count, no over-count, no re-ordering). **This is the orphan-panel
-  reconciliation predicate** (neither gate script sees it — it MUST run inline).
+  `storyboard_spec.page_order` **after excluding the storyboard's declared endcard pages** (an endcard folds
+  into the prior page's `closing{}`, never its own entry; the fold is asserted via `endcard_unfolded`). No
+  short-count, no over-count, no re-ordering. **This is the orphan-panel reconciliation predicate** (neither
+  gate script sees it — it MUST run inline).
 - **`no_orphan_panels`** **[inline step ②]** — every panel defined in `panels{}` is referenced by at least one
   page; any defined-but-unreferenced panel is surfaced (a sanctioned recap reuse counts as a reference).
 - **`grid2x2_arity`** **[inline step ②]** — every `grid2x2` page carries **exactly 4** panel ids; no empty page.
@@ -282,7 +315,9 @@ Contract predicates (each PASS/FAIL — and note the schema does NOT enforce the
    `closing.image` endcard (the **orphan-panel class**; a finale endcard via `closing.image` is a legitimate
    use, NOT an orphan — see S22). Authority = the storyboard's page order — conform, do not ship the short count.
 2. **A dangling page ref** — a `pages[].panel_ids` entry with no `panels{}` key.
-3. **Page count disagrees with the storyboard authority** (short, over, or re-ordered vs `page_order`).
+3. **Page count disagrees with the storyboard authority** (short, over, or re-ordered vs `page_order`,
+   measured AFTER excluding declared endcard folds) — **or a declared endcard panel appears on no page's
+   `closing.image`** (the fold never happened: the vanished-finale case).
 4. **A `grid2x2` page without exactly 4 panel ids**, or any empty page.
 5. **A panel with `condition.content_svg: null`** (or missing) — the engine fail-closed rejects it (asserted
    inline at step ④; jsonschema will NOT catch it).
@@ -366,7 +401,13 @@ The canonical exhibit is **[`examples/comic_m3_audit/comic.json`](../../examples
 Copy its exact shape — and copy how it *fails* the integrity check, because that is the teaching case:
 
 - **The closing-aware orphan check — the reference IS the PASSING fixture.** That file ships **18 pages /
-  24 panels** (verified). `S22` (the wordless finale constellation) is **NOT** an orphan: it is wired as the
+  24 panels** (verified) — while its `STORYBOARD_DRAFT.md` declares **19 pages** (TOTALS: "24 panels · 19
+  pages") ending in a standalone `P03_end[S22·endcard]`. Both are right: the endcard FOLDS (`P03_end` →
+  `P_B12.closing`), so 19 declared − 1 fold = 18 `pages[]`. The draft's first-third ordinal ids
+  (`P02_b03…P06_b07`) also appear in the IR as beat-keyed `P_B03…P_B07` (the PAGE-ID rule) — two projections a
+  naive element-wise diff against the *draft* would false-flag; the reconcile compares against the LOCKED
+  `storyboard_spec.page_order` (final IR vocabulary) minus its declared endcard pages, never the `.md` draft.
+  `S22` (the wordless finale constellation) is **NOT** an orphan: it is wired as the
   finale endcard via **`P_B12.closing.image == "S22"`**, so the step-② reconcile (which counts `closing.image`
   as a use) reports `orphans = []` and prints **`reconcile OK`** on this file. A `panel_ids`-ONLY check would
   FALSE-flag it — exactly the weaker-than-the-floor bug step-② fixes. To watch the orphan blocker FIRE, use a
@@ -383,7 +424,10 @@ Copy its exact shape — and copy how it *fails* the integrity check, because th
   # delete P_B12.closing.image and re-run → ORPHANS == ['S22'] → the reconcile BLOCKS (the negative fixture)
   ```
   (The reference exhibit is a *completed runtime* trace with no Phase-1 `storyboard_*.json` node; in a real
-  compile run that node exists and the reconcile compares `pages[]` element-wise to its `page_order`.)
+  compile run that node exists and the reconcile compares `pages[]` element-wise to its `page_order` — final
+  IR page ids, endcard pages excluded per the declared `endcard_folds`. Do NOT reconstruct a `page_order` from
+  `STORYBOARD_DRAFT.md` to "test" the reconcile on the reference: its 19 draft pages + ordinal ids would fire
+  `order_missing`/`order_extra` on a correct IR.)
 - **The legitimate recap reuse to PASS.** In the same file `S12,S13,S14,S15` are each referenced **twice** —
   the individual `single` pages `P_B08_1..4` *and* the `grid2x2` recap/hero page `P02_b08`. That is the
   storyboard's declared recap (a `mirror_lock`), so those duplicate references are **NOT** veto #8 — the inline

@@ -27,28 +27,49 @@ own detailed skill.
 > user must approve each before the next layer starts (the story-first rule; the gate is
 > [`acceptance-gate`](../../protocols/acceptance-gate.md)). Everything downstream is agent-driven + cross-model gated.
 
-## The pipeline (run in order; each step = a detailed skill + its gate)
+## The pipeline (run in order) — the N1 two-stage DAG (each step = a detailed skill + its gate)
 Dependencies are the node_schema `source_*` fields, not invented — each step consumes the prior locked node.
+The two-stage shape is the deadlock fix: the outline gate demands every referenced `asset_id` be **DECLARED
+with a complete, generatable request** (never `locked` — assets don't exist yet on a fresh project); the
+storyboard runs a **provisional structural pass** first; the ONE hard locked-asset barrier sits before
+blueprint authoring (step 7), reached via two cheap gate re-passes (6a/6b).
 
-| # | Step → skill | Produces (locked node) | Gate (via [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md)) |
+| # | Step → skill | Produces | Gate (via [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md)) |
 |---|---|---|---|
 | 1 | [`comic-intent-parser`](../comic-intent-parser/SKILL.md) | `intent_spec` | **USER approves** → `--gate intent` |
 | 2 | [`comic-style-bible-lock`](../comic-style-bible-lock/SKILL.md) | `style_anchor`×N + `ART_BIBLE.md` | style lock (design-aware) |
-| 3 | [`comic-outline-creator`](../comic-outline-creator/SKILL.md) | `outline_spec` (3-lens → synth) | **USER approves** → `--gate outline` |
-| 4 | [`comic-storyboard-creator`](../comic-storyboard-creator/SKILL.md) | `storyboard_spec` + `panel_spec`×N + `motif_ledger` + consolidated `asset_requests` | `--gate storyboard` |
+| 3 | [`comic-outline-creator`](../comic-outline-creator/SKILL.md) | `outline_spec` (3-lens → synth) | **OUTLINE_DRAFT_VALID** (`--gate outline`: narrative+continuity+safety; asset_ids DECLARED, **not** locked) → **USER approves** → locked |
+| 4 | [`comic-storyboard-creator`](../comic-storyboard-creator/SKILL.md) | PROVISIONAL `storyboard_spec` + `panel_spec`×N + `motif_ledger` + consolidated `asset_requests` | `--gate storyboard` **structural pass** (may reference draft assets) |
 | 5 | [`comic-asset-ref-generator`](../comic-asset-ref-generator/SKILL.md) | `asset`×N (single-source, from the requests) | — |
-| 6 | [`comic-asset-review-loop`](../comic-asset-review-loop/SKILL.md) | each `asset` → `status: locked` (准×3) | `--gate asset` · **ASSET-LOCK BARRIER ↓** |
-| 7 | [`comic-blueprint-author`](../comic-blueprint-author/SKILL.md) | `blueprint`×N (content-SVG, no baked bubbles) | `--gate blueprint` |
+| 6 | [`comic-asset-review-loop`](../comic-asset-review-loop/SKILL.md) | each `asset` → `status: locked` (准×3) | `--gate asset` · **assets LOCKED** |
+| 6a | **OUTLINE_FINAL_LOCK** (gate re-pass, no new skill) | outline re-check `decision` node | cheap re-check: the locked assets still match the approved outline (`identity/scene_lock_feasibility` scored HERE) |
+| 6b | storyboard **FINAL validation** (gate re-pass) | `storyboard_spec` → `locked` | re-run `--gate storyboard`: `panel_assets_referenceable` (resolves AND locked) now satisfiable · **ASSET-LOCK BARRIER ↓** |
+| 7 | [`comic-blueprint-author`](../comic-blueprint-author/SKILL.md) | `blueprint`×N (content-SVG, no baked bubbles) | `--gate blueprint` (the locked-asset HARD barrier lives here) |
 | 8 | [`comic-panel-prompt-builder`](../comic-panel-prompt-builder/SKILL.md) | `prompt_bundle`×N (搬运工原則) | build asserts: literal / zero-text / ref-count |
 | 9 | [`comic-json-compiler`](../comic-json-compiler/SKILL.md) | `comic.json` (authored fields only) | `--gate compile` (`run_comic --dry-run` + `validate_wiki`) |
+
+Entry/exit contract per step (what each consumes → hands off):
+
+| # | Entry | Exit |
+|---|---|---|
+| 1 | the user's fuzzy idea | locked `intent_spec` |
+| 2 | `intent_spec` | locked `ART_BIBLE.md` + `style_anchor`×N |
+| 3 | `intent_spec` (+ its skeleton) | locked, user-approved `outline_spec` (motif arcs + declared asset_ids) |
+| 4 | locked `outline_spec` | provisional `storyboard_spec` / `panel_spec`×N / `motif_ledger` + consolidated `asset_requests` |
+| 5 | consolidated `asset_requests` + `ART_BIBLE.md` | draft `asset`×N (files + nodes) |
+| 6 | draft `asset`×N | locked `asset`×N |
+| 6a/6b | approved outline + provisional storyboard + locked assets | outline re-check `decision` node → locked `storyboard_spec` |
+| 7 | `panel_spec.content_blueprint` + locked assets | locked `blueprint`×N |
+| 8 | blueprints + panel_specs + `ART_BIBLE.md` | `prompt_bundle`×N |
+| 9 | every locked layer | `comic.json` + compile `decision` node |
 
 Two services woven across the pipeline (not sequential steps):
 - [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md) — the ONE score-fuser every `--gate <kind>`
   above calls. **Never invoked cold:** each step first fans out its cross-model reviewers (writes `review:*`
   nodes + `reviews` edges), THEN calls the gate to fuse + flip `status` (`locked` on advance, `rejected` on a
-  terminal fail; `revise`/`regenerate`/`fallback` are verdicts, never statuses). Reviewer routing: Codex
-  `gpt-5.5 xhigh` ‖ (Gemini `auto-gemini-3` when available) — a different model family from this Claude author,
-  paths only.
+  terminal fail; `revise`/`regenerate`/`fallback` are verdicts, never statuses). Reviewer routing: the Codex CLI at
+  `xhigh` (it pins NO model — it follows the local codex config, currently `gpt-5.6-sol`) ‖ (Gemini
+  `auto-gemini-3` when available) — a different model family from this Claude author, paths only.
 - [`comic-continuity-audit`](../comic-continuity-audit/SKILL.md) — authors the `motif_ledger` invariants in
   step 4 and runs as `--gate continuity` against that ledger (and at bake time inside the engine): DDL
   monotonic-down, bounce-single-max, metric-columns-disjoint, design-aware (`absence ≠ drift`).
@@ -56,26 +77,34 @@ Two services woven across the pipeline (not sequential steps):
 ## The barriers (fail-closed — do not cross early)
 1. **Story approval** — do NOT author the outline before the user approves the intent; do NOT author the
    storyboard before the user approves the outline.
-2. **ASSET-LOCK BARRIER (after step 6)** — **every** `asset` a panel references must be `status: locked`
-   before blueprint authoring (step 7) starts. A blueprint/panel referencing a draft asset is a hard veto. (This
-   is why the single-source asset library + 准×3 finish before any per-panel blueprint.) **Ordering note for the
-   storyboard gate:** step 4 produces the `storyboard_spec` + the consolidated `asset_requests`, but
-   `--gate storyboard`'s `panel_assets_referenceable` dim (assets resolve AND are `locked`) is only satisfiable
-   AFTER this barrier — so run the storyboard's STRUCTURAL pass at step 4, then its asset-resolution pass + the
-   final `locked` flip once steps 5–6 have locked every requested asset (re-run `--gate storyboard` then).
-3. **ZERO-CREDIT P0 GATE (after step 9, before ANY bake)** — run
-   `comic-cross-layer-gate <comic_id> --gate p0_proof`: a text-only cross-model adversarial review of the
-   compiled `comic.json` + the pipeline machinery. It must clear `blockers.length == 0` BEFORE a single metered
-   `codex image_gen` credit is spent in Phase 2/3.
+2. **ASSET-LOCK BARRIER (before step 7, blueprint authoring)** — **every** `asset` a panel references must be
+   `status: locked` before any blueprint is authored; a blueprint/panel referencing a draft asset is a hard
+   veto. This is the ONE place the locked-asset demand lands (why the single-source asset library + 准×3
+   finish before any per-panel blueprint). Steps 6a/6b are its approach ramp: OUTLINE_FINAL_LOCK re-checks the
+   approved outline against the now-locked assets, then the FINAL `--gate storyboard` re-run satisfies
+   `panel_assets_referenceable` and flips the storyboard `locked`.
+3. **ZERO-CREDIT P0 SPENDING GATE (after step 9, before ANY bake)** — the `--gate p0_proof` procedure: the
+   agent fans out ≥2 cross-model reviewers over the compiled `comic.json` + the pipeline machinery, each
+   writing a review JSON (`{family, verdict, blockers[], comic_sha}`); the deterministic MINTER
+   [`comic-cross-layer-gate/scripts/run_p0_proof.py`](../comic-cross-layer-gate/scripts/run_p0_proof.py) then
+   verifies FAIL-CLOSED that BOTH non-author families `{openai, google}` PASS with `blockers == []` on the SAME
+   `comic.json` digest (parseable ≠ quorum; a missing/unparseable/timed-out review never counts) and atomically
+   mints `decision:p0_proof_*` (verdict `advance`, digest-bound `comic_sha` + `bake_plan_sha`). `run_comic.py`'s
+   `_p0_clean` REJECTS a cert with missing/stale digests — a post-mint `comic.json` edit fail-closes the bake.
 
 ## Hand-off to Phase 2/3
-When `comic.json` validates, `--gate compile` passes, and `--gate p0_proof` is clean, Phase 1 is done. Then
-[`comic-director`](../comic-director/SKILL.md) bakes + verifies:
+When `comic.json` validates, `--gate compile` passes, and the digest-bound `decision:p0_proof_*` cert is
+minted, Phase 1 is done. Then [`comic-director`](../comic-director/SKILL.md) bakes + verifies:
 ```bash
 python3 skills/comic-director/scripts/run_comic.py --project examples/<name> --page <P> --panels S01,S02 --dry-run
 ```
-`--dry-run` first (it prints concrete bake prompts + literals, no image_gen — also how this skill confirms
-Phase 1 is correct); then drop `--dry-run` to bake the audited spiral. After ship, optionally
+`--dry-run` first (it prints concrete bake prompts + literals, spends nothing — also how this skill confirms
+Phase 1 is correct). The REAL bake is **not** "just drop `--dry-run`": it runs `--bake-mode=agent` (the
+default) and needs a running agent wrapper servicing the `mcp__codex__codex` sidecar (`.bakereq`/`.bakestatus`
++ pickup) — see comic-director's "Who runs `--bake-mode=agent`"; the exec path RAISES (retired). Honest model
+split: the BAKE pins `gpt-5.5` + `xhigh` as the single compat default in `run_comic.get_bake_plan()` (the p0
+cert digests it; a config-driven override is PLANNED, not yet implemented); the Codex CLI *reviewers* pin NO
+model (local codex config, currently `gpt-5.6-sol`) at `xhigh`. After ship, optionally
 [`comic-blind-comparison-review`](../comic-blind-comparison-review/SKILL.md) runs a double-blind A/B vs a naive
 one-shot baseline to prove the pipeline earned its cost.
 
@@ -107,8 +136,8 @@ self-contained and does not depend on it at runtime.
   own layer's correctness; the cross-layer gate (a different family) does.
 - [`reviewer-independence`](../../protocols/reviewer-independence.md) — every gate's reviewer gets file paths +
   an `=== EXTERNAL CONTEXT (advisory) ===` fence, never the author's interpretation.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`
-  when available; never downgrade the tier.
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex reviewers at `xhigh`, NO model pin (local
+  codex config, currently `gpt-5.6-sol`); Gemini `auto-gemini-3` when available; never downgrade the effort tier.
 - [`review-tracing`](../../protocols/review-tracing.md) · [`output-versioning`](../../protocols/output-versioning.md)
   · [`resumable-runs`](../../protocols/resumable-runs.md) · [`external-cadence`](../../protocols/external-cadence.md)
   — trace every gate; version asset refs (`_v{NNN}` + `supersedes`); the orchestrator is resumable + its

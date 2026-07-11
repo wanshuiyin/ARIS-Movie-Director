@@ -2,9 +2,16 @@
 
 ## Default (NEVER changes without explicit user request)
 
-All review calls use **Codex MCP** (`mcp__codex__codex`, default model `gpt-5.5`) with `reasoning_effort: xhigh`.
+**Reviewers pin NO model.** The pipeline's review/gate calls shell the **`codex` CLI** at
+`model_reasoning_effort: xhigh` — they follow the **local codex config** (currently `gpt-5.6-sol`); Gemini
+reviewers run `auto-gemini-3`.
 
-This is the default for ALL skills. No parameter, no config, no effort level changes this.
+**The one place a model IS pinned is the metered BAKE, not a reviewer:** `gpt-5.5` + `xhigh` as the single
+compat default in `run_comic.get_bake_plan()` (contract `bakereq/v1`; a config-driven override is planned,
+not yet implemented — changing any knob invalidates prior P0 certs via `bake_plan_sha`).
+
+`xhigh` is a **capability floor** for ALL skills: no parameter, no config, no effort level downgrades it
+(effort widens fan-out; it never weakens the judge).
 
 ## Optional: GPT-5.5 Pro via Oracle
 

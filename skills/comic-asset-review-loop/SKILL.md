@@ -20,6 +20,14 @@ round — or it sends the asset back to be regenerated, or (at the round ceiling
 *requirement* itself back to the outline/storyboard layer. The executor (and the generation model family)
 **never** acquit their own ref.
 
+**Pipeline position (the Phase-1 asset DAG — the documented contract):** this lock runs AFTER the
+human-approved outline (OUTLINE_DRAFT_VALID only requires every referenced asset to be DECLARED with a
+complete, generatable request — never pre-locked assets) and the **provisional** storyboard's
+`consolidated_asset_requests`, and BEFORE OUTLINE_FINAL_LOCK (cheap re-check that the locked assets still
+match the approved outline) → storyboard FINAL asset-resolution validation → blueprint authoring, where the
+hard locked-asset barrier sits. (The old single-stage contract — outline gate demanding locked assets —
+deadlocked and is retired.)
+
 ```text
   asset (review_status:"pending")  ◀── comic-asset-ref-generator (S4: generates, NEVER self-locks)
         │
@@ -47,7 +55,10 @@ round — or it sends the asset back to be regenerated, or (at the round ceiling
 ## Constants
 - **REVIEWERS** = Claude (this agent, narrative) ‖ `mcp__gemini__analyzeFile` (`model: "auto-gemini-3"`, NEVER
   raw `gemini-3.1-pro` — 429 silent-downgrade to 2.5) ‖ `mcp__codex__codex` r1 / `mcp__codex__codex-reply` r2+
-  (`gpt-5.5`, `model_reasoning_effort: "xhigh"`, save the `threadId`).
+  (`model_reasoning_effort: "xhigh"`, save the `threadId`; pin **no** model — Codex reviewer calls follow the
+  local codex config, currently `gpt-5.6-sol`, exactly like the shipped Codex CLI reviewers in `run_comic.py`,
+  which pass no `-m`; only the upstream BAKE payload pins `gpt-5.5` + `xhigh`, the `run_comic.get_bake_plan()`
+  compat default — a config-driven override there is planned, not yet implemented).
 - **准×3 UNANIMITY** — the lock predicate. A Codex-synth `approve` is **NOT** enough: `cc_approves AND
   gemini_approves AND codex_approves` must ALL be true **in the same round** (each reviewer's *own* dim scores
   must independently clear threshold). Codex-approve-without-unanimity is **DOWNGRADED to `revise`** (the "准×3
@@ -189,10 +200,14 @@ non_white_bg, jpeg_artifact, glyph_break, unintended_text, watermark_present, co
 copyrighted_character, brand_logo_present, collage_grid, low_resolution, melted_anatomy`. Every reject mints a
 `failure_mode` wiki node `fail:<asset-slug>_<tag>` tagged from this set (the `<tag>` must match `[a-z0-9_]+` —
 strip any stray punctuation before assembling the node_id; maps to `comic-director`'s anatomy/identity vetoes) and routes
-its tag into the S4 `repair_instruction`. The node MUST carry the schema-required shape (see the `fail:*`
-skeleton in "Wiki node skeletons" below): root `status: "active"` + payload `{layer, affected_shot_ids, active,
-repair_pattern}`. Because this is an **upstream asset gate with no shots yet**, `affected_shot_ids` is `[]`
-(empty) — never invented; mirror the real `examples/comic_m3_audit/wiki/nodes/fail:*.json` shape.
+its tag into the S4 `repair_instruction`. The node MUST carry the schema-required shape (copy the `fail:*`
+skeleton in "Wiki node skeletons" below **verbatim**): root `status: "active"` + payload `{layer,
+affected_shot_ids, active, repair_pattern}`. Because this is an **upstream asset gate with no shots yet**,
+`affected_shot_ids` is `[]` (empty) — never invented. NB the shipped example failure nodes are FILES named
+`fail_*.json` (the colon lives only inside the `node_id`, e.g. `fail:s09_a01`) and are ALL downstream
+shot-level nodes (`layer:"panel_visual"`, non-empty `affected_shot_ids` — `fail_s09_a01.json` carries
+`["S09"]`); **no asset_ref-layer example exists in the repo**, so do NOT copy the example nodes for this gate —
+the skeleton below is the authoritative shape.
 
 ## Wiki node skeletons (the EXACT shape each minted node MUST carry — validated by `cli/validate_wiki.py`)
 Every node this skill writes obeys `schemas/node_schema.json`: the **root** carries `node_id, node_type, title,
@@ -282,7 +297,8 @@ node per the `fail:*` skeleton (root `status: "active"`, payload `{layer:"asset_
 active:true, repair_pattern:"gemini_parse_failure — re-elicit strict JSON"}`).
 
 **P3 — Codex synth gate.** `mcp__codex__codex` (r1) / `mcp__codex__codex-reply` (r2+ with the saved
-`threadId`), `gpt-5.5` `xhigh`. Pass **ONLY** numeric scores + `failure_modes` + `asset_metadata` + file paths
+`threadId`), effort `xhigh`, no model pin (follows the local codex config — currently `gpt-5.6-sol`). Pass
+**ONLY** numeric scores + `failure_modes` + `asset_metadata` + file paths
 + (optional) numeric prior-round deltas — **NEVER** any reviewer `narrative_notes`/prose (reviewer-independence;
 a prose leak ABORTS the call with a loud error). Codex adds its OWN `safety_ip` (PRIMARY) + semantic
 `identity_lock_satisfied` + `reuse_readiness` scores. **First persist Codex's OWN reviewer node** (mirroring P1
@@ -431,4 +447,4 @@ or route back to S4 (regenerate) / outline (escalate).**
 - [`reviewer-independence`](../../protocols/reviewer-independence.md) — each reviewer reads the real asset file; the Codex synth gets **numeric scores + failure_modes + paths only**, never another reviewer's prose (a leak ABORTS).
 - [`acceptance-gate`](../../protocols/acceptance-gate.md) — the loop DRIVES (regenerate, re-fire R+1) but can't ACQUIT: the LOCK is a Type-B verdict that needs 准×3 (Gemini + Codex + Claude in the same round); Codex-synth-approve alone is downgraded; same-family N-of-Claude is never a jury.
 - [`review-tracing`](../../protocols/review-tracing.md) — every Codex/Gemini reviewer call's full prompt+response is saved under `.aris/traces/comic-asset-review-loop/<date>_run<NN>/`, so each lock/abandon_shot verdict is auditable; the `ASSET_REVIEW.md` score_progression is the human-readable trail.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3` (never raw `gemini-3.1-pro`); `— reviewer: oracle-pro` routes the synth to `mcp__oracle__consult` (`gpt-5.5-pro`) on explicit request; never downgrade the tier.
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex reviewer calls pin **no** model (local codex config — currently `gpt-5.6-sol`) at effort `xhigh` (only the upstream bake payload pins `gpt-5.5` + `xhigh`, the `run_comic.get_bake_plan()` compat default; config-driven override planned); Gemini `auto-gemini-3` (never raw `gemini-3.1-pro`); `— reviewer: oracle-pro` routes the synth to `mcp__oracle__consult` (the Pro tier) on explicit request; never downgrade the tier.

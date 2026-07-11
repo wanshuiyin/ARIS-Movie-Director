@@ -51,7 +51,7 @@ bash tests/smoke.sh
 
 ## 加一个示例项目
 
-一个项目通过 `examples/<name>/movie.project.json` + 一份 `comic.json` IR + 一份 `wiki/` trace 接入。最小可复制的样板是 [`examples/comic_min_author/`](examples/comic_min_author/)(每种作者节点类型各一个合法节点)。开 PR 之前:
+一个项目通过 `examples/<name>/movie.project.json` + 一份 `comic.json` IR + 一份 `wiki/` trace 接入。[`examples/comic_min_author/`](examples/comic_min_author/) 是**仅限作者 wiki 节点**的最小可复制样板(每种作者节点类型各一个合法节点 —— 它不含 `movie.project.json`、也不含 `comic.json`);`movie.project.json` + `comic.json` 的形状请从 [`examples/comic_m3_audit/`](examples/comic_m3_audit/) 复制。开 PR 之前:
 
 ```bash
 python3 cli/validate_wiki.py examples/<name>                 # 必须 PASS

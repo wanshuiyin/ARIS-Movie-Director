@@ -20,15 +20,19 @@ The panel is the gate. Its job is to make figure quality **objective**, not a vi
    *veto* but can NEVER be the sole acquitter. ACCEPT requires **Gemini approve + Claude structural approve +
    the hard-diff empty**.
 
-## Per-reviewer lens (fixed — do not free-style)
-- **Claude** — structure / narrative readability: first-read order, phase grouping, does the flow tell the
-  story L→R, is the hierarchy clear. Owns `layout_readability`.
-- **Gemini** — visual / identity / legibility / artifacts. Owns `character_identity`, `text_fidelity` (is
-  each token crisp & legible), `style_fit`, and the `anomalies` audit.
-- **Codex** — second visual + code-native critique (arrow topology, exact-token spelling). Owns
-  `arrow_topology`. Diagnostic/veto only; not an acquitter.
+## Roster — TWO blind transcribers + one structural sign-off (fixed — do not free-style)
+- **Gemini** (blind transcriber #1) — visual / identity / legibility / artifacts: `character_identity`,
+  `text_fidelity` (is each token crisp & legible), `style_fit`, and the `anomalies` audit. Its core-score
+  vector is the one the orchestrator enforces against `acceptance.min_core_score`.
+- **Codex** (blind transcriber #2) — second visual + code-native critique (arrow topology, exact-token
+  spelling). Its `verdict` / `blockers` / `anatomy_defect` are enforced as VETO signals — diagnostic/veto
+  only, never an acquitter (Codex is the generation family).
+- **Claude** (the calling agent) — **NOT a blind transcriber**: it never produces a `round<N>.cc.json` and
+  nothing from it enters `content_diff`. After the loop converges (PANEL-CLEAN) it gives the post-pass
+  STRUCTURAL sign-off: first-read order, phase grouping, does the flow tell the story L→R, is the
+  hierarchy clear.
 
-## Strict per-round output (every reviewer returns THIS JSON)
+## Strict per-round output (each of the TWO blind transcribers returns THIS JSON)
 ```json
 {
   "verdict": "approve | retry | escalate",
@@ -47,14 +51,18 @@ The panel is the gate. Its job is to make figure quality **objective**, not a vi
 ```
 
 ## Consolidation (anti-oscillation)
-`consolidate_reviews.py` merges **`blockers` only** across the three reviewers (de-duplicated), and carries
-every `positive_invariant` forward into the next bake prompt so good parts aren't lost. **Never** act on
-`nice_to_have` during the loop — chasing polish makes it oscillate and never converge.
+`run_spiral.py` consolidates INLINE (there is no separate consolidation script): it merges **`blockers`
+only** across the two transcribers (de-duplicated), folds the deterministic diff's findings in as concrete
+fixes (missing/forbidden/unsourced tokens, wrong edges, anatomy), and carries every `positive_invariant`
+forward into the next bake prompt so good parts aren't lost. **Never** act on `nice_to_have` during the
+loop — chasing polish makes it oscillate and never converge.
 
 ## Stop rule
-- **ACCEPT** iff: `content_diff` empty (no missing_tokens / wrong_edges / anomalies) AND **no reviewer set
-  `anatomy_defect`** AND Gemini `approve` AND Claude structural `approve` AND every core score ≥
-  `acceptance.min_core_score` (default 4) AND no timeout.
+- **ACCEPT** iff: BOTH transcribers returned parseable JSON with `observed_tokens` AND `content_diff` empty
+  (no missing_tokens / wrong_edges / anomalies) AND **no reviewer set `anatomy_defect`** AND Gemini
+  `approve` with no `anomalies` AND Codex `approve` with no `blockers` (required — veto/diagnostic, never
+  the sole acquitter) AND every core score ≥ `acceptance.min_core_score` (default 4) AND no timeout — then
+  the calling agent (Claude) gives the final structural `approve`.
 - **RETRY** iff: blockers are prompt/condition-fixable AND `round < max_rounds` → re-bake re-asserting the
   locked `*_exact` labels + the consolidated blockers + the positive_invariants.
 - **ESCALATE** to human iff: the same root failure recurs `max_repeated_failure` rounds (default 2);

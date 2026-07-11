@@ -1,20 +1,29 @@
 ---
 name: comic-storyboard-creator
-description: Phase-1 comic-author step — turn a LOCKED, user-approved outline into the page-first storyboard that IS the authoring source of truth: a fixed page order BEFORE any prose, the MOTIF STATE TABLE (the master per-panel continuity ledger), a fixed 9-field per-panel spec, and one deduped canonical asset contract. Decompose beats→pages→panels, 抽卡 K page/panel-order lineages by feasibility, then fill every panel one unit at a time. Writes a storyboard_spec + a motif_ledger (read by comic-continuity-audit) + N panel_spec nodes. Use when the user says "做分镜", "storyboard", "排页", "panel spec", "分镜稿", or the outline layer is locked and approved and you need the per-panel authoring layer the thin comic-author SOP defers to references/.
+description: Phase-1 comic-author step — turn a LOCKED, user-approved outline into the page-first storyboard that IS the authoring source of truth: a fixed page order BEFORE any prose, the MOTIF STATE TABLE (the master per-panel continuity ledger), a fixed 9-field per-panel spec, and one deduped canonical asset contract. Decompose beats→pages→panels, 抽卡 K page/panel-order lineages by feasibility, then fill every panel one unit at a time. Writes a storyboard_spec + a motif_ledger (read by comic-continuity-audit) + N panel_spec nodes. Use when the user says "做分镜", "storyboard", "排页", "panel spec", "分镜稿", or the outline layer is locked and approved and you need the per-panel authoring layer the thin comic-author SOP defers to. Two-stage under the N1 contract: a PROVISIONAL structural gate pass on draft assets now, the FINAL asset-resolution validation after the asset layer locks.
 ---
 
-# comic-storyboard-creator — the Page-First Storyboard + Master Continuity Ledger (Phase 1, step S6)
+# comic-storyboard-creator — the Page-First Storyboard + Master Continuity Ledger (Phase 1, step 4; re-gated at step 6b)
 
 The **storyboard step of the [`comic-author`](../comic-author/SKILL.md) suite**: take a LOCKED, user-approved
 [`outline_spec`](../comic-outline-creator/SKILL.md) and produce the artifact that IS the authoring source of
 truth — a **fixed page order authored as its own section BEFORE any per-panel prose**, the **MOTIF STATE
 TABLE** (the master per-panel ledger that pins every continuity variable for all panels *before* any bake),
 a **fixed 9-field per-panel spec**, and **one deduped canonical asset contract**. This is the deep
-Layer-2 the 150-line comic-author SOP defers to `references/`; it ports the rigor of aris_movie's
+layer the thin [`comic-author`](../comic-author/SKILL.md) orchestrator SOP defers to; it ports the rigor of aris_movie's
 `movie-storyboard-creator` (抽卡 lineages → score → gate) and `-v4` (locked-inputs precondition → beat→panel
 budget → deterministic spec) onto stills, and it emits the `panel_spec` fields the downstream
 [`comic-blueprint-author`](../comic-blueprint-author/SKILL.md) and [`comic-director`](../comic-director/SKILL.md)
 consume. The downstream baking spiral is **not** this skill's job — this is pure authoring + ledger.
+
+> **Two-stage role (the N1 contract):** this layer's gate runs TWICE. Right after the outline locks, this
+> skill authors the storyboard and runs `--gate storyboard` as a **PROVISIONAL structural pass** — the
+> storyboard MAY reference **draft** (declared-but-unlocked) assets; `panel_assets_referenceable` is
+> unscorable, is left `null`, and the fuser SKIPs it (no `locked` flip yet). Then, after the asset layer has
+> locked everything and OUTLINE_FINAL_LOCK has re-confirmed the outline, the **FINAL asset-resolution
+> validation** re-runs `--gate storyboard` with all four dims scorable and flips the storyboard to `locked`.
+> The hard locked-asset barrier stays downstream, before blueprint authoring
+> ([`comic-author`](../comic-author/SKILL.md) steps 6a–7).
 
 > **Cardinal lesson baked in as a gate, not prose:** *decompose beats→pages→panels and 抽卡 K orderings by
 > feasibility, then fill ONE panel at a time — never batch-author-then-look.* The MOTIF STATE TABLE is the
@@ -24,7 +33,7 @@ consume. The downstream baking spiral is **not** this skill's job — this is pu
 > intent off a table instead of inferring it.
 
 ```text
-  locked+approved outline_spec ─▶ ① PRECONDITION (refuse if outline unlocked / unapproved / any asset unlocked)
+  locked+approved outline_spec ─▶ ① PRECONDITION (refuse if outline unlocked / unapproved; draft assets OK here)
                                       ▼
                                 ② DECOMPOSE  beats → pages → panels  (beat→panel budget arithmetic)
                                       ▼
@@ -38,7 +47,10 @@ consume. The downstream baking spiral is **not** this skill's job — this is pu
                                       ▼
                                 ⑦ CONSOLIDATE ASSET_REQUESTS  (one canonical owner per token; naming 铁律)
                                       ▼
-                                ⑧ EMIT  storyboard_spec + motif_ledger + N panel_spec (+ continuity_constraint)  → cross-layer gate
+                                ⑧ EMIT  storyboard_spec + motif_ledger + N panel_spec (+ continuity_constraint)
+                                      ▼
+                                ⑨ GATE ×2: PROVISIONAL structural pass now → (assets lock + OUTLINE_FINAL_LOCK)
+                                   → FINAL asset-resolution pass flips `locked`
 ```
 
 ## Constants
@@ -48,11 +60,23 @@ consume. The downstream baking spiral is **not** this skill's job — this is pu
   un-gateable text rendering, exact UI replication, or face identity it can't anchor). If `<2` survive,
   re-prompt **once** on the same Codex thread; still `<2` → tell the user to lower `--effort` or relax the
   banlist. **Never fall back to a Claude-generated lineage** (violates reviewer independence).
-- **REVIEWER** = Codex `gpt-5.5` `model_reasoning_effort: xhigh` for the 抽卡 brainstorm + the cross-layer gate;
-  Gemini `auto-gemini-3` where a second family is needed. Never downgrade the tier ([`reviewer-routing`](../../protocols/reviewer-routing.md)).
-- **PAGE_TYPES** = `{cover, single, 2-up, vertical-3, grid2x2, big-frame, endcard}`. **WORLDS** = `{warm, dark-cyber,
-  seam, starfield}` (human = warm, ARIS = dark-cyber, explicit `seam` at hand-off/payoff, `starfield` for the
-  wiki/finale) — the two-world palette grammar inherited from the outline.
+- **REVIEWER** = the Codex CLI at `model_reasoning_effort: xhigh` for the 抽卡 brainstorm + the cross-layer
+  gate — it pins NO model (it follows the local codex config, currently `gpt-5.6-sol`); Gemini `auto-gemini-3`
+  where a second family is needed. Never downgrade the effort tier ([`reviewer-routing`](../../protocols/reviewer-routing.md)).
+- **PAGE_TYPES** (authoring vocabulary) = `{cover, single, 2-up, vertical-3, grid2x2, big-frame, endcard}`.
+  These are NOT the compiled IR's page types — `schemas/comic.schema.json` `pages[].type` enum is
+  `{cover, single, grid, grid2x2, feature, finale}` — so the compiler MUST project them (an unmapped token
+  FAILS jsonschema):
+
+  | storyboard token | compiles to `pages[].type` |
+  |---|---|
+  | `cover` / `single` (incl. full-bleed) / `grid2x2` | same name |
+  | `2-up` / `vertical-3` | `grid` |
+  | `big-frame` | `feature` |
+  | `endcard` | the **PRIOR page's `closing.image`** — the shipped-reference convention: comic_m3_audit compiles S22's endcard into `P_B12.closing.image` (18 pages ship, not a 19th endcard page). `finale` stays a legal enum value for a standalone end page, but `closing.image` is THE convention to copy. |
+
+- **WORLDS** = `{warm, dark-cyber, seam, starfield}` (human = warm, ARIS = dark-cyber, explicit `seam` at
+  hand-off/payoff, `starfield` for the wiki/finale) — the two-world palette grammar inherited from the outline.
 - **MOTIF_TABLE_COLUMNS** (per panel, verbatim) = `Panel | <motif-A> | DDL | <motif-B> | exact_parse | claim_delta | bounce`
   — for the worked example: `Panel | Mug | DDL | Tok|yo | exact_parse | claim_delta | bounce`. The two metric
   columns (`exact_parse`, `claim_delta`) **never co-mingle** (different metrics, different value sets).
@@ -66,8 +90,10 @@ consume. The downstream baking spiral is **not** this skill's job — this is pu
 This skill is **pure authoring + ledger**, and it operates ONLY on converged upstream (convergence is the
 upstream gates' job, per [`acceptance-gate`](../../protocols/acceptance-gate.md)):
 - **Refuse (HALT, point at the offending node) if** the `outline_spec` is not `status: "locked"`, OR it lacks
-  the explicit user-approval stamp (the user-first gate — never proceed to asset-library work without a
-  recorded `✅ APPROVED by user <date>`), OR any referenced `asset` node it whitelists is not `locked`.
+  the explicit user-approval stamp (the user-first gate — never proceed without a recorded
+  `✅ APPROVED by user <date>`). Whitelisted assets may still be **draft/declared** at the PROVISIONAL pass —
+  that is the N1 two-stage contract; an unlocked asset only blocks the **FINAL** asset-resolution validation
+  (and everything downstream of it).
 - **Asset-id whitelist is SACRED.** Every panel may reference asset names ONLY from the outline's
   `character_asset_ids` / `scene_asset_ids` / `prop_asset_ids` plus assets you newly request *as*
   `asset_requests`. **Never free-describe an asset inline.** If a panel needs an asset that doesn't exist yet,
@@ -79,9 +105,10 @@ upstream gates' job, per [`acceptance-gate`](../../protocols/acceptance-gate.md)
 ## Procedure (followable, one unit at a time — never batch)
 
 ### ① Precondition check
-Load the `outline_spec`. Verify `status == "locked"` AND the user-approval stamp is present AND every asset it
-whitelists is `locked`. On any failure → HALT with the precise offending node id so the orchestrator routes
-back to the outline / asset layer. Record provenance in the header: source outline id, the prior
+Load the `outline_spec`. Verify `status == "locked"` AND the user-approval stamp is present. (Whitelisted
+assets may still be draft — `locked` is the FINAL pass's demand, not an authoring precondition; N1 two-stage.)
+On any failure → HALT with the precise offending node id so the orchestrator routes
+back to the outline layer. Record provenance in the header: source outline id, the prior
 cross-model verdict it survived (real example: codex critique returned **`REVISE`**; "全部 fix 落地"), and the
 `✅ APPROVED by user <date>` line.
 
@@ -96,7 +123,8 @@ exactly one page with a stable page id** (`P00_cover`, `P01_b02`, …, `P03_end`
 
 ### ③ 抽卡 K page/panel-order lineages (Codex xhigh), score, keep
 Pass **file paths only** (the locked outline, the style bible, the wiki banlist of prior failed orderings) to
-Codex `gpt-5.5` `xhigh` — reviewer independence: Codex forms its own reading, never gets your summary. Demand
+the Codex CLI at `xhigh` (no model pin — local codex config) — reviewer independence: Codex forms its own
+reading, never gets your summary. Demand
 `K` (= the tier constant) alternative **page/panel orderings** of the same beat set, each differing on ≥2 of:
 *page-rhythm axis* (cover/2-up/grid/vertical-3/big-frame mix) · *cast-presence axis* (which panels show the
 duo vs solo) · *world-alternation axis* (warm/dark/seam sequencing) · *reading-order axis*. Score each lineage
@@ -195,36 +223,44 @@ Write the wiki nodes (§ below) and append the author edges. The storyboard gate
 walks `reviews` edges into the target, fuses the pre-existing `review:*` score-nodes, and **HARD-FAILS if
 zero are attached** ("no reviews — gate is a score-fuser, not a reviewer"). So before invoking it:
 
-0. **Asset-lock precondition (ordering).** A panel asset must be `status: locked` AT GATE TIME
-   (`panel_assets_referenceable` = *resolves AND locked*). If you filed any `asset_requests`, that REOPENS the
-   asset layer — drive those assets through the asset gate to `locked` **before** running the storyboard gate.
-   Never run `--gate storyboard` with an un-locked `asset_request` outstanding (it will hard-veto on
-   `_unresolved_asset_refs`).
+0. **Which pass is this? (the N1 two-stage ordering).** The **PROVISIONAL pass** runs right after authoring:
+   every panel asset ref must be *whitelisted or filed as a complete `asset_request`* (DECLARED), but `locked`
+   is NOT required — `panel_assets_referenceable` (*resolves AND locked*) is unscorable, is left `null`, and
+   the fuser SKIPs it (the provisional verdict rides on the other three structural dims; no `locked` flip
+   yet). The **FINAL pass** runs only after the asset layer has driven every requested asset to `locked` AND
+   OUTLINE_FINAL_LOCK has re-confirmed the outline ([`comic-author`](../comic-author/SKILL.md) steps 5–6b):
+   now all four dims are scorable, an un-locked ref hard-vetoes on `_unresolved_asset_refs`, and an `approve`
+   verdict flips the storyboard to `locked`.
 1. **Pre-gate review (fan-out → persist).** The storyboard gate is **structural, CC-only** (no visual
    reviewer — no pixels exist yet), so the cross-model lens here is the structural validator run, not a
-   panel of model families. Compute the four structural facts (below) and persist them as a `review` node:
+   panel of model families. Compute the structural facts (below; at the PROVISIONAL pass
+   `panel_assets_referenceable` stays `null` — see ⑨.0) and persist them as a `review` node:
    `node_id: review:<slug>`, `payload {target_node_id: "storyboard:<slug>", reviewer, gate_kind: "storyboard",
    review_scores:{panel_assets_referenceable, global_policies_valid, panel_count_band_aligned,
    continuity_chain_well_formed}}`, with a **`reviews`** edge `review:<slug> → storyboard:<slug>`.
 2. **Invoke the fuser.** `python3` / call **[`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md)
    `<storyboard:slug> --gate storyboard`** to fuse + adjudicate against the EXACT predicate below. On an
-   `approve` verdict (the gate's verdict set is `{approve, revise}`), the gate flips `storyboard_spec.status`
-   → `locked`; on `revise` it sets/keeps `under_review`. (Canon ⑥ FLIP: `locked` is a STATUS reached by the
+   `approve` verdict (the gate's verdict set is `{approve, revise}`) **at the FINAL pass**, the gate flips
+   `storyboard_spec.status` → `locked`; a PROVISIONAL-pass `approve` leaves it `under_review` (⑨.0), and
+   `revise` sets/keeps `under_review` at either pass. (Canon ⑥ FLIP: `locked` is a STATUS reached by the
    advance verdict, never a verdict name.) The gate (a different model
    family) — never this authoring agent — acquits ([`artifact-integrity`](../../protocols/artifact-integrity.md)).
-Reviewer routing for any model-family fan-out: Claude (one lens) ‖ Codex `gpt-5.5` `xhigh` ‖ Gemini
+Reviewer routing for any model-family fan-out: Claude (one lens) ‖ Codex CLI `xhigh` (no model pin — local
+codex config, currently `gpt-5.6-sol`) ‖ Gemini
 `auto-gemini-3`, file paths only ([`reviewer-routing`](../../protocols/reviewer-routing.md)).
 
 ## EXACT gate (`storyboard`) — quote [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md) `--gate storyboard`
 This is **not** this skill's rubric to define — [`comic-cross-layer-gate`](../comic-cross-layer-gate/SKILL.md)
 is the SOLE gate authority, and `--gate storyboard` is **STRUCTURAL, CC-only** (no visual reviewer; no pixels
-yet). Verdict set `{approve, revise}`. The text below is quoted verbatim from that gate so this skill authors
+yet). Verdict set `{approve, revise}`. Under the N1 contract it is invoked TWICE (provisional → final; the
+which-pass rules are ⑨.0). The text below is quoted verbatim from that gate so this skill authors
 to the real predicate — if the two ever diverge, the gate wins.
 
 **Scored dimensions = exactly FOUR; each scored `0–5`; ADVANCE (`APPROVE`) iff ALL FOUR ≥ 4.** These four are
 **file-system facts the gate computes**, not reviewer opinion:
-- **`panel_assets_referenceable`** — every asset ref in each *panel* **resolves AND is `status: locked`** (a
-  still-unlocked `asset_request` FAILS this dim — see ⑨.0 for the lock-before-gate ordering).
+- **`panel_assets_referenceable`** — every asset ref in each *panel* **resolves AND is `status: locked`**.
+  Scored at the FINAL pass only; at the PROVISIONAL pass it is left `null`/SKIPped and the declared-check
+  (whitelisted or complete `asset_request`) applies instead — see ⑨.0 for the two-stage ordering.
 - **`global_policies_valid`** — `global_policies` fields match expected (text-mode rules present; mirror-lock
   policy present; page-order authority declared).
 - **`panel_count_band_aligned`** — panels-per-page in band per target tier `{mvp:(2,2), demo:(4,6),
@@ -235,7 +271,9 @@ to the real predicate — if the two ever diverge, the gate wins.
 
 **STRUCTURAL HARD VETO** (forces `revise` **regardless of reviewer scores OR Codex** — these are NOT scored
 ≥4 dims, they are the gate's computed structural vetoes; "structural failures cannot be voted-around"):
-1. Any non-empty `_unresolved_asset_refs` (a referenced asset missing or not `locked`).
+1. Any non-empty `_unresolved_asset_refs` (a referenced asset missing or not `locked`) — FINAL pass; at the
+   provisional pass declared-but-unlocked refs are expected, and only an UNDECLARED ref (no whitelist entry,
+   no complete `asset_request`) vetoes.
 2. Any non-empty `_policy_violations` (a missing/inconsistent `global_policies` field, incl. no
    page-order-first section).
 3. Any non-empty `_continuity_breaks` (no MOTIF STATE TABLE; a row missing; a `motifs` field disagreeing).
@@ -325,7 +363,8 @@ exact shape:
   P_B08_0[S12a NEW] → P_B08_1..4[S12–S15 reuse] → P02_b08[grid2x2 recap S12–S15 kept] → P_B09[S16
   mirror-of-S11] → P_B09_5[S16b big-frame star-map] → P_B10[S17] → P_B11[2-up seam S18(L)|S19(R)] →
   P_B12[2-up S20(L)|S21(R seam)] → P03_end[S22 endcard]`. **TOTALS: 24 panels · 19 pages · 20 NEW bakes +
-  4 reused DONE (S12–S15).**
+  4 reused DONE (S12–S15).** (19 pages is the AUTHORED plan — the compiler folds the `endcard` into
+  `P_B12.closing.image`, so the compiled `comic.json` ships **18** pages; see §Constants PAGE_TYPES mapping.)
 - **The CORRECTED MOTIF STATE TABLE** (lines 14–39) — the load-bearing artifact. Columns
   `Panel | Mug | DDL | Tok|yo | exact_parse | claim_delta | bounce`. Patterns to copy: the monotonic-DDL fix
   (`S06 T-18:40` so it stays `> S07's 18:30`); split metric columns (`S10 exact_parse 0.71→0.66` with
@@ -340,8 +379,9 @@ exact shape:
   variants declared void) + the single-source pins + P0 blocker + zero-new-work reuse.
 
 ## Hard do / don't (earned lessons)
-- **DO** require a LOCKED, user-approved outline + locked assets before authoring; HALT with the offending
-  node id otherwise. Convergence is the upstream gate's job, not yours.
+- **DO** require a LOCKED, user-approved outline before authoring; HALT with the offending node id otherwise.
+  (Draft assets are fine at the PROVISIONAL pass; locked assets are the FINAL pass's demand — N1 two-stage.)
+  Convergence is the upstream gate's job, not yours.
 - **DO** author the **page order as its own section BEFORE any prose**, and the **MOTIF STATE TABLE before
   any per-panel prose** — both are sources of truth the gate and compiler check against.
 - **DO** fill **one panel at a time**, fully, in page order. NEVER batch-author all panels then look — the
@@ -360,6 +400,6 @@ exact shape:
 ## Protocols (governance contracts this skill honors)
 - [`reviewer-independence`](../../protocols/reviewer-independence.md) — the 抽卡 Codex call and the cross-layer gate get **file paths only** (the locked outline, style bible, banlist) behind an `=== EXTERNAL CONTEXT (advisory) ===` fence, never this agent's interpretation; the brainstorm family ≠ the gate family.
 - [`acceptance-gate`](../../protocols/acceptance-gate.md) — the loop can DRIVE but can't ACQUIT; user approval of the outline is the hard precondition gate (never proceed without it); the storyboard gate (different model family) acquits the layer.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`; never downgrade the reviewer tier (effort never lowers reviewer quality).
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex at `xhigh` (NO model pin — follows the local codex config, currently `gpt-5.6-sol`); Gemini `auto-gemini-3`; never downgrade the effort tier (effort never lowers reviewer quality).
 - [`artifact-integrity`](../../protocols/artifact-integrity.md) — the agent that authors the storyboard does not judge its own correctness; the MOTIF STATE TABLE is the ground-truth spec a fresh reviewer verifies, never the author.
 - [`review-tracing`](../../protocols/review-tracing.md) — every 抽卡 round + gate round is logged to `trace.jsonl` so each verdict (and each dropped lineage) is auditable.

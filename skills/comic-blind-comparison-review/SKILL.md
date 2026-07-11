@@ -48,9 +48,11 @@ it is an **evaluation** skill, not an authoring one: it never edits a comic, it 
   under test) + [`examples/comic_m3_audit/ART_BIBLE.md`](../../examples/comic_m3_audit/ART_BIBLE.md) (the
   SHARED blind spec both reviewers read).
 - **MAPPING_FILE** = `outputs/.ab_mapping.json` — the seal, `chmod 600`. Written by ⓪ **before** any reviewer.
-- **REVIEWERS (two families, the load-bearing diversity)** = Codex `gpt-5.5` `model_reasoning_effort: xhigh`,
-  `sandbox: "read-only"` ‖ Gemini `auto-gemini-3` (per-page `mcp__gemini__analyzeFile` + a text-only
-  `mcp__gemini-cli__ask-gemini` synthesis). Never downgrade the tier
+- **REVIEWERS (two families, the load-bearing diversity)** = Codex via a fresh `mcp__codex__codex` call,
+  `model_reasoning_effort: xhigh`, `sandbox: "read-only"` (**no model pin** — the call follows the local codex
+  CLI config; only the *bake* pins a model, via `run_comic.get_bake_plan()`) ‖ Gemini `auto-gemini-3` (per-page
+  `mcp__gemini__analyzeFile` + a text-only
+  `mcp__gemini-cli__ask-gemini` synthesis). Never downgrade the effort tier
   ([`reviewer-routing`](../../protocols/reviewer-routing.md)). Optionally fold in the project's CC-narrative
   vote to make it the same tri-reviewer panel as `panel_gate` (CC ‖ Gemini ‖ Codex) — see *Adaptation*.
 - **BLIND TOKENS** = the only identifiers a reviewer ever sees are `comic_A` / `comic_B` (and per-page
@@ -138,7 +140,11 @@ and `comic_B`'s source — neither side knows which is which):
 `comic.json` `pages[]` (a LIST, each page = a discrete unit). Stage one **page-level** render per page
 (`page.page_image` / `page.rendered_path` — the whole page as the reader sees it: panels + HTML bubbles +
 narration), **never** a raw per-panel `panel_attempt.image_path` (that drops the bubbles/narration and, on a
-multi-panel page, the other panels — see the code's HALT). Copy into the sealed dir as one PNG per page,
+multi-panel page, the other panels — see the code's HALT). **Know that the SHIPPED reference IR does NOT
+qualify:** `examples/comic_m3_audit/comic.json` carries NO `page_image`/`rendered_path` on any of its 18 pages
+(verified), so `stage()` HALTs on it *by design* — Form (a) applies only after a separate whole-page render
+step has populated those fields; on the shipped IR (and any comic.json like it) route to **Form (b)**
+(rasterize the viewer). Copy into the sealed dir as one PNG per page,
 renumbered `A_pNN.png`/`B_pNN.png` in `pages[]` order (**never re-bake**):
 ```bash
 mkdir -p outputs/comparison-pages/A outputs/comparison-pages/B
@@ -284,9 +290,11 @@ return, else re-run that page once then abort").
 Read `outputs/.ab_mapping.json` for the first time. **Verify the seal predates BOTH reviews** (its mtime is
 older than both raw review files):
 ```bash
-SEAL=$(stat -f %m outputs/.ab_mapping.json)
-CODEX=$(stat -f %m outputs/blind_review_codex_raw.json)
-GEM=$(stat -f %m outputs/blind_review_gemini_raw.json)
+# portable mtime probe — BSD stat is `-f %m`, GNU stat is `-c %Y`; python3 works identically on both:
+mt() { python3 -c 'import os,sys; print(int(os.path.getmtime(sys.argv[1])))' "$1"; }
+SEAL=$(mt outputs/.ab_mapping.json)
+CODEX=$(mt outputs/blind_review_codex_raw.json)
+GEM=$(mt outputs/blind_review_gemini_raw.json)
 [ "$SEAL" -lt "$CODEX" ] && [ "$SEAL" -lt "$GEM" ] && echo "intact" || echo "compromised"
 ```
 If out of order → `blinding_integrity = "compromised"`: still produce `comparison.md`, but **flag it
@@ -455,7 +463,8 @@ The canonical exhibits are **[`examples/comic_m3_audit/comic.json`](../../exampl
 spec both reviewers read). The concrete pattern to copy:
 
 - **The progressive side is the structured IR, the baseline is its one-shot foil.** `comic.json` is a
-  24-panel / 19-page comic-ir/1.0 with, per panel, a `condition.content_svg` and (for baked panels)
+  24-panel / 18-page comic-ir/1.0 (the storyboard *declared* 19 pages; the endcard folds into
+  `P_B12.closing.image`, so the compiled IR ships 18 `pages[]`) with, per panel, a `condition.content_svg` and (for baked panels)
   `condition.expected_literals` — e.g. `S01 → content_svg: "assets/s01_ddl_anchor_v1.svg",
   expected_literals: ["DDL","T-24:00:00"]`; `S12 → content_svg:
   "assets/method_random_vs_schema_first_v1.svg", expected_literals: ["+6.2"]`. The baseline for the A/B is a
@@ -526,8 +535,9 @@ baseline-relative honest verdict; it does not replace any authoring step.
 - [`output-language`](../../protocols/output-language.md) — `comparison.md` is the Chinese human deliverable
   (headings, analysis, the editability/blinding tables localized); raw review JSON, file paths, node fields,
   and `expected_literals` stay machine-form.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`;
-  `— reviewer: oracle-pro` may route the Codex side to GPT-5.5-Pro on explicit request; never downgrade the
-  tier (effort never lowers reviewer quality).
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex at `xhigh` (no model pin — the call
+  follows the local codex CLI config); Gemini `auto-gemini-3`;
+  `— reviewer: oracle-pro` may route the Codex side to the Oracle Pro tier on explicit request; never
+  downgrade the effort tier (effort never lowers reviewer quality).
 - [`review-tracing`](../../protocols/review-tracing.md) — every reviewer prompt + verbatim response (and the
   seal→unseal timeline) is logged to `trace.jsonl` so the blinding audit is independently inspectable.

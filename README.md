@@ -30,7 +30,7 @@ modes dominate:
 agent workflow runs the full loop (*author a source of truth → bake → cross-model gate*): **(1)**
 [`comic-author`](skills/comic-author/SKILL.md) turns fuzzy intent into an authored `comic.json` + locked refs,
 **(2)** [`comic-director`](skills/comic-director/SKILL.md) runs the per-panel audited spiral — the **multi-agent
-debate** (CC ‖ Gemini ‖ Codex blind-read → deterministic diff), logging every attempt / decision to the
+debate** (Codex narrative ‖ Gemini + Codex visual blind-read → deterministic diff), logging every attempt / decision to the
 **[research-wiki](examples/comic_m3_audit/wiki/)** — **(3)** the pipeline assembles accepted panels into the
 released viewer. The bottom-left failure is the whole rule: *a beautiful but wrong literal still fails*
 (`+6.2` expected vs `+6.25` observed).
@@ -41,9 +41,9 @@ released viewer. The bottom-left failure is the whole rule: *a beautiful but wro
 
 <details><summary><b>Figure 1 — stages, gates, and provenance</b> (click to expand)</summary>
 
-> **(1) Authored source of truth** — asset library · outline · storyboard compile into `comic.json` (`content_svg · expected_literals · identity_ref`). **(2) The audited spiral (per panel)** — a content-SVG blueprint is baked by image_gen, then a 3-reviewer cross-model `panel_gate` (CC narrative ‖ Gemini + Codex visual *blind-transcribe* → a deterministic token-diff · single-vote veto) returns a deterministic `verdict`: **KEEP**, or **RETRY** (≤4/panel) re-baked with the failed attempt's repair note; every attempt/review/decision/failure is logged to the `research-wiki`. **(3) Assembly + release** — a cast-aware `page_assembly_gate` (repair drift → re-bake, ≤6/run) ships PNG panels + a single-file HTML viewer. The punchline (bottom-left): **a beautiful panel with a wrong number does not pass** — `+6.2` expected vs `+6.25` observed fails the token-diff.
+> **(1) Authored source of truth** — asset library · outline · storyboard compile into `comic.json` (`content_svg · expected_literals · identity_ref`). **(2) The audited spiral (per panel)** — a content-SVG blueprint is baked by image_gen, then a 3-reviewer cross-model `panel_gate` (narrative ‖ Gemini + Codex visual *blind-transcribe* → a deterministic token-diff · single-vote veto) returns a deterministic `verdict`: **KEEP**, or **RETRY** (≤4/panel) re-baked with the failed attempt's repair note; every attempt/review/decision/failure is logged to the `research-wiki`. **(3) Assembly + release** — a cast-aware `page_assembly_gate` (repair drift → re-bake, ≤6/run) ships PNG panels + a single-file HTML viewer. The punchline (bottom-left): **a beautiful panel with a wrong number does not pass** — `+6.2` expected vs `+6.25` observed fails the token-diff.
 >
-> *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned `gpt-image-2` (driven by Codex GPT-5.5 xhigh), then 4 generation rounds were ratified by the method-figure panel — **Gemini + Codex blind-transcribe + a deterministic `content_diff`, then a Claude structural sign-off** — until clean. The **exact prompt sequence that baked this image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference: [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
+> *This figure was itself produced by the same loop it depicts: a labeled blueprint conditioned Codex's native image-generation tool (driven by Codex GPT-5.5 xhigh — dated 2026-06 provenance; the image backend, called `gpt-image-2` at the time, is not runtime-attested), then 4 generation rounds were ratified by the method-figure panel — **Gemini + Codex blind-transcribe + a deterministic `content_diff`, then a Claude structural sign-off** — until clean. The **exact prompt sequence that baked this image** (all 4 rounds + the cross-model critiques) is published verbatim as a reference: [`skills/method-figure/examples/method_figure/PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).*
 
 </details>
 
@@ -135,7 +135,7 @@ wrong frame.)*
 - 📐 **Blueprints** — a deterministic `content_svg` per panel (no baked bubbles)
 - 🧾 **Prompts** — exact bake prompts + verbatim `expected_literals` (搬运工原則)
 - ✅ **Compile** — schema-valid `comic.json`; the zero-credit `p0_proof` gate runs BEFORE any image credit
-- 🔥 **Spiral bake** — render → agent `mcp__codex__codex` image_gen → 3-reviewer `panel_gate` → keep / retry-same-panel → `assembly_gate` (re-bakes only NAMED drifting panels on cross-page drift) → viewer
+- 🔥 **Spiral bake** — render → agent `mcp__codex__codex` sidecar bake (Codex's native image tool) → 3-reviewer `panel_gate` → keep / retry-same-panel → `assembly_gate` (re-bakes only NAMED drifting panels on cross-page drift) → viewer
 
 **📐 Flow — the skill chain (trace it top-to-bottom):**
 
@@ -158,8 +158,8 @@ wrong frame.)*
    comic-cross-layer-gate --gate p0_proof     ├─ P0 · ZERO-CREDIT proof — must pass before any image credit ─┤
    │
    ▼   comic-director — the audited spiral     (run_comic.py  |  packages/core/spiral_engine.js)
-   per panel:  content_svg → codex image_gen → panel_gate
-                  reviewers: CC narrative ‖ Gemini visual ‖ Codex visual
+   per panel:  content_svg → agent mcp__codex__codex sidecar bake → panel_gate
+                  reviewers: Codex narrative ‖ Gemini visual ‖ Codex visual
                   → blind transcriptions → deterministic token-diff vs expected_literals
                verdict ─ KEEP → page pool
                        ├ RETRY ≤4   (re-bake the SAME panel + repair note)
@@ -173,11 +173,14 @@ wrong frame.)*
                       escalates; a non-convergent panel is flagged for you, never silently shipped.
 ```
 
-**The `panel_gate`** (Phase 2/3, per panel): the bake is read by **3 independent reviewers** — CC *narrative*
-(does it land the beat?) ‖ Gemini *visual* ‖ Codex *visual* (a second, different-family eye) — who
+**The `panel_gate`** (Phase 2/3, per panel): the bake is read by **3 independent reviewers** — a *narrative*
+reviewer (does it land the beat? — **currently the codex CLI**, recorded honestly as family `openai`; a
+configurable `--narrative-reviewer` is planned, not yet implemented) ‖ Gemini *visual* ‖ Codex *visual* — who
 **blind-transcribe** the pixels; a **deterministic** token-diff of `observed_literals` vs the authored
 `expected_literals` decides KEEP / RETRY; `content_corruption` is a single-vote veto, both visual reviewers must
 score, and **no model self-acquits**. Every attempt / review×3 / decision / failure is written to the `research-wiki`.
+There is **no live Claude CLI reviewer** in this panel — Claude's role is the workflow-layer structural sign-off;
+cross-family acquittal vs the Claude-authored prompts comes from Gemini + the deterministic fuse.
 
 **Phase 2/3 standalone** (once `comic.json` exists). Only the **zero-credit `--dry-run`** below is genuinely
 agent-free — that's the CI-tested slice:
@@ -192,7 +195,10 @@ NOT agent-free**: each panel bake is fulfilled by the agent-sidecar SOP — the
 [`comic-director`](skills/comic-director/SKILL.md) skill agent watches for the core's `*.bakereq.json`, calls
 `mcp__codex__codex` (with `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`) to fire the
 native image tool, and writes back `*.bakestatus.json`. So a real movie bake needs a coding-agent runtime; only
-`--dry-run` runs standalone. **Throttling:** a
+`--dry-run` runs standalone. **Model honesty:** the bake payload pins `model: gpt-5.5` + effort `xhigh` as a
+single compatibility default (`run_comic.get_bake_plan()` — the exact plan the P0 certificate digests; a
+config-driven override is planned, not yet implemented), while the codex CLI **reviewers** pin no model — they
+follow your local codex config, at effort `xhigh` (`--review-effort`). **Throttling:** a
 rate-limited bake stops cleanly with `fresh_run_required` — after cooldown launch a **fresh** run for the remaining
 panels, do **not** resume cached state. Caps: **≤4 attempts/panel · ≤6 rollbacks/run · no concurrent bakes**
 ([`docs/spiral-runtime.md`](docs/spiral-runtime.md)).
@@ -212,7 +218,7 @@ open  examples/comic_m3_audit/outputs/index.html
 ### 🖼️ Workflow 2 · Method figure — `/method-figure` (a brief → Figure-1)
 One **slash-command**, [`/method-figure`](skills/method-figure/SKILL.md) — give it a `method_figure_brief.json`
 (the same brief `paper-plan` emits after its claims_matrix) and it runs the whole audited spiral to a signed-off
-figure (Step-0 compile → render condition → `gpt-image-2` bake → Gemini + Codex blind panel + `content_diff` →
+figure (Step-0 compile → render condition → sidecar bake via Codex's native image-generation tool → Gemini + Codex blind panel + `content_diff` →
 retry until clean → **Claude structural sign-off**):
 
 ```text
@@ -221,7 +227,7 @@ retry until clean → **Claude structural sign-off**):
 
 The **deterministic core** — Step-0 compile, blueprint validation, the condition render, and the content-diff
 gate — is driven by one command, `run_spiral.py`. Its **zero-credit slices (`--p0-only` / `--dry-run`) run with
-no agent runtime**; a **real `gpt-image-2` bake, however, REQUIRES the agent sidecar SOP** (the
+no agent runtime**; a **real bake — Codex's native image-generation tool (image backend not runtime-attested) — REQUIRES the agent sidecar SOP** (the
 [`method-figure`](skills/method-figure/SKILL.md) skill agent services the core's `*.bakereq.json` by calling
 `mcp__codex__codex` with `config: {include_image_gen_tool: true, model_reasoning_effort: xhigh}`):
 ```bash
@@ -247,7 +253,7 @@ python3 skills/method-figure/scripts/run_spiral.py \
    run_spiral.py — the deterministic core (starts from a brief):
      compile_brief.py (Step-0) → blueprint.json + traceability.json     every node traces to a brief field — else FAIL-CLOSED
        → validate_blueprint.py → render_condition.py                    labeled condition SVG → PNG
-       → agent mcp__codex__codex (workspace-write, config{xhigh}) → gpt-image-2 bake    fail-closed verifier, not a sandbox setting
+       → agent mcp__codex__codex (workspace-write, config{xhigh}) → native image-gen bake    fail-closed verifier, not a sandbox setting
        → Gemini blind-transcribe ‖ Codex blind-transcribe → content_diff.py     deterministic vetoes
        → RETRY ≤4 (re-assert the locked labels) → Claude STRUCTURAL sign-off
    → figure.png   (+ blueprint.json + traceability.json + trace.jsonl of every round)
@@ -269,7 +275,7 @@ sign-off**. Needs the **`codex` + `gemini` CLIs** + headless Chrome (`python3 cl
 > exact prompts) is in [`PROMPTS.md`](skills/method-figure/examples/method_figure/PROMPTS.md).
 
 ### 🛡️ Why the two gates differ (both correct, by design)
-The **movie** `panel_gate` is a **3-reviewer** panel (CC *narrative* ‖ Gemini *visual* ‖ Codex *visual*) — a story
+The **movie** `panel_gate` is a **3-reviewer** panel (*narrative* — currently the codex CLI ‖ Gemini *visual* ‖ Codex *visual*) — a story
 panel must land its beat AND be visually on-model. The **method-figure** panel is **Gemini + Codex
 blind-transcribe + the deterministic `content_diff`**, with **Claude** the post-pass structural sign-off — a
 figure has no "beat", so the bar is exact labels + clean layout, not narrative. Both obey the one rule:
@@ -297,9 +303,10 @@ The framework knows nothing about any particular story — a project plugs in vi
 - **protocols/** — the cross-model review / governance contracts (framework-owned)
 - **schemas/** — versioned IR + wiki schemas (`comic.schema.json`, `node_schema.json`, `edge_schema.json`)
 - **cli/** — `validate_wiki.py` (the stdlib release gate for a project's wiki)
-- **docs/** — `comic-json.md` (the authored-input spec), `architecture.md` (SSOT), `spiral-runtime.md`, `GENERATION_RETRO.md`
+- **docs/** — `comic-json.md` (the authored-input spec), `spiral-runtime.md` (the live runtime doc), `architecture.md` (historical pre-rewire design), `GENERATION_RETRO.md`
 - **examples/comic_m3_audit/** — the reference movie: `comic.json` IR, `gen/` blueprint scripts,
-  `panels/` baked art, `wiki/` the 198-node generation trace, `outputs/` the built viewer
+  `panels/` baked art, `wiki/` the 198-node generation trace (`outputs/index.html` — the viewer — is
+  **built on demand** by `build_comic.py`, not shipped in the repo)
 
 <a id="community"></a>
 

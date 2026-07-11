@@ -1,5 +1,14 @@
 # ARIS-Movie 连环画 (Comic) — Unified Architecture v2
 
+> ⚠️ **HISTORICAL — pre-rewire design (2026-06-09), kept as a dated record. Do NOT execute from this
+> doc.** The **live doctrine** is the [README](../README.md) + [`docs/spiral-runtime.md`](spiral-runtime.md)
+> \+ the `skills/` SOPs. In particular: the in-engine `codex image_gen` bake described below (§4/§6/§8) is
+> **RETIRED** — the live bake is the agent `mcp__codex__codex` sidecar (`.bakereq.json`/`.bakestatus.json`
+> \+ `pickup_image.py --out-existing`); and several paths below (`comic_kit/`, `movie-wiki/`,
+> `assets_new/`, `probe/`, `comic/index.html`) are the old private-repo layout — today they live under
+> `examples/comic_m3_audit/…`, `packages/viewer/…`, and the built viewer is `outputs/index.html`. The
+> "single source of truth" framing in the next paragraph is itself historical.
+
 > **Single source of truth, consolidated 2026-06-09.** Supersedes the now-partially-stale
 > `aris_movie/COMIC_PIVOT_DESIGN.md` (the original cross-model design — still valid for the
 > spiral/gate/wiki spine, but its text-mode, story, and several mechanisms have been overtaken
@@ -88,7 +97,7 @@ VIEWER (comic_kit/comic_template.html → comic/index.html: bilingual, flip+webt
 
 **Reviewer/record contracts** (already implemented in the engine — see §7 / the script): each visual reviewer returns `VIS_SCHEMA` (identity/style/composition/artifact/safezone/stray scores), CC returns `CC_SCHEMA` (narrative/composition), the JS `panelVerdict` fuses them; wiki writes `panel_attempt` / `review×3` / `decision` (verdict + repair_instruction) / `failure_mode` (active + repair_pattern) nodes. `attempt` carries `{image_path, attempt_index, needs_human}`.
 
-## 7. The engine (`workflows/scripts/aris-comic-spiral-engine.js`)
+## 7. The engine (`packages/core/spiral_engine.js` — plus its Python port `skills/comic-director/scripts/run_comic.py`)
 
 Forked from the video spiral, fixed + recalibrated this session:
 - **Seed-anchored**: panels independent → on a non-keep verdict, retry the SAME panel with the repair invariant; never rollback-to-prior. Caps 4/panel. Exhaustion → push best-so-far flagged `needs_human` and CONTINUE (design R10). Throttle (`gen_failed_reason` matches rate/limit) → stop clean, resumable via `args.panelIds`.

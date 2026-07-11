@@ -1,6 +1,6 @@
 ---
 name: comic-blueprint-author
-description: "Phase-1 (S7 of the comic-author suite) — turn ONE locked panel_spec into a deterministic content-SVG blueprint that becomes the codex image_gen condition, by WRITING A PYTHON GENERATOR (never raw SVG in chat — LLMs botch coordinates). The HEADLINE comic-pivot rule: the image bakes NO bubbles at all — draw only characters + scene + leave negative-space SAFE ZONES; HTML/CSS owns the entire bubble. Every panel gets a content_svg (a figure OR a layout blueprint); a baked figure-panel must declare expected_literals verbatim. Single-source collision check is mandatory. Gated by comic-cross-layer-gate --gate blueprint. Use when the storyboard is locked and you need each panel's deterministic generation condition; do NOT use to bake the panel (that is comic-director) or to write the verdict-stamp/curve assets (that is comic-asset-ref-generator)."
+description: "Phase-1 (S7 of the comic-author suite) — turn ONE locked panel_spec into a deterministic content-SVG blueprint that becomes the bake condition (reference #1 of the agent mcp__codex__codex sidecar bake), by WRITING A PYTHON GENERATOR (never raw SVG in chat — LLMs botch coordinates). The HEADLINE comic-pivot rule: the image bakes NO bubbles at all — draw only characters + scene + leave negative-space SAFE ZONES; HTML/CSS owns the entire bubble. Every panel gets a content_svg (a figure OR a layout blueprint); a baked figure-panel must declare expected_literals verbatim. Single-source collision check is mandatory. Gated by comic-cross-layer-gate --gate blueprint. Use when the storyboard is locked and you need each panel's deterministic generation condition; do NOT use to bake the panel (that is comic-director) or to write the verdict-stamp/curve assets (that is comic-asset-ref-generator)."
 ---
 
 # comic-blueprint-author — one panel_spec → a deterministic content-SVG blueprint (S7)
@@ -8,7 +8,12 @@ description: "Phase-1 (S7 of the comic-author suite) — turn ONE locked panel_s
 The **per-panel condition author** of the [`comic-author`](../comic-author/SKILL.md) Phase-1 suite. It sits
 between the storyboard ([`comic-storyboard-creator`](../comic-storyboard-creator/SKILL.md)) and the bake
 ([`comic-director`](../comic-director/SKILL.md)): for ONE locked `panel_spec` it produces ONE deterministic
-`content_svg` — the answer-key composition image that the spiral feeds to `codex image_gen` as `-i` ref #1.
+`content_svg` — the answer-key composition image the bake conditions on. Concretely (the live seam,
+`run_comic.py` + `pickup_image.build_bake_prompt`): the engine renders the SVG to a PNG via headless Chrome,
+and the agent-side **`mcp__codex__codex` sidecar bake** embeds that render as the **FIRST of exactly two
+absolute-path reference images written literally into the bake prompt** (ref #1 = the blueprint render,
+ref #2 = the canonical identity sheet — the mcp schema has NO `-i` image param, so paths ride in the text),
+`sandbox: workspace-write`, and the returned PNG is verified by `pickup_image.py --out-existing`.
 Unlike video, **the panel IS the deliverable** — there is no i2v start-frame residue, no motion, no temporal
 chaining. The whole job is to LOCK what the panel must contain (numbers, layout, where the empty bubble
 real-estate lives) so the image model has a precise composition to finalize and the `blueprint` gate has a
@@ -59,8 +64,8 @@ re-runnable output.
   `{approve, revise, fallback}`, ADVANCE iff `refs_present ≥ 4 ∧ spatial_correctness ≥ 4 ∧ blueprint_renders ≥ 4`
   (+ `text_preservation ≥ 4` when baked text), `safezone_quality < 3 → fallback`, cap `MAX_BLUEPRINT_REGEN = 3`
   (see EXACT gate). The gate is a score-FUSER — you must FIRST fan out the reviewers (Claude render/lint ‖ Codex
-  `gpt-5.5` `xhigh` ‖ Gemini `auto-gemini-3`) and write their `review:*` nodes + `reviews` edges (⑤a), never call
-  it cold. The author never self-acquits.
+  at `xhigh` (no model pin — the CLI follows the local codex config) ‖ Gemini `auto-gemini-3`) and write their
+  `review:*` nodes + `reviews` edges (⑤a), never call it cold. The author never self-acquits.
 - **SINGLE-SOURCE = mandatory** — `check_asset_collisions.py` must exit 0 (no filename written by >1
   generator) before the gate runs.
 - **SCOPE** — one panel per invocation. You author the *condition*; you do NOT bake the frame (that's
@@ -184,8 +189,8 @@ fan out the reviewers and persist them FIRST — the gate collects, it does not 
 15b. **Fan out the independent reviewers** on the blueprint dims (`refs_present`, `spatial_correctness`,
     `blueprint_renders`, `text_preservation` [only when baked text], `safezone_quality`), file paths only,
     behind an `=== EXTERNAL CONTEXT (advisory) ===` fence, NEVER the author's `expected_literals` list:
-    **Claude render/lint ‖ Codex `gpt-5.5` `xhigh` ‖ Gemini `auto-gemini-3`**
-    ([`reviewer-routing`](../../protocols/reviewer-routing.md)).
+    **Claude render/lint ‖ Codex at `xhigh` (no model pin — follows the local codex config) ‖ Gemini
+    `auto-gemini-3`** ([`reviewer-routing`](../../protocols/reviewer-routing.md)).
 15c. **Write one `review` node per reviewer** (`node_id: review:<slug>`, `node_type:"review"`). Payload **must**
     carry the 3 required fields from `cli/validate_wiki.py` `PAYLOAD_REQUIRED["review"]` — `target_node_id`
     (the `blueprint:<slug>`), `reviewer`, `gate_kind:"blueprint"` — plus `review_scores:{dim:score,...}` (the
@@ -262,7 +267,9 @@ not a separate rubric; the binding floors are the 5 dims above:
 
 **Reviewers (cross-model, independent) — the upstream fan-out in ⑤a, NOT the gate itself:** Claude render/lint
 (does the SVG render? do the literals appear? are safe zones over low-detail pixels? any baked bubble?) ‖ Gemini
-visual (`auto-gemini-3`) ‖ Codex `gpt-5.5` `xhigh`. Each writes a `review:*` node; the gate COLLECTS them via
+visual (`auto-gemini-3`) ‖ Codex at `xhigh` (no model pin — follows the local codex config; only the BAKE pins
+a model, `gpt-5.5` + `xhigh` via `run_comic.get_bake_plan()`'s bakereq/v1 compat default — a config-driven
+override is planned, not shipped). Each writes a `review:*` node; the gate COLLECTS them via
 `reviews` edges and hard-fails if none exist. The author (this agent) never self-acquits; ACCEPT needs the
 deterministic checks clean **and** the fused cross-model verdict to advance.
 
@@ -363,5 +370,5 @@ Ground every blueprint in the real ARIS-Movie-Director comic
 - [`artifact-integrity`](../../protocols/artifact-integrity.md) — the agent that authors a blueprint does not
   judge its own blueprint's correctness; numbers are *originated by the storyboard and verified* by the blind
   diff, never invented at blueprint time.
-- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex `gpt-5.5` `xhigh`; Gemini `auto-gemini-3`;
-  never downgrade the reviewer tier.
+- [`reviewer-routing`](../../protocols/reviewer-routing.md) — Codex at `xhigh` (no model pin — the reviewer
+  follows the local codex CLI config); Gemini `auto-gemini-3`; never downgrade the effort tier.

@@ -71,8 +71,10 @@ it green. The metered stages are deliberately out of CI (they need credentials +
 
 ## Adding an example project
 
-A project plugs in via `examples/<name>/movie.project.json` + a `comic.json` IR + a `wiki/` trace. The minimal
-copy target is [`examples/comic_min_author/`](examples/comic_min_author/) (one valid node of each author type).
+A project plugs in via `examples/<name>/movie.project.json` + a `comic.json` IR + a `wiki/` trace.
+[`examples/comic_min_author/`](examples/comic_min_author/) is the minimal copy target for the **author wiki
+nodes only** (one valid node of each author type — it ships no `movie.project.json` and no `comic.json`); copy
+the `movie.project.json` + `comic.json` shapes from [`examples/comic_m3_audit/`](examples/comic_m3_audit/).
 Before you open the PR:
 
 ```bash

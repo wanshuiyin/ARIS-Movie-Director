@@ -14,7 +14,7 @@ Claude's acquittal for it (it prints a clear "awaiting Claude structural approve
 Long-running (each bake ~3-8 min × rounds) — run it in the background and watch run.log / trace.jsonl.
 Usage:
   python3 run_spiral.py blueprint.json --identity identity_sheet.png --out-dir figures/method_figure/<id>
-  [--max-rounds 4] [--effort high] [--dry-run]
+  [--max-rounds 4] [--dry-run]
 """
 import argparse, hashlib, json, os, re, subprocess, sys, time, shutil
 
@@ -43,22 +43,17 @@ def sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16] if os.path.exists(path) else ""
 
 def extract_json(text, required_key=None):
-    """pull the first balanced {...} object out of a CLI model's (prose/fence-wrapped) output. If
-    required_key is given, skip fragments (e.g. a {"thought":...} preamble) that lack it — only return the
-    real payload."""
+    """pull the first JSON object out of a CLI model's (prose/fence-wrapped) output — a real decoder
+    (raw_decode, mirrors run_comic.py) so braces INSIDE string values (observed_tokens, blockers) can't
+    truncate the payload. If required_key is given, skip fragments (e.g. a {"thought":...} preamble)
+    that lack it — only return the real payload."""
+    dec = json.JSONDecoder()
     s = text.find("{")
     while s != -1:
-        depth = 0
-        for i in range(s, len(text)):
-            if text[i] == "{": depth += 1
-            elif text[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        j = json.loads(text[s:i + 1])
-                        if required_key is None or (isinstance(j, dict) and required_key in j): return j
-                    except Exception: pass
-                    break
+        try:
+            j, _ = dec.raw_decode(text[s:])
+            if isinstance(j, dict) and (required_key is None or required_key in j): return j
+        except Exception: pass
         s = text.find("{", s + 1)
     return None
 
@@ -199,7 +194,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("blueprint"); ap.add_argument("--identity"); ap.add_argument("--out-dir", required=True)
     ap.add_argument("--max-rounds", type=int, default=0, help="0 = use blueprint render_policy.max_rounds")
-    ap.add_argument("--effort", default="xhigh"); ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--dry-run", action="store_true")   # no --effort: bake + review are hardcoded xhigh by design
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
     ap.add_argument("--from-brief", action="store_true", help="force: treat the input as a method_figure_brief (Step-0 compile)")
     ap.add_argument("--from-blueprint", action="store_true", help="force: treat the input as a ready blueprint (legacy/power-user)")
@@ -387,7 +382,7 @@ def main():
                 "image": "figure.png", "blueprint": "blueprint.json", "accepted_round": rd,
                 "verdicts": {"gemini": gv, "codex": cv, "diff": "clean"}}, ensure_ascii=False) + "\n")
             log(f"PANEL-CLEAN at round {rd} → {out_dir}/figure.png")
-            print(f"\n✅ PANEL-CLEAN (Gemini approve + Codex no-veto + deterministic diff empty) at round {rd}.")
+            print(f"\n✅ PANEL-CLEAN (Gemini approve + Codex approve + deterministic diff empty) at round {rd}.")
             print(f"   figure: {out_dir}/figure.png   trace: {trace}")
             print("   NEXT: the calling agent (Claude) gives the final STRUCTURAL sign-off — the orchestrator")
             print("   does not self-acquit the generator family. Inspect the figure and approve or send one more fix.")
