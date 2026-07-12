@@ -32,7 +32,7 @@ STYLE_PREFIX[warm-lab]: flat pixel-art comic; warm real-world interior — Ediso
 STYLE_PREFIX[dark-cyber]: flat pixel-art comic; digital ARIS world — dark_navy_void #0A0E27 + neon (warning-red/amber/invariant-purple/success-green); wiki-void / terminal / audit panels; 1-step shading, crisp integer pixels
 STYLE_PREFIX[starfield]: flat pixel-art; full-bleed dark-navy starfield — glowing star-nodes + thin connecting lines, NO characters; deep night palette, 1-step shading, crisp integer pixels
 
-## 1. 角色身份锁(authority = `movie-wiki/assets/refs/sprites/duo_canonical_ref_v001.png`)
+## 1. 角色身份锁(authority = `assets/duo_canonical_ref_v001.png`(项目内相对路径))
 
 每个出现双人的格子,**必须**把 `duo_canonical_ref` 作为 condition 注入;身份不对 = panel_gate 直接 reject。
 

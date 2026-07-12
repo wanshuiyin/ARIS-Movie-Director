@@ -31,7 +31,7 @@
     "dark_navy_void": "#0A0E27"
   },
   "identity_refs": {
-    "duo_canonical": "movie-wiki/assets/refs/sprites/duo_canonical_ref_v001.png",
+    "duo_canonical": "assets/duo_canonical_ref_v001.png",
     "executor": {
       "hoodie": "#1D4684",
       "hair": "#925935",

@@ -39,3 +39,27 @@ pipeline **refuses to acquit** rather than shipping unreviewed panels.
 serialize the **raw MCP response** into `bakestatus.mcp_output` (a non-empty faithful record) or pickup
 fail-closes on the empty-transcript guard. The planned shared broker (`service_bake_requests.py`, Wave 3)
 should capture the full event stream rather than only the final text.
+
+---
+
+# Update — 2026-07-12: full formal loop CLOSED (real P0 → spiral repair → human KEEP)
+
+The gemini blocker above was resolved on the test machine (google-family reviews now served through a local
+`gemini`→Antigravity compat shim pinned to a Gemini model; the repo-proper configurable-reviewer flag remains
+a Wave-3 item). A second run then exercised the **entire formal chain, no escape hatches** (fresh throwaway
+copy, 2 image credits, `--max-total 2`):
+
+![S12 human-KEEP panel](figassets/bake_keep_S12_2026-07-12.png)
+
+| Stage | Result |
+|---|---|
+| **Real P0 certificate** | round 1: Codex reviewer (self-computing the sha256) found a REAL blocker — `identity_refs.duo_canonical` pointed at a nonexistent `movie-wiki/...` path → fail-closed. Fixed → new digest → **both families PASS on the same sha** → `run_p0_proof.py` minted `decision:p0_proof_*` (verdict advance, comic_sha + bake_plan_sha, quorum [google, openai]) |
+| **Digest preflight** | run launched **without** `--skip-p0-proof`; `_p0_clean` consumed the cert (`p0_skipped:false`) |
+| **Attempt 1 → gate** | full 3-reviewer panel (narrative + Gemini visual + Codex visual): identity 5, literals all read, but **style 3/5 — voxel/3D drift** (the exact failure mode ART_BIBLE §0 warns about) → `retry_panel` + a precise repair constraint |
+| **Attempt 2 → gate** | repair **converged**: style 5/5, identity 5/5, composition 5/5, `missing=[]`, gemini artifacts 0 / corruption false. Sole dissent: Codex `content_corruption_present=true` (its own transcription read every token cleanly; the flagged "corruption" is the t2 box's INTENDED span-fragmentation device) → gate **fail-safed to needs_human, exit 3** |
+| **Human gate** | the operator reviewed both attempts side-by-side and ruled **KEEP** — recorded in the trace as `decision:human_override_s12_a02` (image sha256-bound, reasoned) |
+
+The loop's every designed behavior fired at least once across the two runs: fail-closed P0 (twice, once on a
+real artifact bug it caught in this repo's own reference example — fixed here in the same commit), digest
+binding, nonce handshake, native-image pickup, blind-transcribe literal check, style-drift repair convergence,
+single-reviewer-dissent fail-safe, and the human-override terminal. **The spiral works.**
