@@ -26,6 +26,10 @@ visual ‖ Codex visual) → the deterministic `panel_verdict` → wiki nodes �
 `assembly_gate` → project the kept panels into `comic.json`. Then build the viewer:
 `python3 packages/viewer/build_comic.py examples/mycomic`.
 
+The gates shell the `codex` + `gemini` CLIs; legacy `gemini` CLI dead upstream (`IneligibleTierError`,
+2026-07)? pass `--gemini-cmd "python3 cli/gemini_agy_shim.py"` — the shipped Antigravity shim pins a Gemini
+model, so the reviewer slot stays google-family.
+
 ## P0 spending prerequisite (fail-closed)
 
 `run_comic.py` refuses to spend any image credit without a **clean, digest-bound `decision:p0_proof_*`

@@ -335,7 +335,9 @@ exact compiled version it read:
    hack, `Promise.all` races.
 3. **`gemini` on DESIGN / CONTRACT / UX** — is `ART_BIBLE.md` an **executable convergence target** for the
    panel_gate? Does the `comic.json` IR scale to 24 panels + bilingual + 3 `text_mode`s? The viewer reading
-   experience? Drift from the design doc?
+   experience? Drift from the design doc? *(This google-family review may come from the legacy `gemini` CLI
+   OR from Antigravity via the shipped shim, [`cli/gemini_agy_shim.py`](../../cli/gemini_agy_shim.py) — the
+   shim pins a Gemini model, so the family recorded stays `google` either way.)*
 
 **Gate schema `FIND` (required `[reviewer, blockers, should_fix, overall]`):** `blockers[]` and `should_fix[]`
 are arrays of `{file, issue, fix}` — **all three required per item** (a blocker with no concrete fix is not a

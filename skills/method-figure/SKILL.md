@@ -127,6 +127,9 @@ python3 skills/method-figure/scripts/run_spiral.py your_method_figure_brief.json
 #  --identity is OPTIONAL (resolved from the brief's identity_refs[0].path);  --dry-run prints the round-1 bake
 #  prompt;  --p0-only runs the zero-credit gate (validate+compile+render+prompt-lint) then stops;  --max-rounds N.
 #  There is NO --effort knob (the flag is removed) — bake + review effort are hardcoded xhigh by design.
+#  --gemini-cmd overrides how the google-family reviewer is shelled (default: the legacy `gemini` CLI). Legacy
+#  CLI dead (IneligibleTierError, 2026-07)? pass --gemini-cmd "python3 cli/gemini_agy_shim.py" — the shipped
+#  Antigravity shim pins a Gemini model (the second-reviewer slot must stay google-family for quorum honesty).
 ```
 > **Power-user / override:** already have a hand-tuned blueprint? `run_spiral.py blueprint.json --identity
 > sheet.png --out-dir … --from-blueprint` runs the legacy path unchanged. A worked example brief lives at

@@ -23,7 +23,7 @@ The generator family (the agent mcp__codex__codex sidecar bake) can NOT self-acq
 deterministic token-diff over Gemini+Codex blind transcriptions. The calling agent (Claude) gives the final
 structural sign-off; this orchestrator prints a run-report JSON and never claims that acquittal for itself.
 """
-import argparse, hashlib, json, os, re, shutil, subprocess, sys, time
+import argparse, hashlib, json, os, re, shlex, shutil, subprocess, sys, time
 from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -446,7 +446,7 @@ def review_gemini(paths, pid, img, idref, id_desc, baked, args):
          f"identity reference ({id_desc}) — judge each character against it. Honor ART_BIBLE. Score 0-5. baked={baked}: if baked, "
          f"observed_literals = verbatim transcription of every number/label/code you can READ (never guess); content_corruption_present = "
          f"any garbled/illegal token.{ANATOMY} Output ONLY one JSON line: {shape}")
-    r = sh(["gemini", "--model", "auto-gemini-3", "-p", p], args.review_timeout)
+    r = sh(shlex.split(args.gemini_cmd) + ["--model", "auto-gemini-3", "-p", p], args.review_timeout)
     return extract_json((getattr(r, "stdout", "") or "") + (getattr(r, "stderr", "") or ""), required_key="identity_consistency") or {"timed_out": True}
 
 def review_codex(paths, pid, img, idref, id_desc, bible_excerpt, baked, args):
@@ -492,7 +492,7 @@ def add_edges(paths, edges):
             if (s, d, t) not in existing:
                 f.write(json.dumps({"src": s, "dst": d, "type": t}, ensure_ascii=False) + "\n"); existing.add((s, d, t))
 
-def write_wiki(paths, pid, gen, gate, ai):
+def write_wiki(paths, pid, gen, gate, ai, gemini_family):
     os.makedirs(paths["NODES"], exist_ok=True)
     sl = pid.lower(); aTag = "a" + str(ai).zfill(2); v = gate["verdict"]["v"]
     ts = now_utc()
@@ -516,7 +516,7 @@ def write_wiki(paths, pid, gen, gate, ai):
     w(f"decision_panel_{sl}_{aTag}", {"node_id": dnode, "node_type": "decision", "status": "final",
         "title": f"panel_gate {pid} a{ai} → {v}", "created_at": ts,
         "payload": {"gate_kind": "panel", "target_node_id": attempt_node, "verdict": v,
-                    "reviewer_families": {"cc": "openai", "gemini": "google", "codex": "openai"},  # honest provenance: the narrative "cc" slot CURRENTLY shells the codex CLI (an OpenAI model; a configurable --narrative-reviewer is planned) — cross-family acquittal vs the Claude author still holds via gemini + codex
+                    "reviewer_families": {"cc": "openai", "gemini": gemini_family, "codex": "openai"},  # honest provenance: the narrative "cc" slot CURRENTLY shells the codex CLI (an OpenAI model; a configurable --narrative-reviewer is planned) — cross-family acquittal vs the Claude author still holds via gemini + codex. gemini_family = --gemini-family (whatever --gemini-cmd actually routes to; must stay non-openai)
                     "reasoning": gate["verdict"]["reason"][:300], "repair_instruction": gate["verdict"].get("invariant", "")}})
     edges.append((dnode, attempt_node, "decides"))
     if v != "keep":
@@ -557,7 +557,7 @@ def run_assembly(paths, page, kept, cfg_map, page_mode, args):
           "NOT containing a character is design, NEVER a penalty; same pixel style = style — warm vs cyber world is design, not drift). "
           "Output ONLY one JSON line: "
           '{"cross_panel_identity":n,"cross_panel_style":n,' + text_key + ',"drift_panels":["id of a panel with a real identity break or style collapse, else omit"]}')
-    g_r = sh(["gemini", "--model", "auto-gemini-3", "-p", gp], args.review_timeout)
+    g_r = sh(shlex.split(args.gemini_cmd) + ["--model", "auto-gemini-3", "-p", gp], args.review_timeout)
     gem = clamp_scores(extract_json((getattr(g_r, "stdout", "") or "") + (getattr(g_r, "stderr", "") or ""), required_key="cross_panel_identity") or {"timed_out": True})
     return {"cc": cc, "gem": gem, "verdict": assembly_verdict(cc, gem, page_mode)}
 
@@ -576,6 +576,13 @@ def parse_args():
     ap.add_argument("--skip-p0-proof", action="store_true", help="bake without a clean decision:p0_proof_* node (UNAUDITED; forces the run non-shippable)")
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
     ap.add_argument("--review-effort", default="xhigh")   # bake effort is get_bake_plan's p0-bound knob, not a flag
+    ap.add_argument("--gemini-cmd", default="gemini",
+                    help='command for the SECOND visual reviewer — the legacy gemini CLI, or e.g. "python3 cli/gemini_agy_shim.py" '
+                         "for Antigravity; MUST route to a google-family model (shlex-split; the "
+                         '["--model","auto-gemini-3","-p",<prompt>] tail is appended unchanged)')
+    ap.add_argument("--gemini-family", default="google",
+                    help="provenance family recorded for that reviewer in decision-node reviewer_families — must differ from "
+                         "the codex reviewers' family (openai) or the cross-model quorum provenance is dishonest")
     ap.add_argument("--min-bytes", type=int, default=500000)
     ap.add_argument("--bake-mode", choices=["agent", "exec"], default="agent",
                     help="agent = real bake via the mcp__codex__codex sidecar seam (default); exec = legacy/CI non-image path that RAISES if it reaches a real bake (exec hand-draws a non-native fallback)")
@@ -703,7 +710,7 @@ def main():
                 continue
             last_gen = gen
             gate = panel_gate(paths, pid, gen, cfg, ai, args)
-            write_wiki(paths, pid, gen, gate, ai)
+            write_wiki(paths, pid, gen, gate, ai, args.gemini_family)
             log(f"  panel_gate {pid}#{ai}: {gate['verdict']['v']} — {gate['verdict']['reason']}")
             if gate["verdict"]["v"] == "keep":
                 update_comic_json(paths, comic, pid, gen, ai)
@@ -755,7 +762,7 @@ def main():
                     if is_throttle(gen, gen.get("gen_failed_reason", "")): throttled = True; escalated = {"pid": pid, "why": "throttled during cross-frame repair"}
                     continue
                 gate = panel_gate(paths, pid, gen, cfg_map[pid], ai, args)
-                write_wiki(paths, pid, gen, gate, ai)
+                write_wiki(paths, pid, gen, gate, ai, args.gemini_family)
                 if gate["verdict"]["v"] == "keep":
                     idx = next((i for i, k in enumerate(kept) if k["pid"] == pid), -1)
                     if idx >= 0: kept[idx] = {"pid": pid, "image_path": gen["image_path"], "image_sha256": gen.get("image_sha256"), "attempt": ai, "needs_human": False}

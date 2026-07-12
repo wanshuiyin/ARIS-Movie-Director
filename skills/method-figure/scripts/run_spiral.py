@@ -16,7 +16,7 @@ Usage:
   python3 run_spiral.py blueprint.json --identity identity_sheet.png --out-dir figures/method_figure/<id>
   [--max-rounds 4] [--dry-run]
 """
-import argparse, hashlib, json, os, re, subprocess, sys, time, shutil
+import argparse, hashlib, json, os, re, shlex, subprocess, sys, time, shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -121,9 +121,9 @@ def run_codex(prompt, images, effort, timeout, logf):
     if logf: open(logf, "w").write((r.stdout or "") + "\n---STDERR---\n" + (r.stderr or ""))
     return (r.stdout or "") + (r.stderr or "")
 
-def review_gemini(png, timeout):
+def review_gemini(png, timeout, gemini_cmd):
     p = REVIEW_PROMPT.format(png="the attached image")
-    r = sh(["gemini", "--model", "auto-gemini-3", "-p", f"@{png} {p}"], timeout)
+    r = sh(shlex.split(gemini_cmd) + ["--model", "auto-gemini-3", "-p", f"@{png} {p}"], timeout)
     return extract_json((r.stdout or "") + (r.stderr or ""), required_key="verdict")
 
 def review_codex(png, timeout):
@@ -196,6 +196,11 @@ def main():
     ap.add_argument("--max-rounds", type=int, default=0, help="0 = use blueprint render_policy.max_rounds")
     ap.add_argument("--dry-run", action="store_true")   # no --effort: bake + review are hardcoded xhigh by design
     ap.add_argument("--bake-timeout", type=int, default=600); ap.add_argument("--review-timeout", type=int, default=300)
+    # no --gemini-family here: run_spiral writes no reviewer_families provenance (trace carries verdicts only)
+    ap.add_argument("--gemini-cmd", default="gemini",
+                    help='command for the SECOND visual reviewer — the legacy gemini CLI, or e.g. "python3 cli/gemini_agy_shim.py" '
+                         "for Antigravity; MUST route to a google-family model (shlex-split; the "
+                         '["--model","auto-gemini-3","-p",<prompt>] tail is appended unchanged)')
     ap.add_argument("--from-brief", action="store_true", help="force: treat the input as a method_figure_brief (Step-0 compile)")
     ap.add_argument("--from-blueprint", action="store_true", help="force: treat the input as a ready blueprint (legacy/power-user)")
     ap.add_argument("--p0-only", action="store_true", help="run validate + render the condition (the zero-credit P0 gate), then stop")
@@ -331,7 +336,7 @@ def main():
             open(trace, "a").write(json.dumps({"round": rd, "decision": "escalate", "reason": "no native image", "detail": pk.stderr.strip()}) + "\n")
             print("ESCALATE: image generation failed (throttle? non-native fallback?). See", _status_path(png)); sys.exit(2)
         log(f"baked → {png} ({sha(png)})  : PANEL (Gemini + Codex)")
-        rg = review_gemini(png, a.review_timeout); rc = review_codex(png, a.review_timeout)
+        rg = review_gemini(png, a.review_timeout, a.gemini_cmd); rc = review_codex(png, a.review_timeout)
         reviews = {}
         for name, rv in (("gemini", rg), ("codex", rc)):
             j = os.path.join(out_dir, f"round{rd}.{name}.json")

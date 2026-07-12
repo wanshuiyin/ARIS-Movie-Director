@@ -90,10 +90,19 @@ git clone https://github.com/wanshuiyin/ARIS-Movie-Director.git && cd ARIS-Movie
 python3 -m pip install -r requirements.txt
 
 # 2 · external tools for the bake/review stages — install + authenticate, then verify:
-#     codex CLI  ·  gemini CLI (uses auto-gemini-3)  ·  headless Chrome / Chromium
+#     codex CLI  ·  a google-family reviewer (legacy gemini CLI, or Antigravity via the shipped shim — see note)  ·  headless Chrome / Chromium
 python3 cli/preflight.py
 ```
 There is **no bundled installer** — the `skills/` are *followed by your coding agent pointed at this repo*; the deterministic CLIs run in-repo.
+
+> **Google-family reviewer (2026-07):** the legacy `gemini` CLI is deprecated upstream (it now dies with
+> `IneligibleTierError` — Gemini Code Assist for individuals is retired; Google's migration target is
+> **Antigravity**). Install Antigravity (`agy`) + log in, then pass
+> `--gemini-cmd "python3 cli/gemini_agy_shim.py"` to `run_comic.py` / `run_spiral.py` — the shipped shim
+> translates the old `gemini -p "@file …"` reviewer interface to `agy` and **pins a Gemini model**
+> (Antigravity also serves Claude/GPT-OSS; the second-reviewer slot must stay google-family or the
+> cross-model quorum's provenance is corrupted). If your legacy `gemini` CLI still works, the default is
+> unchanged.
 
 **Run the two workflows** — in a coding agent that has these skills (`/…` is a **slash-command agent workflow**, *not* a shell binary):
 ```text

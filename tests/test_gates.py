@@ -20,6 +20,10 @@ These lock the cross-model-audited gate guarantees so a future edit can't silent
     e2e ONLY on a both-families {openai,google} same-digest quorum (one family / wrong comic_sha -> exit 1)
   - run_spiral.extract_json uses a real decoder (raw_decode): braces INSIDE string values (observed_tokens)
     can't truncate the payload — parity with run_comic.extract_json (N11)
+  - --gemini-cmd reviewer-seam threading: run_comic.review_gemini / run_spiral.review_gemini exec the CUSTOM
+    shlex-split command (a stub reviewer's JSON comes back parsed; a broken cmd -> the timed_out fail-shape),
+    run_comic parse_args defaults stay gemini/google (backward compat), and cli/gemini_agy_shim.py with no
+    prompt fail-closes (exit 2) BEFORE any agy lookup — no network / no agy / no gemini binary needed
   - run_comic --page must NAME an existing comic.json page (a valid-charset ghost id exits !=0, --dry-run
     included); _p0_clean requires the cert's reviewer_quorum to carry BOTH {openai,google} — correct digests
     alone never clear the gate; run_p0_proof refuses a quorum-family --author-family (openai -> exit 1,
@@ -28,7 +32,7 @@ These lock the cross-model-audited gate guarantees so a future edit can't silent
 
 Run locally:  python3 tests/test_gates.py    (exit 0 = all pass).  Also invoked by tests/smoke.sh + CI.
 """
-import json, os, re, subprocess, sys, tempfile
+import json, os, re, shlex, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MF = os.path.join(ROOT, "skills", "method-figure")
@@ -743,6 +747,59 @@ check("run_spiral.extract_json: payload with unbalanced brace INSIDE a string pa
       isinstance(_j6, dict) and _j6.get("verdict") == "approve")
 check("run_spiral.extract_json: the brace-carrying observed_tokens string round-trips EXACTLY",
       isinstance(_j6, dict) and _j6.get("observed_tokens") == [_inner] and _j6.get("blockers") == [])
+
+# ── 7. --gemini-cmd reviewer-seam threading: the google slot must exec the CUSTOM command ──
+# The legacy `gemini` CLI is dead upstream (IneligibleTierError — Code Assist for individuals deprecated), so the
+# reviewer seam survives via --gemini-cmd (e.g. "python3 cli/gemini_agy_shim.py" → Antigravity). Lock the threading
+# IN-PROCESS with a STUB reviewer — a script that ignores its args and prints ONE valid review JSON line (no
+# network, no agy, no gemini binary): a 5-score verdict coming back proves the custom cmd was shlex-split, exec'd,
+# and parsed; a BROKEN cmd (nonexistent binary) must yield the {"timed_out": True} fail-shape (so the positive
+# result demonstrably came from the stub, and a dead reviewer can never pass for a scored one). The stub invocation
+# is multi-token ("<python> <script>") ON PURPOSE — the documented shim shape exercises the shlex.split path.
+import argparse as _argparse
+import run_comic as _rcm   # already loaded via §5's from-import (comic-director/scripts is on sys.path)
+_COMIC_LINE = ('{"identity_consistency":5,"style_consistency":5,"composition_readability":5,"artifact_severity":0,'
+               '"baked_text_quality":5,"observed_literals":["+6.2"],"content_corruption_present":false,'
+               '"anatomy_defect":false,"timed_out":false}')
+_SPIRAL_LINE = ('{"verdict":"approve","identity_consistency":5,"scores":{"text_fidelity":5},'
+                '"observed_tokens":["+6.2"],"blockers":[],"timed_out":false}')   # run_spiral parses required_key="verdict"
+with tempfile.TemporaryDirectory() as td:
+    def _stub_cmd(name, line):
+        p = os.path.join(td, name)
+        open(p, "w").write(f"print({line!r})\n")   # ignores argv: the appended --model/-p tail is irrelevant by design
+        return f"{shlex.quote(PY)} {shlex.quote(p)}"
+    _bible = os.path.join(td, "ART_BIBLE.md"); open(_bible, "w").write("# art bible\n")
+    _gc_ns = _argparse.Namespace(gemini_cmd=_stub_cmd("stub_gemini_comic.py", _COMIC_LINE), review_timeout=30)
+    _gc = _rcm.review_gemini({"BIBLE": _bible}, "S01", os.path.join(td, "p.png"), os.path.join(td, "id.png"),
+                             "the duo", True, _gc_ns)
+    check("gemini-cmd threading: run_comic.review_gemini execs the CUSTOM cmd + parses its JSON (identity_consistency==5)",
+          isinstance(_gc, dict) and _gc.get("identity_consistency") == 5 and _gc.get("observed_literals") == ["+6.2"])
+    _dead_ns = _argparse.Namespace(gemini_cmd=os.path.join(td, "no_such_reviewer"), review_timeout=30)
+    _dead = _rcm.review_gemini({"BIBLE": _bible}, "S01", os.path.join(td, "p.png"), os.path.join(td, "id.png"),
+                               "the duo", True, _dead_ns)
+    check("gemini-cmd threading: BROKEN cmd -> {'timed_out': True} fail-shape (control: the 5s really came from the stub)",
+          _dead == {"timed_out": True})
+    _gs = _rs.review_gemini(os.path.join(td, "fig.png"), 30, _stub_cmd("stub_gemini_spiral.py", _SPIRAL_LINE))
+    check("gemini-cmd threading: run_spiral.review_gemini(png, timeout, gemini_cmd) execs the stub + parses verdict==approve",
+          isinstance(_gs, dict) and _gs.get("verdict") == "approve" and _gs.get("identity_consistency") == 5)
+
+# backward-compat lock: an UNFLAGGED run must behave exactly as before — parse_args defaults gemini_cmd "gemini"
+# (the legacy invocation) and gemini_family "google" (the provenance the decision nodes record for that slot).
+_argv_save = sys.argv
+try:
+    sys.argv = ["run_comic.py", "--project", "/tmp/x", "--page", "P00", "--panels", "S01"]
+    _dflt = _rcm.parse_args()
+finally:
+    sys.argv = _argv_save
+check('gemini-cmd defaults: run_comic parse_args -> gemini_cmd == "gemini" (backward compat)', _dflt.gemini_cmd == "gemini")
+check('gemini-cmd defaults: run_comic parse_args -> gemini_family == "google" (provenance default)', _dflt.gemini_family == "google")
+
+# agy-shim arg contract (needs NO agy): cli/gemini_agy_shim.py with no -p must fail-closed — exit 2 with a
+# stderr that names the missing prompt — BEFORE it ever looks for the agy binary.
+_shim = os.path.join(ROOT, "cli", "gemini_agy_shim.py")
+_r_shim = subprocess.run([PY, _shim], capture_output=True, text=True, timeout=30)
+check("agy shim: no -p -> exit 2 (fail-closed before any agy lookup)", _r_shim.returncode == 2)
+check("agy shim: the refusal names the missing prompt on stderr", "prompt" in (_r_shim.stderr or "").lower())
 
 print()
 if fails:

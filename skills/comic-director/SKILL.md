@@ -36,13 +36,23 @@ forced a hand-drawn SVG/struct+zlib fallback; `--bake-mode=exec` RAISES if it ev
 ```bash
 python3 skills/comic-director/scripts/run_comic.py \
     --project examples/comic_m3_audit --page P02_b08 --panels S12,S13,S14,S15 \
-    [--bake-lang zh] [--finalize] [--dry-run] [--skip-assembly]
+    [--bake-lang zh] [--finalize] [--dry-run] [--skip-assembly] \
+    [--gemini-cmd "python3 cli/gemini_agy_shim.py"] [--gemini-family google]
 ```
 - `--dry-run` validates + prints each frame's concrete bake prompt (no image_gen) — **run this first**; it's
   also how `comic-author` confirms Phase 1 is correct.
 - `--finalize` rebuilds the single-file viewer (`packages/viewer/build_comic.py`) **only if the run is
   shippable** (nothing escalated/throttled/flagged-for-human; assembly accepted).
-- Needs the **`codex` and `gemini` CLIs** on PATH + headless Chrome (to rasterize the content-SVG blueprint).
+- `--gemini-cmd` (default: the legacy `gemini` CLI) — the argv prefix shelled for the google-family reviewer
+  slot (the `--model auto-gemini-3 -p <prompt>` tail is appended). With the legacy CLI deprecated upstream
+  (`IneligibleTierError`, 2026-07), pass `--gemini-cmd "python3 cli/gemini_agy_shim.py"` — the shipped shim
+  translates the old interface to Antigravity's `agy` and **pins a Gemini model** (Antigravity also serves
+  Claude/GPT-OSS; the slot must stay google-family for cross-model quorum honesty).
+- `--gemini-family` (default `google`) — the provenance family recorded in the wiki for whatever
+  `--gemini-cmd` actually routes to. It must stay **non-`openai`** (the visual quorum needs a second family);
+  record honestly, never re-label.
+- Needs the **`codex` CLI** + a **google-family reviewer** (legacy `gemini` CLI, or Antigravity via
+  `--gemini-cmd` + the shim) on PATH + headless Chrome (to rasterize the content-SVG blueprint).
   Reuses `skills/method-figure/scripts/pickup_image.py`.
 
 It prints a JSON run-report (`kept`, `flagged_for_human`, `needs_human`, `shippable`, `throttled`,
@@ -92,7 +102,10 @@ The comic-director **skill agent** is the bake fulfiller. Concretely:
    - then read `request_id` from `<out>.bakereq.json` and write `<out>.bakestatus.json` carrying **the status, a
      bounded raw `mcp_output`, AND that `request_id` VERBATIM** — `mcp_output` so the core's HARD-VETO can scan it,
      and `request_id` because `pickup_image.py --out-existing --request-id` **fail-closes the bake if the status
-     `request_id` is missing or mismatched** (it must be written on BOTH ok and fail):
+     `request_id` is missing or mismatched** (it must be written on BOTH ok and fail). **Live-verified pitfall:**
+     if the `mcp__codex__codex` reply TEXT is EMPTY (an image-only reply), serialize the RAW response object into
+     `mcp_output` — never write an empty string (pickup fail-closes a blank `mcp_output` on the empty-transcript
+     guard):
      `{"status":"ok","mcp_output":"<raw>","request_id":"<verbatim from bakereq>"}` on success, or
      `{"status":"fail","failure_kind":"throttle","mcp_output":"<raw>","request_id":"<verbatim from bakereq>"}` on a
      429 / `MODEL_CAPACITY_EXHAUSTED` / overloaded error (otherwise

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """preflight.py — verify a fresh machine has what BOTH pipelines need, BEFORE the first (metered) run.
 
-Checks the external tools the README names (codex CLI, gemini CLI, a headless Chrome/Chromium) plus the one
+Checks the external tools the README names (codex CLI, a google-family reviewer CLI, a headless
+Chrome/Chromium) plus the one
 Python module the docs use (jsonschema), and prints a per-check table. Exits non-zero if any REQUIRED check
 fails, so a user discovers a missing tool/auth here (free) instead of mid-bake. Pure stdlib.
 
@@ -18,7 +19,9 @@ import sys
 # (name, kind, how-to) — kind: "bin" = on PATH, "pybin"-alts = any-of, "mod" = importable
 CHECKS = {
     "codex": ("bin", "codex", "OpenAI Codex CLI — needed for the image bake + the Codex reviewer (must be authed)"),
-    "gemini": ("bin", "gemini", "Gemini CLI — the Gemini reviewer; must run as `gemini --model auto-gemini-3`"),
+    "gemini": ("gemini", None, "google-family reviewer — either the legacy `gemini` CLI (deprecated upstream: "
+               "IneligibleTierError) OR Antigravity's `agy` (https://antigravity.google) driven via "
+               '--gemini-cmd "python3 cli/gemini_agy_shim.py"'),
     "chrome": ("anyof", ["chromium", "google-chrome", "chromium-browser", "chrome",
                           "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
                           "/Applications/Chromium.app/Contents/MacOS/Chromium"],
@@ -33,6 +36,16 @@ NEED = {
 
 
 def probe(kind, target):
+    if kind == "gemini":
+        # the google reviewer slot: legacy `gemini` CLI if it survives, else Antigravity's `agy` via the shim
+        p = shutil.which("gemini")
+        if p:
+            return True, p
+        p = shutil.which("agy")
+        if p:
+            return True, (f'{p} — legacy `gemini` CLI deprecated; run engines with '
+                          f'--gemini-cmd "python3 cli/gemini_agy_shim.py"')
+        return False, "neither `gemini` nor `agy` on PATH"
     if kind == "bin":
         return shutil.which(target) is not None, shutil.which(target) or "not on PATH"
     if kind == "anyof":
@@ -76,7 +89,8 @@ def main():
               "logged in; a baked run additionally needs image-generation entitlement on the Codex account.)")
         sys.exit(1)
     print("\n[preflight] PASS — all required tools present. (Note: presence != auth — confirm `codex` and "
-          "`gemini --model auto-gemini-3` actually return before a long run.)")
+          "your google reviewer (`gemini --model auto-gemini-3`, or `agy` via cli/gemini_agy_shim.py) "
+          "actually return before a long run.)")
 
 
 if __name__ == "__main__":

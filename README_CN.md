@@ -80,10 +80,17 @@ git clone https://github.com/wanshuiyin/ARIS-Movie-Director.git && cd ARIS-Movie
 python3 -m pip install -r requirements.txt
 
 # 2 · 烤制/评审阶段需要的外部工具 —— 安装 + 登录,然后自检:
-#     codex CLI  ·  gemini CLI(使用 auto-gemini-3)·  无头 Chrome / Chromium
+#     codex CLI  ·  一个 google 家族审稿人(旧版 gemini CLI,或经随仓 shim 走 Antigravity —— 见下方说明)·  无头 Chrome / Chromium
 python3 cli/preflight.py
 ```
 **没有打包的安装器** —— `skills/` 是由*你那个指向本仓库的 coding agent 来"跟随"执行*的;确定性 CLI 在仓库内直接跑。
+
+> **Google 家族审稿人(2026-07):** 旧版 `gemini` CLI 已被上游弃用(现在直接报
+> `IneligibleTierError` —— 个人版 Gemini Code Assist 已退役;Google 的迁移目标是 **Antigravity**)。
+> 安装 Antigravity(`agy`)+ 登录,然后给 `run_comic.py` / `run_spiral.py` 传
+> `--gemini-cmd "python3 cli/gemini_agy_shim.py"` —— 随仓 shim 把旧的 `gemini -p "@file …"` 审稿接口翻译成
+> `agy`,并**钉死一个 Gemini 模型**(Antigravity 也提供 Claude/GPT-OSS;第二审稿人槽位必须留在 google 家族,
+> 否则跨模型 quorum 的 provenance 就被污染了)。如果你的旧版 `gemini` CLI 还能用,默认行为不变。
 
 **跑两个工作流** —— 在一个装有这些 skill 的 coding agent 里(`/…` 是一个**斜杠命令式 agent 工作流**,*不是* shell 二进制):
 ```text
